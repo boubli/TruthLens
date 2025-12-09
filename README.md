@@ -1,72 +1,72 @@
 # TruthLens 🔍🥗
 
-**TruthLens** is a modern, AI-powered Progressive Web App (PWA) designed to demystify the food you eat. By combining advanced computer vision with powerful Large Language Models (LLMs), TruthLens helps users scan products, analyze ingredients, and make healthier dietary choices instantly.
+**TruthLens** is an advanced AI-powered nutrition assistant that helps you "see the truth" behind the food you eat. 
+
+Built as a modern Progressive Web App (PWA), it combines the power of **Google Gemini** and **Groq (Llama 3)** to instantly analyze food products, decode complex ingredient lists, and provide personalized health insights based on your specific dietary needs.
 
 ## 🌟 Key Features
 
-*   **🥗 Smart Ingredient Analysis**: Scan product barcodes or labels to instantly get a breakdown of ingredients, revealing hidden additives, allergens, and nutritional value.
-*   **🤖 Empowered by AI**:
-    *   **AI Chat Assistant**: Have a natural conversation with our AI about food, nutrition, and health goals (`/ai-chat`).
-    *   **Multi-Provider Support**: Powered by **Groq** (Llama 3) and **Google Gemini** for fast, accurate insights.
-    *   **Personalized Advice**: Recommendations tailored to your specific dietary needs (Vegan, Gluten-Free, Keto, etc.).
-*   **📊 Comprehensive Scoring**: Get an instant "Health Score" for every product, backed by scientific data.
-*   **💎 Tiered Membership System**:
-    *   **Free/Plus**: Bring Your Own Key (BYOK) for AI features.
-    *   **Pro/Ultimate**: Unlimited, hassle-free access with platform-managed API keys.
-*   **🎨 Beautiful, Adaptive UI**:
-    *   Fully customizable themes with Dark/Light mode support.
-    *   Smooth animations powered by Framer Motion.
-    *   Responsive design that works perfectly on Mobile, Tablet, and Desktop.
-*   **💬 Dual Support Channels**:
-    *   **AI Assistant**: For instant nutrition answers.
-    *   **Support Chat**: Direct chat line to customer service for app help (`/support`).
+### 🥗 Smart Food Analysis
+*   **Instant Grading**: Our proprietary **Smart Grade** algorithm evaluates products on a scale from **A (Excellent)** to **E (Avoid)** based on ingredients, processing levels, and nutritional value.
+*   **Ingredient Decoder**: Instantly identifies harmful additives, allergens, and hidden sugars in any product.
+*   **Barcode Scanning**: Quick access to millions of products via camera scan.
 
-## 🚀 Tech Stack
+### 🤖 Advanced AI Integration
+*   **Dual-AI Engine**: Leverages **Groq** for lightning-fast responses and **Gemini 1.5** for deep analytical reasoning.
+*   **Context-Aware Chat**: specialized `/ai-chat` for real-time nutrition advice and meal planning.
+*   **Dynamic Greetings**: A smart home screen that greets you with context-aware, witty messages depending on the time of day (e.g., "Scanning snacks at 3AM?").
 
-*   **Frontend**: Next.js 16 (React 19), TypeScript, Tailwind CSS, Material UI v7.
-*   **Backend**: Firebase (Firestore, Auth, Storage).
-*   **AI Integration**: Groq SDK, Google Generative AI SDK, Framer Motion.
-*   **Platform**: PWA (Progressive Web App) with experimental HTTPS support.
+### 💎 Flexible & Lifetime Access
+*   **Fair Pricing**: We offer both Monthly subscriptions and a unique **Lifetime Deal** for permanent access.
+*   **Tiered Features**:
+    *   **Explorer (Free)**: Basic scanning and manual entry.
+    *   **Pro**: Unlimited scans, detailed AI analysis, and Priority Support.
+    *   **Ultimate**: All Pro features + Exclusive "Global Search" and Beta access.
+
+### 🛠️ Powerful Admin Dashboard
+*   **Full Control**: A dedicated Admin Interface to manage Users, Subscription Tiers, and App Configurations in real-time.
+*   **Dynamic Logic**: Toggle features, enable maintenance mode, or adjust pricing instantly without redeploying.
+
+## 🚀 Technical Stack
+
+Built with cutting-edge web technologies for performance and scale:
+
+*   **Frontend**: Next.js 14 (App Router), TypeScript, Material UI (MUI).
+*   **Backend & Auth**: Firebase (Firestore, Authentication, Security Rules).
+*   **AI Services**: Groq SDK, Google Generative AI SDK (Gemini).
+*   **State Management**: React Context + Hooks.
+*   **Animations**: Framer Motion for buttery smooth UI transitions.
+*   **Styling**: Responsive Design supporting dark/light modes and mobile-first layouts.
 
 ## 🛠️ Getting Started
 
-### Prerequisites
-
-*   Node.js 18+ installed on your machine.
-*   Firebase project configured (with `.env` or `firebaseConfig` setup).
-
-### Installation
-
-1.  **Clone the repository**:
+1.  **Clone the Repo**:
     ```bash
-    git clone https://github.com/yourusername/truth-lens.git
-    cd truth-lens
+    git clone https://github.com/yourusername/truthlens.git
+    cd truthlens
     ```
 
-2.  **Install dependencies**:
+2.  **Install Dependencies**:
     ```bash
     npm install
-    # or
-    yarn install
     ```
 
-3.  **Run the development server**:
+3.  **Environment Setup**:
+    Create a `.env.local` file with your keys:
+    ```env
+    NEXT_PUBLIC_FIREBASE_API_KEY=...
+    NEXT_PUBLIC_GEMINI_API_KEY=...
+    NEXT_PUBLIC_GROQ_API_KEY=...
+    ```
+
+4.  **Run Development Server**:
     ```bash
     npm run dev
     ```
 
-4.  **Open the app**:
-    Visit `https://localhost:3000` (Note: Uses HTTPS).
+## 📄 License
 
-## 📂 Project Structure
-
-*   `/app`: Next.js App Router pages and layouts.
-    *   `/ai-chat`: AI Assistant interface.
-    *   `/support`: Human support chat interface.
-    *   `/scan`: Barcode/Product scanning feature.
-*   `/components`: Reusable UI components.
-*   `/services`: Business logic and API integrations (Firebase, AI).
-*   `/lib`: Core configuration (Firebase, Theme).
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-*Powered by TruthLens Team*
+*Empowering healthier choices, one scan at a time.*
