@@ -22,6 +22,11 @@ interface Message {
     sender: 'ai' | 'user';
 }
 
+interface AiPreferenceOnboardingProps {
+    open: boolean;
+    onClose: () => void;
+}
+
 export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOnboardingProps) {
     const { user, refreshProfile } = useAuth();
     const { t } = useTranslation();
