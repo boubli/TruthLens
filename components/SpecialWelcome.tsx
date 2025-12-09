@@ -34,13 +34,8 @@ export default function SpecialWelcome() {
         if (user.email === TARGET_EMAIL && !hasSeen) {
             setIsVisible(true);
             startSequence();
-
-            // Mark as seen persistently in Firestore immediately to prevent repeat
-            if (user.uid) {
-                markUserAsWelcomed(user.uid).catch(err =>
-                    console.error("Failed to mark welcome as seen:", err)
-                );
-            }
+            // We now mark it as seen ONLY after they reach the letter stage or finish.
+            // This prevents "missed" animations on refresh.
         }
     }, [user, userProfile, loading]);
 
@@ -104,6 +99,11 @@ export default function SpecialWelcome() {
         setTimeout(() => {
             setStage('letter');
             startLetterTypewriter();
+
+            // Mark as seen when the letter reveals (they have seen the effect)
+            if (user && user.uid) {
+                markUserAsWelcomed(user.uid).catch(e => console.error("Welcome mark failed", e));
+            }
         }, 5000);
     };
 
