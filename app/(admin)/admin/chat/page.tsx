@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { listenForAdminChatList, clearAllChats } from '@/services/supportService';
 import AdminChatWindow from '@/components/admin/AdminChatWindow';
+import UserAvatarWithStatus from '@/components/admin/UserAvatarWithStatus';
 import { useAuth } from '@/context/AuthContext';
 import { Chat } from '@/types/chat';
 import { Trash2, Search, Filter, MessageSquare } from 'lucide-react';
@@ -101,14 +102,12 @@ export default function AdminChatPage() {
                                     : 'bg-white border-transparent hover:border-gray-200'
                                     }`}
                             >
-                                <div className="relative shrink-0">
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${selectedChatId === chat.id ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500 group-hover:bg-blue-50 group-hover:text-blue-500'
-                                        }`}>
-                                        {(chat.userName || chat.userEmail || 'U')[0]?.toUpperCase()}
-                                    </div>
-                                    {/* Online Status Indicator (mock) */}
-                                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
-                                </div>
+                                <UserAvatarWithStatus
+                                    userId={chat.userId}
+                                    name={chat.userName || ''}
+                                    email={chat.userEmail}
+                                    isSelected={selectedChatId === chat.id}
+                                />
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-1">

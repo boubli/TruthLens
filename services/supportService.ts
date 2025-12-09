@@ -29,16 +29,32 @@ export const startNewChat = async (userId: string, userEmail?: string, userName?
     const q = query(collection(db, CHATS_COLLECTION), where('userId', '==', userId));
     const snapshot = await getDocs(q);
 
+    let finalName = userName || '';
+
+    // If name is missing, try to fetch from User Profile
+    if (!finalName) {
+        try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+                finalName = userDoc.data().displayName || '';
+            }
+        } catch (e) { console.error("Error fetching user name for chat:", e); }
+    }
+
     if (!snapshot.empty) {
-        // Update existing chat with latest user details if needed (optional optimization)
-        return snapshot.docs[0].id;
+        const chatDoc = snapshot.docs[0];
+        // UPDATE existing chat with latest user details (Name sync)
+        if (finalName && chatDoc.data().userName !== finalName) {
+            await updateDoc(chatDoc.ref, { userName: finalName });
+        }
+        return chatDoc.id;
     }
 
     // Create new chat
     const chatData = {
         userId,
         userEmail: userEmail || '',
-        userName: userName || '',
+        userName: finalName,
         updatedAt: serverTimestamp(),
         unreadCountUser: 0,
         unreadCountAdmin: 0

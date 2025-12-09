@@ -8,6 +8,7 @@ import { getUserProfile, getFeatureAccess } from '@/services/subscriptionService
 import { subscribeToSystemSettings } from '@/services/systemService';
 import { SystemTierConfig, TierDefinition } from '@/types/system';
 import { useFcmToken } from '@/hooks/useFcmToken';
+import { usePresence } from '@/hooks/usePresence';
 
 
 interface AuthContextType {
@@ -59,8 +60,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [betaMode, setBetaMode] = useState(false);
     const [tierConfig, setTierConfig] = useState<SystemTierConfig | null>(null);
 
+
+
     // Initialize FCM Token Management
     useFcmToken();
+
+    // Initialize Presence System (Heartbeat)
+    usePresence(user);
+
 
     const router = useRouter();
     const pathname = usePathname();

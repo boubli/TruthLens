@@ -25,6 +25,12 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
     const [userUnreadCount, setUserUnreadCount] = useState<number | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const [partnerStatus, setPartnerStatus] = useState<'online' | 'offline'>('offline');
+    const [lastSeen, setLastSeen] = useState<Date | null>(null);
+
+    // Fetch Chat Data to get User ID for Presence Check
+    const [targetUserId, setTargetUserId] = useState<string | null>(null);
+
     useEffect(() => {
         if (!chatId) return;
 
@@ -37,11 +43,12 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
             markChatAsRead(chatId, 'admin');
         });
 
-        // Listen for chat metadata (to check if user has read messages)
-        const unsubscribeChat = onSnapshot(doc(db, 'chats', chatId), (doc) => {
-            if (doc.exists()) {
-                const data = doc.data();
+        // Listen for chat metadata AND User Presence
+        const unsubscribeChat = onSnapshot(doc(db, 'chats', chatId), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
                 setUserUnreadCount(data.unreadCountUser);
+                if (data.userId) setTargetUserId(data.userId);
             }
         });
 
@@ -50,6 +57,33 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
             unsubscribeChat();
         };
     }, [chatId]);
+
+    // Listen for Realtime User Presence
+    useEffect(() => {
+        if (!targetUserId) return;
+
+        const unsubscribeUser = onSnapshot(doc(db, 'users', targetUserId), (docSnap) => {
+            if (docSnap.exists()) {
+                const userData = docSnap.data();
+                const now = new Date();
+                const lastSeenDate = userData.lastSeen?.toDate ? userData.lastSeen.toDate() : null;
+                setLastSeen(lastSeenDate);
+
+                // Deterministic Online Check:
+                // 1. status === 'online' (from visibility API)
+                // 2. lastSeen < 60 seconds ago (Heartbeat check)
+                const isHeartbeatAlive = lastSeenDate && (now.getTime() - lastSeenDate.getTime() < 60000);
+
+                if (userData.status === 'online' && isHeartbeatAlive) {
+                    setPartnerStatus('online');
+                } else {
+                    setPartnerStatus('offline');
+                }
+            }
+        });
+
+        return () => unsubscribeUser();
+    }, [targetUserId]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -89,13 +123,16 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
                             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold border-2 border-white/30">
                                 {(chatPartnerName || chatPartnerEmail || 'U')[0]?.toUpperCase()}
                             </div>
-                            <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-[#007bff] rounded-full"></div>
+                            {/* Real Status Indicator */}
+                            <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[#007bff] rounded-full ${partnerStatus === 'online' ? 'bg-green-400' : 'bg-gray-400'}`}></div>
                         </div>
                         <div>
                             <h3 className="font-bold text-sm md:text-base leading-tight">
                                 {chatPartnerName || chatPartnerEmail || 'User'}
                             </h3>
-                            <p className="text-xs text-blue-100/90">We are online!</p>
+                            <p className="text-xs text-blue-100/90">
+                                {partnerStatus === 'online' ? 'Online' : lastSeen ? `Last seen ${lastSeen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Offline'}
+                            </p>
                         </div>
                     </div>
                 </div>
