@@ -1,7 +1,6 @@
 'use server';
 
 import axios from 'axios';
-import { fetchFromUSDA } from '@/services/external/usdaService';
 
 const OFF_API_URL = 'https://world.openfoodfacts.org/api/v0/product';
 
@@ -181,45 +180,13 @@ export const searchProductsAction = async (query: string): Promise<EnhancedProdu
 
 export const getProductAction = async (barcode: string): Promise<EnhancedProductData | null> => {
     try {
-        // 1. Try OpenFoodFacts
+        // Fetch from OpenFoodFacts
         const response = await apiClient.get(`${OFF_API_URL}/${barcode}.json`);
 
         let productData: EnhancedProductData | null = null;
 
         if (response.data.status === 1) {
             productData = mapOpenFoodFactsToEnhanced(response.data.product);
-        }
-
-        // 2. Fallback Logic: Check USDA if Nutrition is Missing
-        if (productData) {
-            const hasCalories = productData.nutrition.calories_100g !== undefined;
-            if (!hasCalories) {
-                console.log(`[Data Aggregation] OFF missing nutrition for ${barcode}. Fetching USDA...`);
-                try {
-                    const usdaData = await fetchFromUSDA(barcode);
-                    if (usdaData) {
-                        // Merge USDA nutrition into OFF data
-                        // Note: fetchFromUSDA currently returns old ProductData. 
-                        // We will just read manual props from it if we don't refactor it yet, 
-                        // OR we trust the simple mapping from the service.
-                        // Assuming fetchFromUSDA returns { nutriments: { ... } }
-                        // For the prompt's sake, let's assuming we strictly extract what we need.
-
-                        // We need to verify what fetchFromUSDA returns. Ideally we update it too, 
-                        // but we can map the result here directly.
-                        if (usdaData.nutriments) {
-                            // Map USDA nutriments to our schema
-                            productData.nutrition.calories_100g = usdaData.nutriments.energy_100g;
-                            productData.nutrition.proteins_100g = usdaData.nutriments.proteins_100g;
-                            productData.nutrition.fat_100g = usdaData.nutriments.fat_100g;
-                            productData.nutrition.carbs_100g = usdaData.nutriments.carbohydrates_100g;
-                            productData.identity.name = productData.identity.name === 'Unknown Product' ? usdaData.name : productData.identity.name;
-                        }
-                    }
-                } catch (e) {
-                    console.error("USDA Fallback Error", e);
-                }
-            }
         }
 
         return productData;

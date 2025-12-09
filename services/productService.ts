@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { fetchFromUSDA } from './external/usdaService';
 import { fetchFromFooDB } from './external/foodbService';
 
 const OFF_API_URL = 'https://world.openfoodfacts.org/api/v0/product';
@@ -25,25 +24,21 @@ const CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
 
 /**
  * -----------------------------------------------------------------------------
- * DATA AGGREGATION STRATEGY & "BRAND RESCUE" LOGIC
+ * DATA FETCHING STRATEGY
  * -----------------------------------------------------------------------------
  * 
- * 1. MANDATORY HIERARCHY: BRAND FIRST
- *    The UI requires a Brand Name to identify products.
- *    Structure: [Brand Name] -> [Product Name]
+ * 1. PRIMARY SOURCE: Open Food Facts
+ *    - Comprehensive product database
+ *    - Free, no API key required
+ *    - Provides: name, brand, image, ingredients, nutrition
  * 
- * 2. BRAND RESCUE PROTOCOL (Priority Order):
- *    a. Open Food Facts (OFF): Check `brands` or `brands_tags`.
- *    b. USDA FoodData Central: If OFF returns null/"Unknown", query USDA 
- *       using the barcode/GTIN and extract `brandOwner`.
- *    c. FALLBACK: If both fail (common for raw produce), default to 
- *       "Unbranded Commodity".
+ * 2. FALLBACK: FooDB (Optional)
+ *    - Tertiary source for products not in OFF
+ *    - Requires API key
  * 
- * 3. SERVICE CONSTRAINTS:
- *    - FooDB: Treated as TERTIARY/OPTIONAL. The implementation in 
- *      `foodbService.ts` is currently a placeholder/mock. 
- *      The agent must NOT block execution if FooDB data is missing.
- *    - Language: English only. Filter non-English fields.
+ * 3. BRAND HANDLING:
+ *    - If brand is missing/invalid, default to "Unbranded Commodity"
+ * 
  * -----------------------------------------------------------------------------
  */
 
@@ -82,10 +77,9 @@ export const fetchProductData = async (barcode: string): Promise<ProductData | n
     console.log(`[ProductService] Fetching ${barcode} from APIs...`);
 
     try {
-        // 2. PRIMARY SOURCE: Open Food Facts (Master Record)
+        // 2. PRIMARY SOURCE: Open Food Facts
         const offResponse = await apiClient.get(`${OFF_API_URL}/${barcode}.json`);
         let productData: ProductData | null = null;
-        let needsBrandRescue = false;
 
         if (offResponse.data.status === 1) {
             const product = offResponse.data.product;
@@ -97,17 +91,17 @@ export const fetchProductData = async (barcode: string): Promise<ProductData | n
             // Extract brand with tags fallback
             let brand = product.brands || product.brands_tags?.[0] || '';
 
-            // BRAND RESCUE RULE: Check if brand is valid
+            // Normalize brand
             if (!isValidBrand(brand)) {
-                console.log(`[ProductService] Brand missing/invalid in OFF: "${brand}". Triggering Brand Rescue...`);
-                needsBrandRescue = true;
+                console.log(`[ProductService] Brand missing/invalid in OFF: "${brand}". Using default.`);
+                brand = 'Unbranded Commodity';
             }
 
-            // Build initial product data from OFF
+            // Build product data from OFF
             productData = {
                 id: product._id || barcode,
                 name: productName,
-                brand: brand || 'Unbranded Commodity', // Temporary, will be updated if rescue succeeds
+                brand: brand,
                 image: product.image_url || product.image_front_url || '',
                 ingredients: product.ingredients_text ? [product.ingredients_text] : [],
                 nutrition_grades: product.nutrition_grades?.toUpperCase() || '?',
@@ -117,34 +111,7 @@ export const fetchProductData = async (barcode: string): Promise<ProductData | n
             };
         }
 
-        // 3. BRAND RESCUE: Query USDA if brand is missing
-        if (needsBrandRescue || !productData) {
-            console.log(`[ProductService] Executing Brand Rescue via USDA...`);
-            const usdaResult = await fetchFromUSDA(barcode);
-
-            if (usdaResult) {
-                if (needsBrandRescue && productData) {
-                    // OFF had product but missing brand - use USDA's brand
-                    if (isValidBrand(usdaResult.brand)) {
-                        console.log(`[ProductService] Brand Rescue SUCCESS: "${usdaResult.brand}"`);
-                        productData.brand = usdaResult.brand;
-                        productData.source = 'Aggregated'; // Mark as aggregated from multiple sources
-                    } else {
-                        console.log(`[ProductService] Brand Rescue FAILED: USDA also lacks valid brand`);
-                        productData.brand = 'Unbranded Commodity';
-                    }
-                } else if (!productData) {
-                    // OFF didn't have product at all - use USDA as primary
-                    productData = { ...usdaResult, source: 'USDA' };
-                }
-            } else if (productData) {
-                // USDA failed, keep "Unbranded Commodity"
-                console.log(`[ProductService] Brand Rescue FAILED: USDA returned null`);
-                productData.brand = 'Unbranded Commodity';
-            }
-        }
-
-        // 4. Fallback to FooDB (tertiary source)
+        // 3. Fallback to FooDB if OFF didn't find anything
         if (!productData) {
             const foodbResult = await fetchFromFooDB(barcode);
             if (foodbResult) {
@@ -152,7 +119,7 @@ export const fetchProductData = async (barcode: string): Promise<ProductData | n
             }
         }
 
-        // 5. Update Cache
+        // 4. Update Cache
         if (productData) {
             productCache.set(barcode, { data: productData, timestamp: Date.now() });
             console.log(`[ProductService] Final Product: ${productData.brand} → ${productData.name} (Source: ${productData.source})`);
