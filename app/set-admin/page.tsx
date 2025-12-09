@@ -6,7 +6,7 @@ import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { validateAndUseAdminToken } from '@/services/adminService';
+import { recoverAdminAccount } from '@/app/actions/adminRecovery';
 
 /**
  * Temporary page to set current user as admin
@@ -43,29 +43,20 @@ export default function SetAdminPage() {
         try {
             console.log('Validating token for:', user.email);
 
-            // 1. Validate Token & Email Match
-            const validation = await validateAndUseAdminToken(token, user.email);
+            // Use Server Action to bypass Client Rules
+            const result = await recoverAdminAccount(token, user.email, user.uid);
 
-            if (!validation.valid) {
-                throw new Error(validation.error);
+            if (!result.success) {
+                throw new Error(result.message);
             }
-
-            console.log('Token valid. Promoting user:', user.uid);
-
-            // 2. Update User Role
-            const userRef = doc(db, 'users', user.uid);
-            await updateDoc(userRef, {
-                role: 'admin',
-                updatedAt: serverTimestamp(),
-                adminTokenUsed: token, // Audit trail
-            });
 
             setSuccess(true);
             console.log('✅ Successfully set', user.email, 'as admin!');
 
             // Redirect to admin dashboard after 2 seconds
+            // Force reload to update claims/context
             setTimeout(() => {
-                router.push('/admin');
+                window.location.href = '/admin';
             }, 2000);
         } catch (err: any) {
             console.error('Error details:', err);
