@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { listenForAdminChatList, clearAllChats } from '@/services/supportService';
+import { listenForAdminChatList, clearAllChats, deleteChat } from '@/services/supportService';
 import AdminChatWindow from '@/components/admin/AdminChatWindow';
 import UserAvatarWithStatus from '@/components/admin/UserAvatarWithStatus';
 import { useAuth } from '@/context/AuthContext';
 import { Chat } from '@/types/chat';
-import { Trash2, Search, Filter, MessageSquare } from 'lucide-react';
+import { Trash2, Search, Filter, MessageSquare, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function AdminChatPage() {
@@ -22,6 +22,19 @@ export default function AdminChatPage() {
         });
         return () => unsubscribe();
     }, []);
+
+    const handleDeleteChat = async (chatId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!confirm("Are you sure you want to delete this conversation?")) return;
+
+        try {
+            if (selectedChatId === chatId) setSelectedChatId(null);
+            await deleteChat(chatId);
+        } catch (error) {
+            console.error("Failed to delete chat:", error);
+            alert("Failed to delete chat.");
+        }
+    };
 
     const handleClearAll = async () => {
         if (!confirm("Are you sure you want to DELETE ALL chats and messages? This cannot be undone.")) return;
@@ -108,6 +121,15 @@ export default function AdminChatPage() {
                                     email={chat.userEmail}
                                     isSelected={selectedChatId === chat.id}
                                 />
+
+                                {/* Delete Button - Visible on Group Hover */}
+                                <button
+                                    onClick={(e) => handleDeleteChat(chat.id, e)}
+                                    className="absolute right-2 top-2 p-2 bg-white/80 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm"
+                                    title="Delete Conversation"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex justify-between items-baseline mb-1">

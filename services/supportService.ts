@@ -216,6 +216,64 @@ export const getAdminChatList = async (): Promise<Chat[]> => {
 };
 
 /**
+ * Helper to delete a collection/query in batches of 400 to match Firebase limits.
+ */
+async function deleteQueryBatch(db: any, query: any, resolve: any) {
+    const snapshot = await getDocs(query);
+    const batchSize = snapshot.size;
+    if (batchSize === 0) {
+        // When there are no documents left, we are done
+        resolve();
+        return;
+    }
+
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((doc: any) => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+
+    // Recurse on the next process tick, to avoid stack overflows
+    process.nextTick(() => {
+        deleteQueryBatch(db, query, resolve);
+    });
+}
+
+/**
+ * Deletes a single chat and all its messages safely.
+ */
+export const deleteChat = async (chatId: string) => {
+    // 1. Delete all messages (subcollection)
+    const messagesRef = collection(db, CHATS_COLLECTION, chatId, MESSAGES_SUBCOLLECTION);
+
+    // We need to delete all messages. If there are > 500, we need to batch.
+    // Simple approach: fetch all and batch delete in chunks.
+    const messagesSnapshot = await getDocs(messagesRef);
+
+    // Split into chunks of 400
+    const chunks: any[] = [];
+    let currentChunk: any[] = [];
+
+    messagesSnapshot.docs.forEach((doc) => {
+        currentChunk.push(doc.ref);
+        if (currentChunk.length >= 400) {
+            chunks.push(currentChunk);
+            currentChunk = [];
+        }
+    });
+    if (currentChunk.length > 0) chunks.push(currentChunk);
+
+    for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach((ref: any) => batch.delete(ref));
+        await batch.commit();
+    }
+
+    // 2. Delete the chat document itself
+    await deleteDoc(doc(db, CHATS_COLLECTION, chatId));
+};
+
+/**
  * Clears all chats and messages (Admin only).
  */
 export const clearAllChats = async () => {
@@ -223,21 +281,6 @@ export const clearAllChats = async () => {
     const chatsSnapshot = await getDocs(chatsQuery);
 
     for (const chatDoc of chatsSnapshot.docs) {
-        const messagesQuery = query(collection(db, CHATS_COLLECTION, chatDoc.id, MESSAGES_SUBCOLLECTION));
-        const messagesSnapshot = await getDocs(messagesQuery);
-
-        const batch = writeBatch(db);
-        let count = 0;
-
-        messagesSnapshot.docs.forEach((msgDoc) => {
-            batch.delete(msgDoc.ref);
-            count++;
-        });
-
-        // Delete chat doc
-        batch.delete(chatDoc.ref);
-        count++;
-
-        await batch.commit();
+        await deleteChat(chatDoc.id);
     }
 };
