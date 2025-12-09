@@ -124,7 +124,15 @@ export default function InstallPrompt() {
                             </p>
 
                             {isIOS ? (
-                                <div className="mt-3 text-sm text-gray-300 bg-white/5 p-2 rounded-lg border border-white/5">
+                                    <div className="mt-3 flex gap-2">
+                                        <button
+                                            onClick={() => window.location.href = '/install-guide'}
+                                            className="flex-1 bg-white/10 hover:bg-white/20 text-white text-xs font-medium py-2 px-3 rounded-lg transition-colors border border-white/10"
+                                        >
+                                            View Guide with Pictures
+                                        </button>
+                                    </div>
+                                    <div className="mt-3 text-sm text-gray-300 bg-white/5 p-2 rounded-lg border border-white/5">
                                     <div className="flex items-center gap-2 mb-1">
                                         1. Tap the <span className='mx-1 inline-flex items-center justify-center bg-white/10 w-6 h-6 rounded'><ShareIcon className="w-3 h-3" /></span> button in your browser/toolbar
                                     </div>
