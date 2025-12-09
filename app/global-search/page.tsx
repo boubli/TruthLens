@@ -8,6 +8,7 @@ import PublicIcon from '@mui/icons-material/Public';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import LockIcon from '@mui/icons-material/Lock';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import { searchProductsAction, EnhancedProductData } from '@/app/actions';
 import { useAuth } from '@/context/AuthContext';
 import { addToHistory } from '@/services/historyService';
@@ -26,8 +27,8 @@ export default function GlobalSearchPage() {
     const [loading, setLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const router = useRouter();
-    const { user, isUltimate } = useAuth(); // We need userProfile to check strict tier
-
+    const { isUltimate } = useAuth(); // We need userProfile to check strict tier
+    const { t } = useTranslation();
 
     const handleSearch = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -38,18 +39,6 @@ export default function GlobalSearchPage() {
         try {
             const data = await searchProductsAction(query);
             setResults(data);
-
-            if (user && data.length > 0) {
-                try {
-                    await addToHistory(user.uid, {
-                        type: 'search',
-                        title: `Global Search: "${query}"`, // Distinguish source
-                        grade: undefined,
-                    });
-                } catch (historyError) {
-                    console.error('[SEARCH] ❌ Failed to save to history:', historyError);
-                }
-            }
         } catch (error) {
             console.error("Search failed", error);
         } finally {
@@ -87,14 +76,13 @@ export default function GlobalSearchPage() {
                                 <LockIcon sx={{ fontSize: 40 }} />
                             </Avatar>
                             <Typography variant="h4" fontWeight="bold" gutterBottom>
-                                Global Search
+                                {t('global_search_title')}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
-                                Access the entire global database with advanced filters and unlimited history.
-                                Exclusively for Ultimate members.
+                                {t('global_search_restricted_desc')}
                             </Typography>
                         </Box>
-                        <UpgradePrompt feature="Global Search" variant="full" />
+                        <UpgradePrompt feature={t('global_search_feature_name')} variant="full" />
                     </Container>
                 </Box>
             </PageTransition>
@@ -143,10 +131,10 @@ export default function GlobalSearchPage() {
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                         }}>
-                            Global Search
+                            {t('global_search_title')}
                         </Typography>
                         <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                            Accessing TruthLens Premium Database
+                            {t('global_search_subtitle')}
                         </Typography>
                     </Box>
 
@@ -174,7 +162,7 @@ export default function GlobalSearchPage() {
                         <SearchIcon sx={{ color: 'rgba(255,255,255,0.5)', mr: 2 }} />
                         <TextField
                             fullWidth
-                            placeholder="Search global products..."
+                            placeholder={t('global_search_placeholder')}
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             variant="standard"
@@ -207,7 +195,7 @@ export default function GlobalSearchPage() {
                                 boxShadow: '0 4px 12px rgba(108, 99, 255, 0.3)'
                             }}
                         >
-                            Search
+                            {t('search_button')}
                         </AnimatedButton>
                     </Paper>
 
@@ -288,9 +276,9 @@ export default function GlobalSearchPage() {
 
                     {hasSearched && results.length === 0 && !loading && (
                         <EmptyState
-                            title={`No global results for "${query}"`}
-                            description="Try checking your spelling or search for a broader term."
-                            actionLabel="Clear Search"
+                            title={t('global_search_no_results', { query })}
+                            description={t('global_search_no_results_desc')}
+                            actionLabel={t('clear_search')}
                             onAction={handleClear}
                         />
                     )}

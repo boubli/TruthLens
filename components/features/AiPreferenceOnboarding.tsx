@@ -14,6 +14,7 @@ import { DietaryPreferences } from '@/types/user';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
     id: number;
@@ -21,26 +22,9 @@ interface Message {
     sender: 'ai' | 'user';
 }
 
-const STEPS = [
-    { id: 1, type: 'open', question: "" }, // Placeholder, set dynamically
-    { id: 2, type: 'yesno', key: 'isKeto', question: "Got it. Do you follow a Keto diet (High Fat, Low Carb)?" },
-    { id: 3, type: 'yesno', key: 'isVegan', question: "Are you Vegan? (No animal products whatsoever)" },
-    { id: 4, type: 'yesno', key: 'isDiabetic', question: "Are you managing Diabetes or watching your sugar intake closely?" },
-    { id: 5, type: 'yesno', key: 'lowSodium', question: "Do you need to follow a Low Sodium diet for heart health?" },
-    { id: 6, type: 'yesno', key: 'glutenFree', question: "Do you strictly avoid Gluten (Wheat, Barley, Rye)?" },
-    { id: 7, type: 'options', key: 'goals', question: "What is your primary health goal right now?", options: ["Weight Loss", "Muscle Gain", "Maintenance", "Energy Boost"] },
-    { id: 8, type: 'yesno', key: 'organic', question: "Do you prefer Organic products when available?" },
-    { id: 9, type: 'yesno', key: 'palmOil', question: "Do you want to avoid Palm Oil for environmental reasons?" },
-    { id: 10, type: 'text', question: "Finally, is there anything else regarding food, skin care, or hair care I should know?" }
-];
-
-interface AiPreferenceOnboardingProps {
-    open: boolean;
-    onClose: () => void;
-}
-
 export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOnboardingProps) {
     const { user, refreshProfile } = useAuth();
+    const { t } = useTranslation();
     const [messages, setMessages] = useState<Message[]>([]);
     const [currentStep, setCurrentStep] = useState(0);
     const [input, setInput] = useState('');
@@ -51,16 +35,29 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
         healthGoals: []
     });
 
+    const STEPS = [
+        { id: 1, type: 'open', question: "" }, // Placeholder, set dynamically
+        { id: 2, type: 'yesno', key: 'isKeto', question: t('ai_q_keto') },
+        { id: 3, type: 'yesno', key: 'isVegan', question: t('ai_q_vegan') },
+        { id: 4, type: 'yesno', key: 'isDiabetic', question: t('ai_q_diabetic') },
+        { id: 5, type: 'yesno', key: 'lowSodium', question: t('ai_q_low_sodium') },
+        { id: 6, type: 'yesno', key: 'glutenFree', question: t('ai_q_gluten_free') },
+        { id: 7, type: 'options', key: 'goals', question: t('ai_q_goals'), options: [t('ai_opt_weight_loss'), t('ai_opt_muscle'), t('ai_opt_maintenance'), t('ai_opt_energy')] },
+        { id: 8, type: 'yesno', key: 'organic', question: t('ai_q_organic') },
+        { id: 9, type: 'yesno', key: 'palmOil', question: t('ai_q_palm_oil') },
+        { id: 10, type: 'text', question: t('ai_q_anything_else') }
+    ];
+
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
     // Initial Greeting
     useEffect(() => {
         if (open && messages.length === 0) {
             const userName = user?.displayName?.split(' ')[0] || 'there';
-            const initialQuestion = `Hello! ${userName} I'm TRADMSS your Smart Diet Consultant. To start, do you have any severe allergies or ingredients you absolutely need to avoid? (e.g., Peanuts, Shellfish, Gluten)`;
+            const initialQuestion = t('ai_intro_greeting', { name: userName });
             addMessage(initialQuestion, 'ai');
         }
-    }, [open, user]);
+    }, [open, user, t]);
 
     // Auto-scroll
     useEffect(() => {
@@ -104,9 +101,9 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
         } else if (step.type === 'yesno') {
             if (step.key && ['isKeto', 'isVegan', 'isDiabetic', 'lowSodium', 'glutenFree'].includes(step.key)) {
                 // @ts-ignore
-                setTempPreferences(prev => ({ ...prev, [step.key]: answer === 'Yes' }));
+                setTempPreferences(prev => ({ ...prev, [step.key]: [t('yes'), 'Yes'].includes(answer) }));
             }
-            if (answer === 'Yes' && step.key === 'palmOil') {
+            if ([t('yes'), 'Yes'].includes(answer) && step.key === 'palmOil') {
                 setTempPreferences(prev => ({ ...prev, avoidIngredients: [...(prev.avoidIngredients || []), "Palm Oil"] }));
             }
         } else if (step.id === 7) {
@@ -126,7 +123,7 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
     };
 
     const finishOnboarding = async () => {
-        addMessage("Thank you! I've built your nutritional profile. Saving now...", 'ai');
+        addMessage(t('ai_finish_msg'), 'ai');
 
         if (user) {
             try {
@@ -291,7 +288,7 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
                         <Box sx={{ display: 'flex', gap: 2, mb: 2, justifyContent: 'center' }}>
                             <Button
                                 variant="outlined"
-                                onClick={() => handleOptionClick('Yes')}
+                                onClick={() => handleOptionClick(t('yes'))}
                                 sx={{
                                     borderColor: '#00C853',
                                     color: '#00C853',
@@ -300,11 +297,11 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
                                     '&:hover': { bgcolor: '#E8F5E9', borderColor: '#00C853' }
                                 }}
                             >
-                                Yes
+                                {t('yes')}
                             </Button>
                             <Button
                                 variant="outlined"
-                                onClick={() => handleOptionClick('No')}
+                                onClick={() => handleOptionClick(t('no'))}
                                 sx={{
                                     borderColor: '#EF4444',
                                     color: '#EF4444',
@@ -313,7 +310,7 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
                                     '&:hover': { bgcolor: '#FEF2F2', borderColor: '#EF4444' }
                                 }}
                             >
-                                No
+                                {t('no')}
                             </Button>
                         </Box>
                     </motion.div>
@@ -344,7 +341,7 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
                 <Box sx={{ display: 'flex', gap: 1.5 }}>
                     <TextField
                         fullWidth
-                        placeholder="Type your answer..."
+                        placeholder={t('type_your_answer')}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}

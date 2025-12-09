@@ -214,7 +214,7 @@ export default function DietaryPreferencesSection({
                                 <TextField
                                     {...params}
                                     variant="outlined"
-                                    placeholder="Add allergens (e.g. Peanuts)"
+                                    placeholder={t('placeholder_add_allergens')}
                                     sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                                 />
                             )}
@@ -246,7 +246,7 @@ export default function DietaryPreferencesSection({
                                 <TextField
                                     {...params}
                                     variant="outlined"
-                                    placeholder="Add ingredients (e.g. Palm Oil)"
+                                    placeholder={t('placeholder_add_ingredients')}
                                     sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                                 />
                             )}
@@ -278,7 +278,7 @@ export default function DietaryPreferencesSection({
                                 <TextField
                                     {...params}
                                     variant="outlined"
-                                    placeholder="Select or type (e.g. High Protein)"
+                                    placeholder={t('placeholder_select_type')}
                                     sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                                 />
                             )}
