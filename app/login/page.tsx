@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Box, Button, TextField, Typography, Alert, Grid, Paper } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -19,6 +20,7 @@ export default function LoginPage() {
     const [verificationSent, setVerificationSent] = useState(false);
     const [unverifiedEmail, setUnverifiedEmail] = useState('');
     const router = useRouter();
+    const { t } = useTranslation();
 
     const handleGoogleLogin = async () => {
         setLoading(true);
@@ -38,7 +40,7 @@ export default function LoginPage() {
             }
         } catch (err: any) {
             console.error('Google login error:', err);
-            setError(err.message || 'Failed to login with Google.');
+            setError(err.message || t('auth_login_failed_google'));
         } finally {
             setLoading(false);
         }
@@ -60,7 +62,7 @@ export default function LoginPage() {
 
             if (!user.emailVerified) {
                 setUnverifiedEmail(email);
-                setError('Please verify your email address before logging in.');
+                setError(t('auth_verify_email_first'));
                 await auth.signOut();
                 setLoading(false);
                 return;
@@ -78,11 +80,11 @@ export default function LoginPage() {
         } catch (err: any) {
             console.error(err);
             if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
-                setError('Invalid email or password.');
+                setError(t('auth_invalid_credentials'));
             } else if (err.code === 'auth/user-not-found') {
-                setError('No account found. Please sign up first.');
+                setError(t('auth_no_account'));
             } else {
-                setError(err.message || 'Failed to login.');
+                setError(err.message || t('auth_login_failed'));
             }
         } finally {
             setLoading(false);
@@ -101,14 +103,14 @@ export default function LoginPage() {
             setVerificationSent(true);
             setError('');
         } catch (err) {
-            setError('Failed to resend verification email.');
+            setError(t('auth_resend_error'));
         } finally {
             setLoading(false);
         }
     };
 
     if (loading && !error) {
-        return <LoadingSpinner fullScreen message="Logging in..." />;
+        return <LoadingSpinner fullScreen message={t('auth_logging_in')} />;
     }
 
     return (
@@ -129,10 +131,10 @@ export default function LoginPage() {
                 <ScrollReveal>
                     <QrCodeScannerIcon sx={{ fontSize: 80, mb: 3 }} />
                     <Typography variant="h3" fontWeight="bold" gutterBottom>
-                        Welcome Back to TruthLens
+                        {t('auth_login_welcome_title')}
                     </Typography>
                     <Typography variant="h6" sx={{ opacity: 0.9, maxWidth: 400, textAlign: 'center' }}>
-                        Scan products, get instant AI-powered health insights, and make smarter choices.
+                        {t('auth_login_welcome_desc')}
                     </Typography>
                 </ScrollReveal>
             </Grid>
@@ -161,10 +163,10 @@ export default function LoginPage() {
                         <Box sx={{ textAlign: 'center', mb: 4 }}>
                             <LockOutlinedIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
                             <Typography variant="h4" fontWeight="bold" gutterBottom>
-                                Sign In
+                                {t('auth_sign_in_title')}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                Enter your credentials to access your account
+                                {t('auth_sign_in_subtitle')}
                             </Typography>
                         </Box>
 
@@ -186,7 +188,7 @@ export default function LoginPage() {
 
                         {verificationSent && (
                             <Alert severity="success" sx={{ mb: 3 }}>
-                                Verification email sent! Check your inbox.
+                                {t('auth_verification_sent')}
                             </Alert>
                         )}
 
@@ -206,13 +208,13 @@ export default function LoginPage() {
                                 },
                             }}
                         >
-                            Continue with Google
+                            {t('auth_continue_google')}
                         </AnimatedButton>
 
                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                             <Box sx={{ flex: 1, height: 1, bgcolor: 'divider' }} />
                             <Typography variant="body2" sx={{ px: 2, color: 'text.secondary' }}>
-                                OR
+                                {t('auth_or')}
                             </Typography>
                             <Box sx={{ flex: 1, height: 1, bgcolor: 'divider' }} />
                         </Box>
@@ -220,7 +222,7 @@ export default function LoginPage() {
                         <Box component="form" onSubmit={handleEmailLogin} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                             <TextField
                                 name="email"
-                                label="Email Address"
+                                label={t('auth_email')}
                                 type="email"
                                 required
                                 fullWidth
@@ -229,7 +231,7 @@ export default function LoginPage() {
                             />
                             <TextField
                                 name="password"
-                                label="Password"
+                                label={t('auth_password')}
                                 type="password"
                                 required
                                 fullWidth
@@ -239,7 +241,7 @@ export default function LoginPage() {
 
                             <Box sx={{ textAlign: 'right', mt: -1 }}>
                                 <Link href="/reset-password" style={{ fontSize: '0.875rem', color: '#6C63FF', textDecoration: 'none' }}>
-                                    Forgot Password?
+                                    {t('auth_forgot_password')}
                                 </Link>
                             </Box>
 
@@ -255,15 +257,15 @@ export default function LoginPage() {
                                     background: 'linear-gradient(45deg, #6C63FF 30%, #00F0FF 90%)',
                                 }}
                             >
-                                {loading ? 'Logging in...' : 'Sign In'}
+                                {loading ? t('auth_logging_in') : t('auth_sign_in_button')}
                             </AnimatedButton>
                         </Box>
 
                         <Box sx={{ mt: 4, textAlign: 'center' }}>
                             <Typography variant="body2" color="text.secondary">
-                                Don't have an account?{' '}
+                                {t('auth_no_account_question')}{' '}
                                 <Link href="/signup" style={{ color: '#6C63FF', fontWeight: 600, textDecoration: 'none' }}>
-                                    Sign Up
+                                    {t('auth_sign_up_link')}
                                 </Link>
                             </Typography>
                         </Box>

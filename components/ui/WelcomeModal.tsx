@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import WavingHandIcon from '@mui/icons-material/WavingHand';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 
 interface WelcomeModalProps {
     open: boolean;
@@ -14,6 +15,7 @@ interface WelcomeModalProps {
 
 export default function WelcomeModal({ open, onClose }: WelcomeModalProps) {
     const router = useRouter();
+    const { t } = useTranslation();
 
     const handleGetStarted = () => {
         onClose();
@@ -104,7 +106,7 @@ export default function WelcomeModal({ open, onClose }: WelcomeModalProps) {
                             WebkitTextFillColor: 'transparent',
                         }}
                     >
-                        Welcome to TruthLens!
+                        {t('welcome_modal_title')}
                     </Typography>
 
                     <Typography
@@ -113,16 +115,15 @@ export default function WelcomeModal({ open, onClose }: WelcomeModalProps) {
                         color="text.secondary"
                         sx={{ mb: 4, lineHeight: 1.6 }}
                     >
-                        Your AI-powered companion for making healthier product choices. Scan barcodes, get instant
-                        health grades, and discover smarter alternatives.
+                        {t('welcome_modal_desc')}
                     </Typography>
 
                     {/* Key Features */}
                     <Box sx={{ mb: 4 }}>
                         {[
-                            '🔍 Instant AI-powered product analysis',
-                            '⚡ Smart health grading (A-F)',
-                            '🎯 Personalized recommendations',
+                            t('welcome_feature_1'),
+                            t('welcome_feature_2'),
+                            t('welcome_feature_3'),
                         ].map((feature, i) => (
                             <Box
                                 key={i}
@@ -164,7 +165,7 @@ export default function WelcomeModal({ open, onClose }: WelcomeModalProps) {
                                 transition: 'all 0.3s',
                             }}
                         >
-                            Get Started Free
+                            {t('welcome_get_started_free')}
                         </Button>
                         <Button
                             fullWidth
@@ -181,7 +182,7 @@ export default function WelcomeModal({ open, onClose }: WelcomeModalProps) {
                                 },
                             }}
                         >
-                            Explore First
+                            {t('welcome_explore_first')}
                         </Button>
                     </Box>
                 </Box>

@@ -6,6 +6,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AuthProvider } from '@/context/AuthContext';
+import { I18nProvider } from '@/components/providers/I18nProvider';
 import { CompareProvider } from '@/context/CompareContext';
 import CompareFloatingBar from '@/components/compare/CompareFloatingBar';
 
@@ -51,14 +52,16 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased" suppressHydrationWarning>
         <AuthProvider>
-          <CompareProvider>
-            <ThemeProvider>
-              <SpecialWelcome />
-              <InstallPrompt />
-              {children}
-              <CompareFloatingBar />
-            </ThemeProvider>
-          </CompareProvider>
+          <I18nProvider>
+            <CompareProvider>
+              <ThemeProvider>
+                <SpecialWelcome />
+                <InstallPrompt />
+                {children}
+                <CompareFloatingBar />
+              </ThemeProvider>
+            </CompareProvider>
+          </I18nProvider>
         </AuthProvider>
       </body>
     </html>

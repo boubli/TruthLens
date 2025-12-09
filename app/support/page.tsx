@@ -45,18 +45,13 @@ export default function UserChatPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background py-20 px-4">
-            <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
-                    Customer Support
-                </h1>
-
-                <div className="flex justify-center mb-6">
-                    <PushNotificationSetup userId={user.uid} />
-                </div>
-
-                <ChatWindow chatId={chatId} currentUserId={user.uid} role="user" />
+        <div className="flex flex-col h-[100dvh] bg-[#0A0A0A] overflow-hidden">
+            {/* Push Notification Setup (Invisible or Minimal) */}
+            <div className="hidden">
+                <PushNotificationSetup userId={user.uid} />
             </div>
+
+            <ChatWindow chatId={chatId} currentUserId={user.uid} role="user" />
         </div>
     );
 }

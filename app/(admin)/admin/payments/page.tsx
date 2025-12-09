@@ -192,7 +192,7 @@ export default function AdminPaymentsPage() {
     return (
         <Container maxWidth="lg" sx={{ mt: 5, mb: 10 }}>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-                Payment Requests Management
+                Free Access Requests
             </Typography>
 
             {error && (
@@ -286,7 +286,7 @@ export default function AdminPaymentsPage() {
                 {getFilteredRequests().length === 0 && (
                     <Grid size={{ xs: 12 }}>
                         <Typography variant="body1" textAlign="center" color="text.secondary" sx={{ mt: 4 }}>
-                            No payment requests found
+                            No access requests found
                         </Typography>
                     </Grid>
                 )}

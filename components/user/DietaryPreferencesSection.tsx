@@ -6,6 +6,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     Box,
     Typography,
@@ -46,12 +47,12 @@ interface DietaryPreferencesSectionProps {
 }
 
 const DIET_TYPES = [
-    { key: 'isKeto' as const, label: 'Keto Diet', desc: 'Low carb, high fat', icon: EggAltIcon, color: '#F59E0B' },
-    { key: 'isVegan' as const, label: 'Vegan', desc: 'No animal products', icon: GrassIcon, color: '#10B981' },
-    { key: 'isDiabetic' as const, label: 'Diabetic Friendly', desc: 'Low sugar monitoring', icon: WaterDropIcon, color: '#3B82F6' },
-    { key: 'lowSodium' as const, label: 'Low Sodium', desc: 'Heart-healthy', icon: FavoriteIcon, color: '#EF4444' },
-    { key: 'glutenFree' as const, label: 'Gluten-Free', desc: 'No wheat, barley, rye', icon: SpaIcon, color: '#8B5CF6' },
-    { key: 'isHalal' as const, label: 'Halal', desc: 'Islamic dietary guidelines', icon: Brightness3Icon, color: '#059669' },
+    { key: 'isKeto' as const, labelKey: 'diet_keto_label', descKey: 'diet_keto_desc', icon: EggAltIcon, color: '#F59E0B' },
+    { key: 'isVegan' as const, labelKey: 'diet_vegan_label', descKey: 'diet_vegan_desc', icon: GrassIcon, color: '#10B981' },
+    { key: 'isDiabetic' as const, labelKey: 'diet_diabetic_label', descKey: 'diet_diabetic_desc', icon: WaterDropIcon, color: '#3B82F6' },
+    { key: 'lowSodium' as const, labelKey: 'diet_lowsodium_label', descKey: 'diet_lowsodium_desc', icon: FavoriteIcon, color: '#EF4444' },
+    { key: 'glutenFree' as const, labelKey: 'diet_glutenfree_label', descKey: 'diet_glutenfree_desc', icon: SpaIcon, color: '#8B5CF6' },
+    { key: 'isHalal' as const, labelKey: 'diet_halal_label', descKey: 'diet_halal_desc', icon: Brightness3Icon, color: '#059669' },
 ];
 
 export default function DietaryPreferencesSection({
@@ -62,6 +63,7 @@ export default function DietaryPreferencesSection({
     onAiSetup,
     isSaving
 }: DietaryPreferencesSectionProps) {
+    const { t } = useTranslation();
 
     return (
         <Paper elevation={0} sx={{
@@ -77,10 +79,10 @@ export default function DietaryPreferencesSection({
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                 <Box>
                     <Typography variant="h5" fontWeight="800" gutterBottom>
-                        Dietary Preferences
+                        {t('dietary_preferences_title')}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        Customize your smart grading algorithm
+                        {t('dietary_preferences_subtitle')}
                     </Typography>
                 </Box>
                 <Button
@@ -95,7 +97,7 @@ export default function DietaryPreferencesSection({
                     startIcon={<AutoAwesomeIcon />}
                     onClick={onAiSetup}
                 >
-                    AI Setup
+                    {t('ai_setup_button')}
                 </Button>
             </Box>
 
@@ -112,12 +114,12 @@ export default function DietaryPreferencesSection({
                     '& .MuiAlert-icon': { color: '#6366F1' }
                 }}
             >
-                AI analyzes products based on these settings to provide personalized grades.
+                {t('ai_analysis_info')}
             </Alert>
 
             {/* Diet Types Grid */}
             <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                Core Diets
+                {t('core_diets_title')}
             </Typography>
 
             <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -157,10 +159,10 @@ export default function DietaryPreferencesSection({
                                     </Box>
                                     <Box sx={{ flex: 1 }}>
                                         <Typography variant="body1" fontWeight="bold">
-                                            {diet.label}
+                                            {t(diet.labelKey)}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            {diet.desc}
+                                            {t(diet.descKey)}
                                         </Typography>
                                     </Box>
                                     <Switch
@@ -187,7 +189,7 @@ export default function DietaryPreferencesSection({
 
             {/* Granular Preferences */}
             <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                Specific Needs
+                {t('specific_needs_title')}
             </Typography>
 
             <Grid container spacing={3}>
@@ -195,7 +197,7 @@ export default function DietaryPreferencesSection({
                     <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, height: '100%', borderColor: alpha('#EF4444', 0.2), bgcolor: alpha('#EF4444', 0.02) }}>
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
                             <WarningAmberIcon color="error" />
-                            <Typography variant="subtitle1" fontWeight="bold">Allergens (Grade F)</Typography>
+                            <Typography variant="subtitle1" fontWeight="bold">{t('allergens_title')}</Typography>
                         </Box>
                         <Autocomplete
                             multiple
@@ -218,7 +220,7 @@ export default function DietaryPreferencesSection({
                             )}
                         />
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            Products containing these will be strictly flagged.
+                            {t('allergens_help')}
                         </Typography>
                     </Paper>
                 </Grid>
@@ -227,7 +229,7 @@ export default function DietaryPreferencesSection({
                     <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, height: '100%', borderColor: alpha('#F59E0B', 0.2), bgcolor: alpha('#F59E0B', 0.02) }}>
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
                             <WarningAmberIcon color="warning" />
-                            <Typography variant="subtitle1" fontWeight="bold">Ingredients to Avoid</Typography>
+                            <Typography variant="subtitle1" fontWeight="bold">{t('avoid_ingredients_title')}</Typography>
                         </Box>
                         <Autocomplete
                             multiple
@@ -250,7 +252,7 @@ export default function DietaryPreferencesSection({
                             )}
                         />
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            Products with these will show a warning.
+                            {t('avoid_ingredients_help')}
                         </Typography>
                     </Paper>
                 </Grid>
@@ -259,7 +261,7 @@ export default function DietaryPreferencesSection({
                     <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, borderColor: alpha('#10B981', 0.2), bgcolor: alpha('#10B981', 0.02) }}>
                         <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
                             <AutoAwesomeIcon color="success" />
-                            <Typography variant="subtitle1" fontWeight="bold">Health Goals</Typography>
+                            <Typography variant="subtitle1" fontWeight="bold">{t('health_goals_title')}</Typography>
                         </Box>
                         <Autocomplete
                             multiple
@@ -282,7 +284,7 @@ export default function DietaryPreferencesSection({
                             )}
                         />
                         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            Smart Grade will boost scores for products matching these goals.
+                            {t('health_goals_help')}
                         </Typography>
                     </Paper>
                 </Grid>
@@ -304,7 +306,7 @@ export default function DietaryPreferencesSection({
                         '&:hover': { bgcolor: 'primary.dark' }
                     }}
                 >
-                    {isSaving ? 'Saving Changes...' : 'Save Preferences'}
+                    {isSaving ? t('saving_changes') : t('save_preferences')}
                 </Button>
             </Box>
         </Paper>
