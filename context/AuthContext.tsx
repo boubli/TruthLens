@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
             if (!isAllowedAdminPath) {
                 console.log('[AUTH] Admin strict mode: Redirecting to dashboard');
-                router.push('/admin');
+                router.replace('/admin');
                 return;
             }
         }
