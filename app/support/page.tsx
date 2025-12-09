@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { startNewChat } from '@/services/supportService';
 import ChatWindow from '@/components/features/support/ChatWindow';
+import PushNotificationSetup from '@/components/PushNotificationSetup';
 
 export default function UserChatPage() {
     const { user, loading } = useAuth();
@@ -46,9 +47,14 @@ export default function UserChatPage() {
     return (
         <div className="min-h-screen bg-background py-20 px-4">
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-3xl font-bold mb-8 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
+                <h1 className="text-3xl font-bold mb-4 text-center bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-teal-400">
                     Customer Support
                 </h1>
+
+                <div className="flex justify-center mb-6">
+                    <PushNotificationSetup userId={user.uid} />
+                </div>
+
                 <ChatWindow chatId={chatId} currentUserId={user.uid} role="user" />
             </div>
         </div>

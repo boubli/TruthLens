@@ -18,10 +18,19 @@ VAPID_PRIVATE_KEY="<your-generated-private-key>"
 VAPID_SUBJECT="mailto:support@yourdomain.com"
 ```
 
-## 3. Database Integration (Crucial)
-The generated API routes contain **placeholder logic** for storage.
--   **`app/api/notifications/subscribe/route.ts`**: Update `saveSubscriptionToDb` to save the subscription JSON to your actual database (e.g., Firestore) associated with the `userId`.
--   **`app/api/notifications/send-chat-push/route.ts`**: Update `getSubscriptionFromDb` to query your database for the user's subscription before sending.
+## 3. Database Integration (Completed)
+-   **`app/api/notifications/subscribe/route.ts`**: Handles saving subscriptions to Firestore (`users/{userId}`).
+-   **`app/api/notifications/send-chat-push/route.ts`**: Handles retrieving subscriptions from Firestore.
+
+## 4. Frontend Integration
+You must add the `<PushNotificationSetup />` component to your **User Chat Page** or **Layout** so users can enable notifications.
+
+Example (`app/chat/layout.tsx` or `app/chat/page.tsx`):
+```tsx
+import PushNotificationSetup from '@/components/PushNotificationSetup';
+// ... inside your component
+<PushNotificationSetup userId={currentUser.uid} />
+```
 
 ## 4. Testing
 1.  Reload your application.

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import webPush from 'web-push';
+import { adminDb } from '@/lib/firebase-admin';
 
 // Configure web-push with your keys
 const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -16,19 +17,6 @@ if (vapidPublicKey && vapidPrivateKey) {
     console.warn('VAPID keys are missing. Push notifications will fail.');
 }
 
-// Mock database retrieval function
-const getSubscriptionFromDb = async (userId: string) => {
-    // TODO: Retrieval logic here
-    // const userDoc = await db.collection('users').doc(userId).get();
-    // return userDoc.data()?.subscription;
-
-    console.log(`[DB] Retrieving subscription for user ${userId}`);
-    // For demonstration, we simply return null and log that a real DB is needed.
-    // In a real scenario, you would return the subscription object stored in 
-    // /api/notifications/subscribe
-    return null;
-};
-
 export async function POST(request: Request) {
     try {
         const { userId, messageText, senderName } = await request.json();
@@ -37,16 +25,24 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing userId or messageText' }, { status: 400 });
         }
 
-        // 1. Retrieve the user's subscription from your database
-        const subscription = await getSubscriptionFromDb(userId);
+        if (!adminDb) {
+            return NextResponse.json({ error: 'Firebase Admin not initialized' }, { status: 500 });
+        }
+
+        // 1. Retrieve the user's subscription from Firestore
+        const userDoc = await adminDb.collection('users').doc(userId).get();
+
+        if (!userDoc.exists) {
+            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        const userData = userDoc.data();
+        const subscription = userData?.pushSubscription;
 
         if (!subscription) {
-            // For this generated code to work 'out of the box' for testing without a DB, 
-            // you might need to pass the subscription in the body temporarily, 
-            // but for production, fetch it from DB.
             return NextResponse.json({
-                error: 'Subscription not found for user. (Implement DB retrieval)',
-                details: 'Ensure to implement the getSubscriptionFromDb function to fetch the stored subscription.'
+                error: 'Subscription not found for user.',
+                details: 'User has not enabled push notifications.'
             }, { status: 404 });
         }
 

@@ -106,26 +106,16 @@ export const sendMessage = async (chatId: string, senderId: string, text: string
                 const targetUserId = chatData.userId;
 
                 if (targetUserId) {
-                    // 2. Get User Profile for FCM Token
-                    const userSnap = await getDoc(doc(db, 'users', targetUserId));
-                    if (userSnap.exists()) {
-                        const userData = userSnap.data();
-                        const fcmToken = userData.fcmToken;
-
-                        if (fcmToken) {
-                            // 3. Call API
-                            fetch('/api/admin/send-notification', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    token: fcmToken,
-                                    title: 'Support Reply',
-                                    body: text.length > 50 ? text.substring(0, 50) + '...' : text,
-                                    link: `/support` // Deep link to chat
-                                })
-                            }).catch(err => console.error("API Call Failed", err));
-                        }
-                    }
+                    // Call new Web Push API
+                    fetch('/api/notifications/send-chat-push', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            userId: targetUserId,
+                            messageText: text,
+                            senderName: 'Support Team'
+                        })
+                    }).catch(err => console.error("API Call Failed", err));
                 }
             }
         } catch (error) {
