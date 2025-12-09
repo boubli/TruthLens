@@ -44,13 +44,17 @@ export default function WelcomeModal({ open, onClose }: WelcomeModalProps) {
                     sx={{
                         position: 'relative',
                         width: { xs: '90%', sm: 500 },
-                        bgcolor: 'background.paper',
+                        bgcolor: '#121212', // Solid dark background
+                        color: '#fff',
                         borderRadius: 4,
-                        boxShadow: 24,
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                         p: 4,
                         outline: 'none',
-                        background: 'linear-gradient(135deg, rgba(108, 99, 255, 0.05) 0%, rgba(0, 240, 255, 0.05) 100%)',
-                        border: '1px solid rgba(108, 99, 255, 0.2)',
+                        // Gradient Overlay using background-image to not override color if possible, or just a solid gradient
+                        background: 'linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        // Additional readability
+                        backdropFilter: 'blur(10px)',
                     }}
                 >
                     {/* Decorative Elements */}
@@ -132,7 +136,8 @@ export default function WelcomeModal({ open, onClose }: WelcomeModalProps) {
                                     mb: 1.5,
                                     p: 1.5,
                                     borderRadius: 2,
-                                    bgcolor: 'rgba(255,255,255,0.5)',
+                                    bgcolor: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
                                 }}
                             >
                                 <Typography variant="body2">{feature}</Typography>

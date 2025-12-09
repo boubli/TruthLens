@@ -9,7 +9,7 @@ import { verifyStripeSession } from '@/app/actions/stripe';
 import { getAuth } from 'firebase/auth'; // Handle client auth
 import { createPaymentRequest } from '@/services/paymentService';
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const sessionId = searchParams.get('session_id');
@@ -32,22 +32,12 @@ export default function PaymentSuccessPage() {
                     // 2. Metadata contains user info
                     const { userId, tier, billingCycle, userEmail } = result.metadata;
 
-                    // 3. Create 'Paid' Payment Request (which triggers upgrade in service)
-                    // We re-use createPaymentRequest with type='paid' to record it and upgrade tier
-                    // Note: Ideally, this happens via Webhook for security, but for immediate MVP 
-                    // this confirms the payment logic client-triggered-but-server-verified.
-
-                    // We need a way to ensure this runs cleanly:
-                    // ideally createPaymentRequest runs on server or we call a new server action 'completeUpgrade'.
-                    // For now, using the existing client service which calls Firestore directly 
-                    // (protected by rules? Rules let user create request, but maybe not upgrade tier directly?)
-                    // CHECK: paymentService.ts -> createPaymentRequest -> updateUserTier (admin only?)
-                    // updateUserTier usually requires Admin. Wait, let's check paymentService.ts.
-                    // createPaymentRequest calls updateUserTier. Firestore rules probably block 'subscription' update for normal users.
-                    // SOLUTION: The 'upgrade' must happen via Server Action (Admin SDK).
-
                     // Calling a new Server Action to finalize
-                    const upgradeResult = await finalizeUpgradeAction(userId, tier, billingCycle);
+                    const upgradeResult = await finalizeUpgradeAction(
+                        userId,
+                        tier as 'plus' | 'pro' | 'ultimate',
+                        billingCycle as 'monthly' | 'lifetime'
+                    );
 
                     if (upgradeResult.success) {
                         setStatus('success');
@@ -111,6 +101,18 @@ export default function PaymentSuccessPage() {
                 </Typography>
             </Paper>
         </Box>
+    );
+}
+
+export default function PaymentSuccessPage() {
+    return (
+        <React.Suspense fallback={
+            <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CircularProgress />
+            </Box>
+        }>
+            <PaymentSuccessContent />
+        </React.Suspense>
     );
 }
 

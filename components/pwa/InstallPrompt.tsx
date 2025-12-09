@@ -16,6 +16,22 @@ export default function InstallPrompt() {
             (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS 13+
         setIsIOS(isIosDevice);
 
+        // Check Persistence (1 Week Cooldown)
+        const checkPersistence = () => {
+            const dismissedAt = localStorage.getItem('pwa_dismissed_at');
+            if (dismissedAt) {
+                const diff = Date.now() - parseInt(dismissedAt, 10);
+                const ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
+                if (diff < ONE_WEEK) {
+                    return false; // Still in cooldown
+                }
+            }
+            return true;
+        };
+
+        const shouldShow = checkPersistence();
+        if (!shouldShow) return;
+
         // Capture the event (Android/Desktop Chrome)
         const handleBeforeInstallPrompt = (e: any) => {
             e.preventDefault();
@@ -35,7 +51,7 @@ export default function InstallPrompt() {
         if (isIosDevice) {
             // Check if installed (standalone mode)
             const isInstalled = (window.navigator as any).standalone === true;
-            if (!isInstalled) {
+            if (!isInstalled && shouldShow) {
                 setTimeout(() => setIsVisible(true), 3000);
             }
         }
@@ -55,19 +71,25 @@ export default function InstallPrompt() {
         }
     };
 
+    const handleDismiss = () => {
+        setIsVisible(false);
+        // Save dismissal time
+        localStorage.setItem('pwa_dismissed_at', Date.now().toString());
+    };
+
     if (!isVisible) return null;
 
     return (
         <AnimatePresence>
             {isVisible && (
                 <motion.div
-                    initial={{ y: 150, opacity: 0 }}
+                    initial={{ y: 200, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 150, opacity: 0 }}
+                    exit={{ y: 200, opacity: 0 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="fixed bottom-6 left-4 right-4 z-[9999] md:left-auto md:right-6 md:w-96"
+                    className="fixed bottom-0 left-0 right-0 z-[99999] p-4 flex justify-center pointer-events-none"
                 >
-                    <div className="bg-[#111] border border-white/10 rounded-2xl p-4 shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex items-start gap-4 backdrop-blur-xl">
+                    <div className="bg-[#111] border border-white/10 rounded-2xl p-4 shadow-[0_8px_32px_rgba(0,0,0,0.8)] flex items-start gap-4 backdrop-blur-xl w-full max-w-md pointer-events-auto">
                         <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl p-3 shrink-0 shadow-lg">
                             <Download className="w-6 h-6 text-black" />
                         </div>
@@ -100,7 +122,7 @@ export default function InstallPrompt() {
                         </div>
 
                         <button
-                            onClick={() => setIsVisible(false)}
+                            onClick={handleDismiss}
                             className="p-2 -mr-2 -mt-2 text-gray-500 hover:text-white transition-colors"
                         >
                             <X className="w-5 h-5" />

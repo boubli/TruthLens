@@ -21,11 +21,11 @@ service cloud.firestore {
       allow create: if request.auth.uid == userId && 
                        (!('role' in request.resource.data) || request.resource.data.role == 'user');
       
-      // Allow update if auth matches BUT prevent changing the role field
+      // Allow update if auth matches BUT prevent changing critical fields (role, subscription, credits)
       // UNLESS a valid admin token is provided
       allow update: if request.auth.uid == userId && 
                        (
-                         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])) 
+                         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'subscription', 'credits'])) 
                          || 
                          (
                            request.resource.data.role == 'admin' && 
@@ -39,11 +39,7 @@ service cloud.firestore {
     
     // Admin Setup Tokens (Secure collection)
     match /admin_setup_tokens/{token} {
-      allow read, write: if isAdmin(); // Only admins can manage tokens
-      allow get: if true; // Needed for the 'exists' check in user update rule? 
-      // Actually, 'exists' in rules runs with system privileges usually, but to be safe for client-side checks:
-      // We don't want public read. The 'exists' in the rule above works internally. 
-      // But let's strictly limit this collection.
+      allow read, write: if isAdmin(); 
     }
     
     // Favorites Subcollection
@@ -51,30 +47,23 @@ service cloud.firestore {
       allow read, write: if request.auth.uid == userId;
     }
 
-    // Subcollections of users (General fallback, can be removed if strictness is required)
+    // Subcollections of users (General fallback)
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth.uid == userId;
     }
 
     // History (Root Collection)
     match /history/{historyId} {
-      // Create: User must own the item
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
-      // Read/Delete: User must own the item
       allow read, delete: if isAuth() && resource.data.userId == request.auth.uid;
-      // Admin can read all
       allow read: if isAdmin();
     }
 
     // Payment Requests (Root Collection)
     match /paymentRequests/{requestId} {
-      // Create: User must own the request
       allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
-      // Read: User can read their own
       allow read: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
-      // Update: Admin only (for approving/rejecting)
       allow update: if isAdmin();
-      // Delete: User can cancel/delete their own request
       allow delete: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
@@ -84,9 +73,9 @@ service cloud.firestore {
         allow write: if isAuth(); 
     }
 
-    // System Settings (Contains API Keys - Restricted Read)
+    // System Settings (Contains API Keys - Restricted Read, Branding - Public Read)
     match /system/settings {
-      allow read: if isAuth(); 
+      allow read: if true; // Public read for Branding/Favicons 
       allow write: if isAdmin();
     }
 
