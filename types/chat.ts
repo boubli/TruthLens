@@ -24,4 +24,5 @@ export interface Chat {
         [userId: string]: Timestamp;
     };
     userEmail?: string;
+    userName?: string;
 }

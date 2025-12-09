@@ -23,7 +23,7 @@ export default function UserChatPage() {
             const initChat = async () => {
                 setInitializing(true);
                 try {
-                    const id = await startNewChat(user.uid, user.email || 'Anonymous');
+                    const id = await startNewChat(user.uid, user.email || 'Anonymous', user.displayName || 'User');
                     setChatId(id);
                 } catch (error) {
                     console.error("Failed to start chat:", error);

@@ -37,6 +37,7 @@ import { useAuth } from '@/context/AuthContext';
 interface AdminSidebarProps {
     mobileOpen: boolean;
     setMobileOpen: (open: boolean) => void;
+    unreadCount?: number;
 }
 
 const SIDEBAR_WIDTH = 280; // Slightly wider for better readability on tablets/desktop
@@ -58,7 +59,7 @@ const menuItems = [
     { name: 'Settings', path: '/admin/settings', icon: SettingsIcon },
 ];
 
-export default function AdminSidebar({ mobileOpen, setMobileOpen }: AdminSidebarProps) {
+export default function AdminSidebar({ mobileOpen, setMobileOpen, unreadCount = 0 }: AdminSidebarProps) {
     const router = useRouter();
     const pathname = usePathname();
     const theme = useTheme();
@@ -197,6 +198,23 @@ export default function AdminSidebar({ mobileOpen, setMobileOpen }: AdminSidebar
                                             fontSize: '0.95rem',
                                         }}
                                     />
+                                    {item.name === 'Chat' && unreadCount > 0 && (
+                                        <Box
+                                            sx={{
+                                                bgcolor: '#EF4444',
+                                                color: 'white',
+                                                borderRadius: '99px',
+                                                px: 1,
+                                                py: 0.25,
+                                                fontSize: '0.75rem',
+                                                fontWeight: 'bold',
+                                                minWidth: '20px',
+                                                textAlign: 'center',
+                                            }}
+                                        >
+                                            {unreadCount}
+                                        </Box>
+                                    )}
                                 </ListItemButton>
                             </ListItem>
                         );

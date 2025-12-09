@@ -44,7 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return (
         <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#F8FAFC' }}>
             {/* Sidebar Navigation */}
-            <AdminSidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+            <AdminSidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} unreadCount={unreadCount} />
 
             {/* Main Content Area */}
             <Box

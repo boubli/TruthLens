@@ -11,13 +11,14 @@ import { db } from '@/lib/firebase';
 interface AdminChatWindowProps {
     chatId: string;
     currentUserId: string;
-    chatPartnerEmail?: string; // To show in header
+    chatPartnerEmail?: string; // To show in header if name missing
+    chatPartnerName?: string;
     onBack: () => void; // For mobile back
 }
 
 const EMOJIS = ['👍', '👋', '🎉', '😊', '😂', '❤️', '🔥', '🤔', '👀', '✅', '🙏', '🚀'];
 
-const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId, chatPartnerEmail, onBack }) => {
+const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId, chatPartnerEmail, chatPartnerName, onBack }) => {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -86,13 +87,13 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
 
                         <div className="relative">
                             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold border-2 border-white/30">
-                                {chatPartnerEmail?.[0]?.toUpperCase() || 'U'}
+                                {(chatPartnerName || chatPartnerEmail || 'U')[0]?.toUpperCase()}
                             </div>
                             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-[#007bff] rounded-full"></div>
                         </div>
                         <div>
                             <h3 className="font-bold text-sm md:text-base leading-tight">
-                                {chatPartnerEmail || 'User'}
+                                {chatPartnerName || chatPartnerEmail || 'User'}
                             </h3>
                             <p className="text-xs text-blue-100/90">We are online!</p>
                         </div>

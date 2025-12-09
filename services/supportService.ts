@@ -24,12 +24,13 @@ const MESSAGES_SUBCOLLECTION = 'messages';
 /**
  * Starts a new chat for a user if one doesn't exist, or returns the existing one.
  */
-export const startNewChat = async (userId: string, userEmail?: string): Promise<string> => {
+export const startNewChat = async (userId: string, userEmail?: string, userName?: string): Promise<string> => {
     // Check if chat already exists for this user
     const q = query(collection(db, CHATS_COLLECTION), where('userId', '==', userId));
     const snapshot = await getDocs(q);
 
     if (!snapshot.empty) {
+        // Update existing chat with latest user details if needed (optional optimization)
         return snapshot.docs[0].id;
     }
 
@@ -37,6 +38,7 @@ export const startNewChat = async (userId: string, userEmail?: string): Promise<
     const chatData = {
         userId,
         userEmail: userEmail || '',
+        userName: userName || '',
         updatedAt: serverTimestamp(),
         unreadCountUser: 0,
         unreadCountAdmin: 0

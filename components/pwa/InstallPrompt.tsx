@@ -89,12 +89,20 @@ export default function InstallPrompt() {
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                     className="fixed bottom-0 left-0 right-0 z-[99999] p-4 flex justify-center pointer-events-none"
                 >
-                    <div className="bg-[#111] border border-white/10 rounded-2xl p-4 shadow-[0_8px_32px_rgba(0,0,0,0.8)] flex items-start gap-4 backdrop-blur-xl w-full max-w-md pointer-events-auto">
-                        <div className="bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-xl p-3 shrink-0 shadow-lg">
-                            <Download className="w-6 h-6 text-black" />
+                    <div className="bg-[#121212] border border-white/10 rounded-2xl p-4 shadow-[0_8px_32px_rgba(0,0,0,0.8)] flex items-start gap-4 backdrop-blur-xl w-full max-w-md pointer-events-auto relative overflow-hidden">
+                        {/* Background Gradient Mesh */}
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/10 blur-[50px] rounded-full pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-500/10 blur-[50px] rounded-full pointer-events-none" />
+
+                        <div className="shrink-0 relative z-10">
+                            <img
+                                src="/icons/icon-192x192.png"
+                                alt="App Icon"
+                                className="w-12 h-12 rounded-xl shadow-lg"
+                            />
                         </div>
 
-                        <div className="flex-1 min-w-0 pt-1">
+                        <div className="flex-1 min-w-0 pt-1 relative z-10">
                             <h3 className="font-bold text-white text-base">Install TruthLens</h3>
                             <p className="text-sm text-gray-400 mt-0.5 leading-snug">
                                 {isIOS
@@ -114,7 +122,7 @@ export default function InstallPrompt() {
                             ) : (
                                 <button
                                     onClick={handleInstallClick}
-                                    className="mt-3 w-full bg-yellow-500 text-black text-sm font-bold px-4 py-2.5 rounded-lg hover:bg-yellow-400 active:scale-95 transition-all shadow-md"
+                                    className="mt-3 w-full bg-gradient-to-r from-[#6C63FF] to-[#00F0FF] text-white text-sm font-bold px-4 py-2.5 rounded-lg hover:shadow-[0_0_20px_rgba(0,240,255,0.3)] active:scale-95 transition-all shadow-md"
                                 >
                                     Install App
                                 </button>
@@ -123,7 +131,7 @@ export default function InstallPrompt() {
 
                         <button
                             onClick={handleDismiss}
-                            className="p-2 -mr-2 -mt-2 text-gray-500 hover:text-white transition-colors"
+                            className="p-2 -mr-2 -mt-2 text-gray-500 hover:text-white transition-colors relative z-10"
                         >
                             <X className="w-5 h-5" />
                         </button>
