@@ -7,6 +7,14 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Helper to fetch keys securely from Firestore (Admin-only collection)
 async function getSecureKeys() {
     try {
+        if (!adminDb) {
+            console.warn('Admin SDK not initialized. Using env fallback.');
+            return {
+                groq: process.env.GROQ_API_KEY,
+                gemini: process.env.GEMINI_API_KEY
+            };
+        }
+
         const doc = await adminDb.collection('_system_secrets').doc('ai_config').get();
         if (!doc.exists) {
             console.warn('System secrets not found. Using fallback env vars.');

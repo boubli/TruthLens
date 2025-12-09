@@ -2,14 +2,24 @@ import 'server-only';
 import * as admin from 'firebase-admin';
 
 if (!admin.apps.length) {
-    const serviceAccount = JSON.parse(
-        process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string
-    );
+    try {
+        const serviceAccountKey = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-    });
+        if (!serviceAccountKey) {
+            console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_KEY not set. Admin SDK will not be available.');
+        } else {
+            const serviceAccount = JSON.parse(serviceAccountKey);
+
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+            });
+
+            console.log('✅ Firebase Admin SDK initialized');
+        }
+    } catch (error) {
+        console.error('❌ Failed to initialize Firebase Admin SDK:', error);
+    }
 }
 
-export const adminDb = admin.firestore();
-export const adminAuth = admin.auth();
+export const adminDb = admin.apps.length > 0 ? admin.firestore() : null;
+export const adminAuth = admin.apps.length > 0 ? admin.auth() : null;
