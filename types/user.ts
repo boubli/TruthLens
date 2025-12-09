@@ -1,0 +1,152 @@
+// User subscription and tier types
+
+export type UserTier = 'free' | 'plus' | 'pro' | 'ultimate';
+
+export interface UserSubscription {
+    tier: UserTier;
+    startDate: Date;
+    endDate: Date | null; // null means lifetime/no expiry
+    autoRenew: boolean;
+}
+
+export interface DietaryPreferences {
+    isKeto: boolean;
+    isVegan: boolean;
+    isDiabetic: boolean;
+    lowSodium: boolean;
+    glutenFree: boolean;
+    isHalal: boolean;
+    // Granular Preferences
+    allergens: string[];        // e.g., ["Peanuts", "Shellfish"]
+    avoidIngredients: string[]; // e.g., ["Sulfates", "Palm Oil"]
+    healthGoals: string[];      // e.g., ["High Protein", "Hair Growth"]
+}
+
+export interface UserProfile {
+    uid: string;
+    email: string;
+    displayName: string | null;
+    photoURL: string | null;
+    role?: 'admin' | 'user';
+    subscription: UserSubscription;
+    dietaryPreferences: DietaryPreferences;
+    createdAt: Date;
+}
+
+// Default values for new users
+export const DEFAULT_SUBSCRIPTION: UserSubscription = {
+    tier: 'free',
+    startDate: new Date(),
+    endDate: null,
+    autoRenew: false,
+};
+
+export const DEFAULT_DIETARY_PREFERENCES: DietaryPreferences = {
+    isKeto: false,
+    isVegan: false,
+    isDiabetic: false,
+    lowSodium: false,
+    glutenFree: false,
+    isHalal: false,
+    allergens: [],
+    avoidIngredients: [],
+    healthGoals: [],
+};
+
+// Feature flags based on tier
+export interface TierFeatures {
+    dailyScanLimit: number; // -1 for unlimited
+    multiScanLimit: number; // 1 for single, >1 for multi
+    historyLimit: number;   // -1 for unlimited
+    recommendationLimit: number; // -1 for unlimited
+
+    // AI Features
+    aiAnalysis: 'basic' | 'advanced' | 'premium';
+    smartGrading: boolean; // Basic vs Full could be handled by aiAnalysis level, keeping bool for simple checks for now
+    aiTruthDetector: boolean; // Full truth detection
+
+    // Utilities
+    exportFormats: ('pdf' | 'csv' | 'excel')[];
+    fastLane: boolean; // Processing speed
+    adsEnabled: boolean;
+
+    // Premium Extras
+    customAlerts: boolean;
+    prioritySupport: boolean;
+    whiteLabel: boolean;
+    betaAccess: boolean;
+}
+
+export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
+    free: {
+        dailyScanLimit: 5,
+        multiScanLimit: 1, // No multi-scan
+        historyLimit: 10,
+        recommendationLimit: 3, // Limited recommendations
+        aiAnalysis: 'basic',
+        smartGrading: false,
+        aiTruthDetector: false,
+        exportFormats: [],
+        fastLane: false,
+        adsEnabled: true,
+        customAlerts: false,
+        prioritySupport: false,
+        whiteLabel: false,
+        betaAccess: false
+    },
+    plus: {
+        dailyScanLimit: 20,
+        multiScanLimit: 3,
+        historyLimit: 50,
+        recommendationLimit: 10, // More recommendations
+        aiAnalysis: 'advanced',
+        smartGrading: true, // Basic version
+        aiTruthDetector: false, // Limited or none
+        exportFormats: ['csv'],
+        fastLane: true, // Priority but not instant
+        adsEnabled: false, // Minimal ads -> setting to false for cleaner codebase, can allow minimal if needed
+        customAlerts: true,
+        prioritySupport: false,
+        whiteLabel: false,
+        betaAccess: false
+    },
+    pro: {
+        dailyScanLimit: -1, // Unlimited
+        multiScanLimit: 10,
+        historyLimit: -1,
+        recommendationLimit: -1, // Unlimited
+        aiAnalysis: 'premium',
+        smartGrading: true,
+        aiTruthDetector: true,
+        exportFormats: ['pdf', 'csv', 'excel'],
+        fastLane: true,
+        adsEnabled: false,
+        customAlerts: true,
+        prioritySupport: true,
+        whiteLabel: false,
+        betaAccess: false
+    },
+    ultimate: {
+        dailyScanLimit: -1,
+        multiScanLimit: 99, // Effectively unlimited
+        historyLimit: -1,
+        recommendationLimit: -1, // Unlimited
+        aiAnalysis: 'premium',
+        smartGrading: true,
+        aiTruthDetector: true,
+        exportFormats: ['pdf', 'csv', 'excel'],
+        fastLane: true,
+        adsEnabled: false,
+        customAlerts: true,
+        prioritySupport: true,
+        whiteLabel: true,
+        betaAccess: true
+    }
+};
+
+export const FREE_TIER_FEATURES = TIER_CONFIG.free; // Legacy compact
+export const PRO_TIER_FEATURES = TIER_CONFIG.pro;   // Legacy compact
+
+export function getTierFeatures(tier: UserTier): TierFeatures {
+    return TIER_CONFIG[tier] || TIER_CONFIG.free;
+}

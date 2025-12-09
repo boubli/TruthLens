@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TruthLens 🔍🥗
 
-## Getting Started
+**TruthLens** is a modern, AI-powered Progressive Web App (PWA) designed to demystify the food you eat. By combining advanced computer vision with powerful Large Language Models (LLMs), TruthLens helps users scan products, analyze ingredients, and make healthier dietary choices instantly.
 
-First, run the development server:
+## 🌟 Key Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+*   **🥗 Smart Ingredient Analysis**: Scan product barcodes or labels to instantly get a breakdown of ingredients, revealing hidden additives, allergens, and nutritional value.
+*   **🤖 Empowered by AI**:
+    *   **AI Chat Assistant**: Have a natural conversation with our AI about food, nutrition, and health goals (`/ai-chat`).
+    *   **Multi-Provider Support**: Powered by **Groq** (Llama 3) and **Google Gemini** for fast, accurate insights.
+    *   **Personalized Advice**: Recommendations tailored to your specific dietary needs (Vegan, Gluten-Free, Keto, etc.).
+*   **📊 Comprehensive Scoring**: Get an instant "Health Score" for every product, backed by scientific data.
+*   **💎 Tiered Membership System**:
+    *   **Free/Plus**: Bring Your Own Key (BYOK) for AI features.
+    *   **Pro/Ultimate**: Unlimited, hassle-free access with platform-managed API keys.
+*   **🎨 Beautiful, Adaptive UI**:
+    *   Fully customizable themes with Dark/Light mode support.
+    *   Smooth animations powered by Framer Motion.
+    *   Responsive design that works perfectly on Mobile, Tablet, and Desktop.
+*   **💬 Dual Support Channels**:
+    *   **AI Assistant**: For instant nutrition answers.
+    *   **Support Chat**: Direct chat line to customer service for app help (`/support`).
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+*   **Frontend**: Next.js 16 (React 19), TypeScript, Tailwind CSS, Material UI v7.
+*   **Backend**: Firebase (Firestore, Auth, Storage).
+*   **AI Integration**: Groq SDK, Google Generative AI SDK, Framer Motion.
+*   **Platform**: PWA (Progressive Web App) with experimental HTTPS support.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🛠️ Getting Started
 
-## Learn More
+### Prerequisites
 
-To learn more about Next.js, take a look at the following resources:
+*   Node.js 18+ installed on your machine.
+*   Firebase project configured (with `.env` or `firebaseConfig` setup).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Installation
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/yourusername/truth-lens.git
+    cd truth-lens
+    ```
 
-## Deploy on Vercel
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3.  **Run the development server**:
+    ```bash
+    npm run dev
+    ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4.  **Open the app**:
+    Visit `https://localhost:3000` (Note: Uses HTTPS).
+
+## 📂 Project Structure
+
+*   `/app`: Next.js App Router pages and layouts.
+    *   `/ai-chat`: AI Assistant interface.
+    *   `/support`: Human support chat interface.
+    *   `/scan`: Barcode/Product scanning feature.
+*   `/components`: Reusable UI components.
+*   `/services`: Business logic and API integrations (Firebase, AI).
+*   `/lib`: Core configuration (Firebase, Theme).
+
+---
+*Powered by TruthLens Team*

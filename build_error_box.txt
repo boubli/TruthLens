@@ -1,0 +1,43 @@
+
+> truth-lens@0.1.0 build
+> next build
+
+ ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\Youssef Boubli\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Youssef Boubli\Desktop\TruthLens\package-lock.json
+
+   Γû▓ Next.js 16.0.7 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 errors:
+./Desktop/TruthLens/components/admin/AdminSidebar.tsx:10:8
+Parsing ecmascript source code failed
+   8 | import React from 'react';
+   9 | import {
+> 10 | import {
+     |        ^
+  11 |         Box,
+  12 |         Drawer,
+  13 |         SwipeableDrawer,
+
+Expected ',', got '{'
+
+Import traces:
+  Client Component Browser:
+    ./Desktop/TruthLens/components/admin/AdminSidebar.tsx [Client Component Browser]
+    ./Desktop/TruthLens/app/(admin)/admin/layout.tsx [Client Component Browser]
+    ./Desktop/TruthLens/app/(admin)/admin/layout.tsx [Server Component]
+
+  Client Component SSR:
+    ./Desktop/TruthLens/components/admin/AdminSidebar.tsx [Client Component SSR]
+    ./Desktop/TruthLens/app/(admin)/admin/layout.tsx [Client Component SSR]
+    ./Desktop/TruthLens/app/(admin)/admin/layout.tsx [Server Component]
+
+
+    at <unknown> (./Desktop/TruthLens/components/admin/AdminSidebar.tsx:10:8)

@@ -1,0 +1,364 @@
+import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc, updateDoc, deleteField } from 'firebase/firestore';
+import { getSystemSettings } from './systemService';
+import { AIProvider, AILanguage, AIChatError, UserApiKeys, AI_LANGUAGES } from '@/types/aiChat';
+import { UserTier } from '@/types/user';
+
+const USERS_COLLECTION = 'users';
+
+/**
+ * Get user's saved API keys from Firestore
+ */
+export const getUserApiKeys = async (userId: string): Promise<UserApiKeys> => {
+    try {
+        const userRef = doc(db, USERS_COLLECTION, userId);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+            return {
+                groq: data.customApiKeys?.groq || undefined,
+                gemini: data.customApiKeys?.gemini || undefined,
+                preferredProvider: data.customApiKeys?.preferredProvider || 'groq',
+                preferredLanguage: data.customApiKeys?.preferredLanguage || 'en'
+            };
+        }
+        return { preferredProvider: 'groq', preferredLanguage: 'en' };
+    } catch (error) {
+        console.error('[AI_CHAT] Error fetching user API keys:', error);
+        return { preferredProvider: 'groq' };
+    }
+};
+
+/**
+ * Save user's API key to Firestore
+ */
+export const saveUserApiKey = async (
+    userId: string,
+    provider: AIProvider,
+    apiKey: string
+): Promise<void> => {
+    try {
+        const userRef = doc(db, USERS_COLLECTION, userId);
+        await setDoc(userRef, {
+            customApiKeys: {
+                [provider]: apiKey
+            }
+        }, { merge: true });
+        console.log(`[AI_CHAT] Saved ${provider} API key for user ${userId}`);
+    } catch (error) {
+        console.error('[AI_CHAT] Error saving API key:', error);
+        throw error;
+    }
+};
+
+/**
+ * Delete user's API key from Firestore
+ */
+export const deleteUserApiKey = async (
+    userId: string,
+    provider: AIProvider
+): Promise<void> => {
+    try {
+        const userRef = doc(db, USERS_COLLECTION, userId);
+        await updateDoc(userRef, {
+            [`customApiKeys.${provider}`]: deleteField()
+        });
+        console.log(`[AI_CHAT] Deleted ${provider} API key for user ${userId}`);
+    } catch (error) {
+        console.error('[AI_CHAT] Error deleting API key:', error);
+        throw error;
+    }
+};
+
+/**
+ * Save user's preferred provider
+ */
+export const savePreferredProvider = async (
+    userId: string,
+    provider: AIProvider
+): Promise<void> => {
+    try {
+        const userRef = doc(db, USERS_COLLECTION, userId);
+        await setDoc(userRef, {
+            customApiKeys: {
+                preferredProvider: provider
+            }
+        }, { merge: true });
+    } catch (error) {
+        console.error('[AI_CHAT] Error saving preferred provider:', error);
+        throw error;
+    }
+};
+
+/**
+ * Save user's preferred language
+ */
+export const savePreferredLanguage = async (
+    userId: string,
+    language: AILanguage
+): Promise<void> => {
+    try {
+        const userRef = doc(db, USERS_COLLECTION, userId);
+        await setDoc(userRef, {
+            customApiKeys: {
+                preferredLanguage: language
+            }
+        }, { merge: true });
+        console.log(`[AI_CHAT] Saved preferred language ${language} for user ${userId}`);
+    } catch (error) {
+        console.error('[AI_CHAT] Error saving preferred language:', error);
+        throw error;
+    }
+};
+
+/**
+ * Determine if user must provide their own key based on tier
+ */
+export const requiresOwnKey = (tier: UserTier): boolean => {
+    return tier === 'free' || tier === 'plus';
+};
+
+/**
+ * Get the appropriate API key based on user tier
+ */
+export const resolveApiKey = async (
+    userId: string,
+    tier: UserTier,
+    provider: AIProvider
+): Promise<{ key: string; source: 'user' | 'platform' }> => {
+    // Pro and Ultimate users use platform key
+    if (!requiresOwnKey(tier)) {
+        const settings = await getSystemSettings();
+        const platformKey = settings.apiKeys?.[provider];
+
+        if (!platformKey) {
+            const error: AIChatError = {
+                code: 'API_ERROR',
+                message: 'Platform API key not configured. Please contact support.',
+                provider
+            };
+            throw error;
+        }
+
+        return { key: platformKey, source: 'platform' };
+    }
+
+    // Free and Plus users must use their own key
+    const userKeys = await getUserApiKeys(userId);
+    const userKey = userKeys[provider];
+
+    if (!userKey) {
+        const error: AIChatError = {
+            code: 'MISSING_KEY',
+            message: `Please add your ${provider === 'groq' ? 'Groq' : 'Gemini'} API key in Settings to use AI Chat.`,
+            provider
+        };
+        throw error;
+    }
+
+    return { key: userKey, source: 'user' };
+};
+
+/**
+ * Send a chat message to the AI provider
+ */
+export const sendAIChatMessage = async (
+    userId: string,
+    tier: UserTier,
+    message: string,
+    provider: AIProvider,
+    conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [],
+    language: AILanguage = 'en'
+): Promise<string> => {
+    // Resolve the API key
+    const { key } = await resolveApiKey(userId, tier, provider);
+
+    // Get language name for prompt
+    const languageInfo = AI_LANGUAGES[language];
+    const languageName = languageInfo?.name || 'English';
+
+    // Build messages array with history
+    const messages = [
+        {
+            role: 'system' as const,
+            content: `You are TruthLens AI 🥗, a friendly and helpful assistant specializing in food, nutrition, and health topics. You help users understand food labels, ingredients, nutrition facts, and make healthier choices.
+
+RESPONSE STYLE:
+- Use relevant emojis naturally throughout your responses (🥗🍎💪🌿✨📊 etc.)
+- Be conversational, warm, and encouraging
+- Vary your wording - never repeat the same phrases
+- Keep responses concise but informative
+- Use bullet points and formatting for clarity
+
+LANGUAGE: You MUST respond in ${languageName}. All your responses should be written in ${languageName}.
+
+IDENTITY KNOWLEDGE:
+- TruthLens: An AI-powered nutrition assistant that helps users make healthier choices by scanning food labels, analyzing ingredients, and answering diet questions instantly.
+- Creator: Youssef Boubli (known as TRADMSS)
+
+When users ask about TruthLens (any spelling variation) or who made/created/built it, share this info naturally using your own creative wording.`
+        },
+        ...conversationHistory.map(msg => ({
+            role: msg.role as 'user' | 'assistant',
+            content: msg.content
+        })),
+        { role: 'user' as const, content: message }
+    ];
+
+    try {
+        if (provider === 'groq') {
+            return await callGroqAPI(key, messages);
+        } else {
+            return await callGeminiAPI(key, messages);
+        }
+    } catch (error: any) {
+        // Handle specific API errors
+        if (error?.code) {
+            throw error; // Already formatted AIChatError
+        }
+
+        // Check for isInvalidKey flag (from Gemini parser)
+        if (error?.isInvalidKey) {
+            const chatError: AIChatError = {
+                code: 'INVALID_KEY',
+                message: `Your ${provider === 'groq' ? 'Groq' : 'Gemini'} API key is invalid. Please update it in Settings.`,
+                provider
+            };
+            throw chatError;
+        }
+
+        // Check for authentication errors (401 for Groq, 400/403 for Gemini)
+        if (error?.status === 401 ||
+            error?.status === 400 ||
+            error?.status === 403 ||
+            error?.message?.includes('401') ||
+            error?.message?.includes('invalid') ||
+            error?.message?.includes('API key')) {
+            const chatError: AIChatError = {
+                code: 'INVALID_KEY',
+                message: `Your ${provider === 'groq' ? 'Groq' : 'Gemini'} API key is invalid. Please update it in Settings.`,
+                provider
+            };
+            throw chatError;
+        }
+
+        // Check for rate limit
+        if (error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('rate')) {
+            const chatError: AIChatError = {
+                code: 'RATE_LIMIT',
+                message: 'Rate limit exceeded. Please wait a moment and try again.',
+                provider
+            };
+            throw chatError;
+        }
+
+        // Generic API error - don't show raw messages
+        const genericError: AIChatError = {
+            code: 'API_ERROR',
+            message: 'An error occurred while communicating with the AI. Please try again.',
+            provider
+        };
+        throw genericError;
+    }
+};
+
+/**
+ * Call Groq API
+ */
+const callGroqAPI = async (
+    apiKey: string,
+    messages: { role: string; content: string }[]
+): Promise<string> => {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages,
+            temperature: 0.7,
+            max_tokens: 1024
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw { status: response.status, message: errorText };
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || 'No response generated.';
+};
+
+/**
+ * Call Gemini API
+ */
+const callGeminiAPI = async (
+    apiKey: string,
+    messages: { role: string; content: string }[]
+): Promise<string> => {
+    // Convert messages to Gemini format
+    const contents = messages
+        .filter(m => m.role !== 'system')
+        .map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+        }));
+
+    // Add system instruction to first user message if present
+    const systemMsg = messages.find(m => m.role === 'system');
+    if (systemMsg && contents.length > 0) {
+        contents[0].parts[0].text = `${systemMsg.content}\n\n${contents[0].parts[0].text}`;
+    }
+
+    const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                contents,
+                generationConfig: {
+                    temperature: 0.7,
+                    maxOutputTokens: 1024
+                }
+            })
+        }
+    );
+
+    if (!response.ok) {
+        const errorText = await response.text();
+
+        // Try to parse Gemini error JSON and extract clean message
+        try {
+            const errorJson = JSON.parse(errorText);
+            const errorMessage = errorJson?.error?.message || 'Unknown error';
+            const errorStatus = errorJson?.error?.status || '';
+
+            // Check for specific error types
+            if (errorStatus === 'INVALID_ARGUMENT' ||
+                errorMessage.includes('API key not valid') ||
+                errorMessage.includes('invalid')) {
+                throw { status: 400, message: 'API key is invalid', isInvalidKey: true };
+            }
+
+            throw { status: response.status, message: errorMessage };
+        } catch (parseError: any) {
+            // If it's our formatted error, rethrow it
+            if (parseError.isInvalidKey) {
+                throw parseError;
+            }
+            // Otherwise throw with raw text
+            throw { status: response.status, message: errorText };
+        }
+    }
+
+    const data = await response.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
+};
+

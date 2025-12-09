@@ -1,0 +1,49 @@
+
+> truth-lens@0.1.0 build
+> next build
+
+ ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\Youssef Boubli\package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Youssef Boubli\Desktop\TruthLens\package-lock.json
+
+   Γû▓ Next.js 16.0.7 (Turbopack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully in 6.0s
+   Running TypeScript ...
+   Collecting page data using 15 workers ...
+   Generating static pages using 15 workers (0/19) ...
+   Generating static pages using 15 workers (4/19) 
+   Generating static pages using 15 workers (9/19) 
+   Generating static pages using 15 workers (14/19) 
+ Γ£ô Generating static pages using 15 workers (19/19) in 1178.7ms
+   Finalizing page optimization ...
+
+Route (app)
+Γöî Γùï /
+Γö£ Γùï /_not-found
+Γö£ Γùï /admin/dashboard
+Γö£ Γùï /admin/payments
+Γö£ Γùï /admin/settings
+Γö£ Γùï /admin/support
+Γö£ Γùï /admin/users
+Γö£ Γùï /history
+Γö£ Γùï /login
+Γö£ ╞Æ /product/[id]
+Γö£ Γùï /profile
+Γö£ Γùï /recommendations
+Γö£ Γùï /reset-password
+Γö£ Γùï /scan
+Γö£ Γùï /search
+Γö£ Γùï /set-admin
+Γö£ Γùï /signup
+Γöö Γùï /upgrade
+
+
+Γùï  (Static)   prerendered as static content
+╞Æ  (Dynamic)  server-rendered on demand
+

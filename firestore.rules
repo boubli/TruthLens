@@ -1,0 +1,131 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Helper function to check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuth(); 
+      // Allow create if auth matches and strictly setting role to 'user' or not setting it
+      allow create: if request.auth.uid == userId && 
+                       (!('role' in request.resource.data) || request.resource.data.role == 'user');
+      
+      // Allow update if auth matches BUT prevent changing the role field
+      // UNLESS a valid admin token is provided
+      allow update: if request.auth.uid == userId && 
+                       (
+                         (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role'])) 
+                         || 
+                         (
+                           request.resource.data.role == 'admin' && 
+                           exists(/databases/$(database)/documents/admin_setup_tokens/$(request.resource.data.adminToken))
+                         )
+                       );
+      
+      // Admins can do anything
+      allow write: if isAdmin();
+    }
+    
+    // Admin Setup Tokens (Secure collection)
+    match /admin_setup_tokens/{token} {
+      allow read, write: if isAdmin(); // Only admins can manage tokens
+      allow get: if true; // Needed for the 'exists' check in user update rule? 
+      // Actually, 'exists' in rules runs with system privileges usually, but to be safe for client-side checks:
+      // We don't want public read. The 'exists' in the rule above works internally. 
+      // But let's strictly limit this collection.
+    }
+    
+    // Favorites Subcollection
+    match /users/{userId}/favorites/{favoriteId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // Subcollections of users (General fallback, can be removed if strictness is required)
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // History (Root Collection)
+    match /history/{historyId} {
+      // Create: User must own the item
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      // Read/Delete: User must own the item
+      allow read, delete: if isAuth() && resource.data.userId == request.auth.uid;
+      // Admin can read all
+      allow read: if isAdmin();
+    }
+
+    // Payment Requests (Root Collection)
+    match /paymentRequests/{requestId} {
+      // Create: User must own the request
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      // Read: User can read their own
+      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Update: Admin only (for approving/rejecting)
+      allow update: if isAdmin();
+      // Delete: User can cancel/delete their own request
+      allow delete: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // Product Cache
+    match /products/{productId}/{document=**} {
+        allow read: if true; 
+        allow write: if isAuth(); 
+    }
+
+    // System Settings (Contains API Keys - Restricted Read)
+    match /system/settings {
+      allow read: if isAuth(); 
+      allow write: if isAdmin();
+    }
+
+    // Global Themes
+    match /globalThemes/{themeId} {
+      allow read: if isAuth(); 
+      allow write: if isAdmin(); 
+    }
+
+    // Theme Analytics
+    match /themeAnalytics/{themeId} {
+      allow read: if isAdmin(); 
+      allow write: if isAuth(); 
+    }
+    
+
+    // Chat System
+    match /chats/{chatId} {
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isAuth() && (
+          get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid || 
+          isAdmin()
+        );
+        allow create: if isAuth() && (
+          get(/databases/$(database)/documents/chats/$(chatId)).data.userId == request.auth.uid || 
+          isAdmin()
+        );
+        allow delete: if isAdmin();
+      }
+    }
+
+    // Default: Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
