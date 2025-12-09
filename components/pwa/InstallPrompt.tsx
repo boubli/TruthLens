@@ -18,6 +18,9 @@ export default function InstallPrompt() {
 
         // Check Persistence (1 Week Cooldown)
         const checkPersistence = () => {
+            const isInstalled = localStorage.getItem('pwa_installed') === 'true';
+            if (isInstalled) return false;
+
             const dismissedAt = localStorage.getItem('pwa_dismissed_at');
             if (dismissedAt) {
                 const diff = Date.now() - parseInt(dismissedAt, 10);
@@ -45,7 +48,13 @@ export default function InstallPrompt() {
             }
         };
 
+        const handleAppInstalled = () => {
+            localStorage.setItem('pwa_installed', 'true');
+            setIsVisible(false);
+        };
+
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.addEventListener('appinstalled', handleAppInstalled);
 
         // iOS Logic
         if (isIosDevice) {
@@ -56,7 +65,10 @@ export default function InstallPrompt() {
             }
         }
 
-        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            window.removeEventListener('appinstalled', handleAppInstalled);
+        };
     }, []);
 
     const handleInstallClick = async () => {
@@ -68,6 +80,7 @@ export default function InstallPrompt() {
         if (outcome === 'accepted') {
             setDeferredPrompt(null);
             setIsVisible(false);
+            localStorage.setItem('pwa_installed', 'true');
         }
     };
 
