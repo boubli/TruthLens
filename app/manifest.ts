@@ -30,7 +30,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
                     src: branding.appleTouchIconUrl || '/apple-touch-icon.png',
                     sizes: '180x180',
                     type: 'image/png',
-                    purpose: 'any maskable'
+                    purpose: 'maskable'
                 },
             ],
         };
