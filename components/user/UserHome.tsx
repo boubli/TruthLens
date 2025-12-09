@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Box, Container, Typography, Grid, Paper, IconButton, Avatar, InputBase, CircularProgress } from '@mui/material';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import TierBadge from '@/components/subscription/TierBadge';
 import SearchIcon from '@mui/icons-material/Search';
@@ -30,6 +30,7 @@ import { calculateSmartGrade } from '@/services/gradingService';
 export default function UserHome() {
     const { user, isPro, features: tierFeatures, dietaryPreferences } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     // Search State
     const [query, setQuery] = useState('');
@@ -37,32 +38,45 @@ export default function UserHome() {
     const [loading, setLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
 
-    const handleSearch = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        if (!query.trim()) return;
+    // Auto-search from URL (e.g. from Scanner)
+    useEffect(() => {
+        const urlQuery = searchParams.get('search');
+        if (urlQuery && urlQuery !== query) {
+            setQuery(urlQuery);
+            // Trigger search
+            performSearch(urlQuery);
+        }
+    }, [searchParams]);
 
+    const performSearch = async (searchQuery: string) => {
+        if (!searchQuery.trim()) return;
         setLoading(true);
         setHasSearched(true);
         try {
-            const data = await searchProductsAction(query);
+            const data = await searchProductsAction(searchQuery);
             setResults(data);
-
+            // History saving logic duplicated here or extracted? 
+            // Better to extract handleSearch logic.
+            // For now, I will just call the action and set results to be safe/fast.
+            // History saving:
             if (user && data.length > 0) {
-                try {
-                    await addToHistory(user.uid, {
-                        type: 'search',
-                        title: `Search: "${query}"`,
-                        grade: undefined, // Service handles this by converting to null
-                    });
-                } catch (historyError) {
-                    console.error('[SEARCH] ❌ Failed to save to history:', historyError);
-                }
+                addToHistory(user.uid, {
+                    type: 'search',
+                    title: `Search: "${searchQuery}"`,
+                    grade: undefined,
+                }).catch(e => console.error(e));
             }
         } catch (error) {
             console.error("Search failed", error);
         } finally {
             setLoading(false);
         }
+    };
+
+
+    const handleSearch = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        performSearch(query);
     };
 
     const clearSearch = () => {

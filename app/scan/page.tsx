@@ -50,8 +50,8 @@ export default function ScanPage() {
         if (code) {
             setLoading(true);
             try {
-                // Redirect to product page with source=scan
-                router.push(`/product/${code}?source=scan`);
+                // Redirect to home with search query (mimic manual search)
+                router.push(`/?search=${encodeURIComponent(code)}`);
             } catch (error) {
                 console.error("Scan error:", error);
                 setLoading(false);
