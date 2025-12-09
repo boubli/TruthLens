@@ -1,6 +1,7 @@
 'use server';
 
 import axios from 'axios';
+import { fetchFromFooDB } from '@/services/external/foodbService';
 
 const OFF_API_URL = 'https://world.openfoodfacts.org/api/v0/product';
 
@@ -180,16 +181,43 @@ export const searchProductsAction = async (query: string): Promise<EnhancedProdu
 
 export const getProductAction = async (barcode: string): Promise<EnhancedProductData | null> => {
     try {
-        // Fetch from OpenFoodFacts
-        const response = await apiClient.get(`${OFF_API_URL}/${barcode}.json`);
-
-        let productData: EnhancedProductData | null = null;
-
-        if (response.data.status === 1) {
-            productData = mapOpenFoodFactsToEnhanced(response.data.product);
+        // 1. Try FooDB First
+        const foodbResult = await fetchFromFooDB(barcode);
+        if (foodbResult) {
+            console.log(`[ProductAction] Found in FooDB: ${foodbResult.name}`);
+            // Map FooDB ProductData to EnhancedProductData
+            return {
+                id: foodbResult.id,
+                identity: {
+                    name: foodbResult.name,
+                    brand: foodbResult.brand,
+                    barcode: barcode,
+                    category: 'Unknown',
+                    description: foodbResult.description
+                },
+                media: {
+                    front_image: foodbResult.image,
+                    thumbnail: foodbResult.image,
+                },
+                grades: {
+                    nutri_score: '?', // FooDB doesn't typically have NutriScore
+                    eco_score: '?',
+                    processing_score: '?'
+                },
+                nutrition: {}, // FooDB structure is complex, leaving empty for generic view
+                sensory_profile: { flavors: [] },
+                ingredients: []
+            };
         }
 
-        return productData;
+        // 2. Fallback to OpenFoodFacts
+        const response = await apiClient.get(`${OFF_API_URL}/${barcode}.json`);
+
+        if (response.data.status === 1) {
+            return mapOpenFoodFactsToEnhanced(response.data.product);
+        }
+
+        return null;
 
     } catch (error) {
         console.error("Error fetching product data:", error);

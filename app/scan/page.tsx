@@ -13,6 +13,7 @@ import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import StarIcon from '@mui/icons-material/Star';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Link from 'next/link';
+import { getProductAction } from '@/app/actions';
 
 // Dynamically import QrScanner
 const QrScanner = dynamic(() => import('react-qr-scanner'), {
@@ -26,7 +27,7 @@ export default function ScanPage() {
     const [scanAllowed, setScanAllowed] = useState(true);
     const [remainingScans, setRemainingScans] = useState<number | null>(null);
     const router = useRouter();
-    const { user, tier, isPro } = useAuth();
+    const { user, tier, isPro, isUltimate } = useAuth();
 
     useEffect(() => {
         const verifyLimit = async () => {
@@ -50,8 +51,27 @@ export default function ScanPage() {
         if (code) {
             setLoading(true);
             try {
-                // Redirect to home with search query (mimic manual search)
-                router.push(`/?search=${encodeURIComponent(code)}`);
+                console.log(`[Scan] Processing code: ${code}`);
+
+                // 1. Check if product exists directly (FooDB or OFF)
+                const product = await getProductAction(code);
+
+                if (product) {
+                    // ✅ Found! Go straight to product page
+                    console.log('[Scan] Product found, redirecting to detail page...');
+                    router.push(`/product/${code}?source=scan`);
+                } else {
+                    // ❌ Not found - Fallback Logic
+                    console.log('[Scan] Product not found, applying fallback...');
+
+                    if (isUltimate) {
+                        // Ultimate User -> Global Search
+                        router.push(`/global-search?q=${encodeURIComponent(code)}`);
+                    } else {
+                        // Free/Pro User -> Standard Local Search
+                        router.push(`/?search=${encodeURIComponent(code)}`);
+                    }
+                }
             } catch (error) {
                 console.error("Scan error:", error);
                 setLoading(false);
