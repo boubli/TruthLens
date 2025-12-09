@@ -40,7 +40,6 @@ export const viewport = {
 };
 
 import SpecialWelcome from '@/components/SpecialWelcome';
-
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 
 export default function RootLayout({

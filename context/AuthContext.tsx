@@ -7,6 +7,7 @@ import { UserProfile, UserTier, DietaryPreferences, TierFeatures, DEFAULT_SUBSCR
 import { getUserProfile, getFeatureAccess } from '@/services/subscriptionService';
 import { subscribeToSystemSettings } from '@/services/systemService';
 import { SystemTierConfig, TierDefinition } from '@/types/system';
+import { useFcmToken } from '@/hooks/useFcmToken';
 
 
 interface AuthContextType {
@@ -57,6 +58,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [maintenanceMode, setMaintenanceMode] = useState(false);
     const [betaMode, setBetaMode] = useState(false);
     const [tierConfig, setTierConfig] = useState<SystemTierConfig | null>(null);
+
+    // Initialize FCM Token Management
+    useFcmToken();
 
     const router = useRouter();
     const pathname = usePathname();

@@ -3,11 +3,13 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export default function InstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [isVisible, setIsVisible] = useState(false);
     const [isIOS, setIsIOS] = useState(false);
+    const pathname = usePathname();
 
     useEffect(() => {
         // Robust iOS/iPadOS detection
@@ -90,7 +92,7 @@ export default function InstallPrompt() {
         localStorage.setItem('pwa_dismissed_at', Date.now().toString());
     };
 
-    if (!isVisible) return null;
+    if (!isVisible || pathname === '/install-guide') return null;
 
     return (
         <AnimatePresence>

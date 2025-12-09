@@ -79,6 +79,43 @@ export const sendMessage = async (chatId: string, senderId: string, text: string
     }
 
     await updateDoc(chatRef, updates);
+
+    // If Admin is sending, try to send Push Notification to User
+    if (senderRole === 'admin') {
+        try {
+            // 1. Get Chat Metadata to find target User ID
+            const chatSnap = await getDoc(chatRef);
+            if (chatSnap.exists()) {
+                const chatData = chatSnap.data();
+                const targetUserId = chatData.userId;
+
+                if (targetUserId) {
+                    // 2. Get User Profile for FCM Token
+                    const userSnap = await getDoc(doc(db, 'users', targetUserId));
+                    if (userSnap.exists()) {
+                        const userData = userSnap.data();
+                        const fcmToken = userData.fcmToken;
+
+                        if (fcmToken) {
+                            // 3. Call API
+                            fetch('/api/admin/send-notification', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    token: fcmToken,
+                                    title: 'Support Reply',
+                                    body: text.length > 50 ? text.substring(0, 50) + '...' : text,
+                                    link: `/support` // Deep link to chat
+                                })
+                            }).catch(err => console.error("API Call Failed", err));
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Failed to trigger notification flow:", error);
+        }
+    }
 };
 
 export const markChatAsRead = async (chatId: string, role: 'user' | 'admin') => {
