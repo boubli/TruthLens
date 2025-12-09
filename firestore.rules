@@ -90,6 +90,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ============================================================================
+    // 🔐 SYSTEM SECRETS (Back-end Only)
+    // ============================================================================
+    // Stores API keys. NO client access allowed.
+    match /_system_secrets/{secretId} {
+      allow read: if false; // Only Admin SDK can read
+      allow write: if isAdmin();
+    }
     // Global Themes
     match /globalThemes/{themeId} {
       allow read: if isAuth(); 
