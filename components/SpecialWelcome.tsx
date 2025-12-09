@@ -9,7 +9,7 @@ import { Play, Volume2, ShieldCheck, Terminal } from 'lucide-react';
 const TARGET_EMAIL = 'youssefboubli71@gmail.com';
 const TOTAL_DURATION = 50000; // 50s failsafe check
 
-const LETTER_TEXT = "Mer7ba bik a Titim ❤️ ... Bghit nakhod had l-waqt sghir bash n-goul lik merci ... Nti machi ghir 'User Raqm 1', nti l-awel wa7ed knt baghih y-chouf had l-khdma ... Had l-project bditou b bzaf dyal l-efforts ... Walakin l-fact annaki nti hna bash t-jarbih ... 3ndu m3na special bzaf 3ndi ... Tmmnay t-3jbk l-experience kima 3jbni n-swabha lik ... Welcome to TruthLens.";
+const LETTER_TEXT = "Mer7ba bik a Titim ❤️ ... Bghit nakhod had lweqt sghir bash n-goul lik thanks ... Nti machi ghir 'First User', nti awel wa7ed knt baghito ychouf had l-khdma ... Had l'project bditou b bzaf dyal l'efforts ... Walakin l fact annaki nti hna bash tjarbih ... 3ndu m3na special bzaf 3ndi ... Ntmna ikon 3jbk l'experience kima 3jbni nswabha lik ... Welcome to TruthLens DEAD ENGINE.";
 
 export default function SpecialWelcome() {
     const { user, loading } = useAuth();
