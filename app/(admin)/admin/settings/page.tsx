@@ -63,6 +63,13 @@ export default function AdminSettingsPage() {
         serpapi: ''
     });
 
+    const [branding, setBranding] = useState({
+        faviconUrl: '',
+        appleTouchIconUrl: '',
+        androidIcon192Url: '',
+        androidIcon512Url: ''
+    });
+
     useEffect(() => {
         if (!authLoading) {
             if (userProfile?.role !== 'admin') {
@@ -100,6 +107,15 @@ export default function AdminSettingsPage() {
             };
 
             setApiKeys(mergedKeys);
+
+            if (settings.branding) {
+                setBranding({
+                    faviconUrl: settings.branding.faviconUrl || '',
+                    appleTouchIconUrl: settings.branding.appleTouchIconUrl || '',
+                    androidIcon192Url: settings.branding.androidIcon192Url || '',
+                    androidIcon512Url: settings.branding.androidIcon512Url || ''
+                });
+            }
             console.log('[ADMIN] Current API keys loaded (from Firebase or env)');
 
             if (typeof settings.maintenanceMode !== 'undefined') {
@@ -122,7 +138,8 @@ export default function AdminSettingsPage() {
         try {
             // Only save API keys - toggles auto-save themselves
             await updateSystemSettings({
-                apiKeys
+                apiKeys,
+                branding
             });
             console.log('[ADMIN] API keys saved successfully!');
             setMsg({ type: 'success', text: 'API keys updated successfully!' });
@@ -292,6 +309,60 @@ export default function AdminSettingsPage() {
                     </Typography>
 
                     <ThemeSelector showCustomizer={false} />
+                </Box>
+
+                <Divider sx={{ my: 4 }} />
+
+                {/* Branding / PWA Settings */}
+                <Box sx={{ mb: 4, p: 3, bgcolor: 'rgba(255, 64, 129, 0.05)', borderRadius: 2, border: '1px solid rgba(255, 64, 129, 0.3)' }}>
+                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: '#ff4081' }}>
+                        📱 PWA & Branding Icons
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        Set custom URLs for your app icons. These will be used for the browser tab, mobile home screen, and installation prompt.
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' } }}>
+                            <TextField
+                                label="Favicon URL (.ico/.png 32x32)"
+                                fullWidth
+                                value={branding.faviconUrl}
+                                onChange={(e) => setBranding(prev => ({ ...prev, faviconUrl: e.target.value }))}
+                                placeholder="https://..."
+                                helperText="Browser tab icon"
+                            />
+                        </Box>
+                        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' } }}>
+                            <TextField
+                                label="Apple Touch Icon URL (.png 180x180)"
+                                fullWidth
+                                value={branding.appleTouchIconUrl}
+                                onChange={(e) => setBranding(prev => ({ ...prev, appleTouchIconUrl: e.target.value }))}
+                                placeholder="https://..."
+                                helperText="iPhone Home Screen"
+                            />
+                        </Box>
+                        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' } }}>
+                            <TextField
+                                label="Android Icon 192px URL"
+                                fullWidth
+                                value={branding.androidIcon192Url}
+                                onChange={(e) => setBranding(prev => ({ ...prev, androidIcon192Url: e.target.value }))}
+                                placeholder="https://..."
+                                helperText="Low-res PWA icon"
+                            />
+                        </Box>
+                        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' } }}>
+                            <TextField
+                                label="Android Icon 512px URL"
+                                fullWidth
+                                value={branding.androidIcon512Url}
+                                onChange={(e) => setBranding(prev => ({ ...prev, androidIcon512Url: e.target.value }))}
+                                placeholder="https://..."
+                                helperText="High-res PWA icon / Splash"
+                            />
+                        </Box>
+                    </Box>
                 </Box>
 
                 <Divider sx={{ my: 4 }} />

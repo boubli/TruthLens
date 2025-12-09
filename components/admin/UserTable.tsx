@@ -58,7 +58,7 @@ export default function UserTable({ users, onEdit, onDelete }: UserTableProps) {
                         <TableRow key={user.id} hover>
                             <TableCell>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <Avatar src={user.photoURL} sx={{ width: 32, height: 32 }}>
+                                    <Avatar src={user.photoURL || '/icons/icon-192x192.png'} sx={{ width: 32, height: 32 }}>
                                         {user.displayName?.[0] || user.email[0].toUpperCase()}
                                     </Avatar>
                                     <Typography variant="body2">{user.displayName || 'No name'}</Typography>

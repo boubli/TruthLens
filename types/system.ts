@@ -35,5 +35,11 @@ export interface ExtendedSystemSettings {
         sambanova?: string;
         serpapi?: string;
     };
-    tierConfig: SystemTierConfig; // New field
+    tierConfig: SystemTierConfig;
+    branding?: {
+        faviconUrl?: string;
+        appleTouchIconUrl?: string;
+        androidIcon192Url?: string;
+        androidIcon512Url?: string;
+    };
 }

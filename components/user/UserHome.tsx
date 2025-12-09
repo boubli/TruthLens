@@ -228,7 +228,7 @@ export default function UserHome() {
                                 component={motion.div}
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.95 }}
-                                src={user?.photoURL || undefined}
+                                src={user?.photoURL || '/icons/icon-192x192.png'}
                                 sx={{
                                     width: { xs: 44, sm: 48 },
                                     height: { xs: 44, sm: 48 },

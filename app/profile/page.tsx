@@ -158,13 +158,9 @@ export default function ProfilePage() {
                                     ) : null
                                 }
                             >
-                                {user.photoURL ? (
-                                    <Avatar src={user.photoURL} sx={{ width: 80, height: 80 }} />
-                                ) : (
-                                    <Avatar sx={{ width: 80, height: 80, bgcolor: 'primary.main' }}>
-                                        <PersonIcon sx={{ fontSize: 50 }} />
-                                    </Avatar>
-                                )}
+                                <Avatar src={user.photoURL || '/icons/icon-192x192.png'} sx={{ width: 80, height: 80 }}>
+                                    {!user.photoURL && <PersonIcon sx={{ fontSize: 50, opacity: 0 }} />}
+                                </Avatar>
                             </Badge>
 
                             <Box sx={{ flex: 1, width: { xs: '100%', sm: 'auto' } }}>

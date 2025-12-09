@@ -191,18 +191,20 @@ const getSwarmResponse = async (prompt: string, trustedProviders: Array<{ name: 
 
     const providersToRace = trustedProviders.length > 0 ? trustedProviders : allProviders;
 
-    // Filter out missing keys
-    const activeProviders = providersToRace.filter(p => {
-        if (p.name === 'Groq') return !!GROQ_API_KEY;
-        if (p.name === 'Gemini') return !!GEMINI_API_KEY;
-        if (p.name === 'OpenAI') return !!OPENAI_API_KEY;
-        if (p.name === 'DeepSeek') return !!DEEPSEEK_API_KEY;
-        if (p.name === 'Cerebras') return !!CEREBRAS_API_KEY;
-        if (p.name === 'SambaNova') return !!SAMBANOVA_API_KEY;
-        return false;
-    });
+    // Check for keys asynchronously (Env OR Dynamic)
+    const activeProviders = (await Promise.all(providersToRace.map(async (p) => {
+        let hasKey = false;
+        if (p.name === 'Groq') hasKey = !!(await getDynamicKey('groq', GROQ_API_KEY));
+        else if (p.name === 'Gemini') hasKey = !!(await getDynamicKey('gemini', GEMINI_API_KEY));
+        else if (p.name === 'OpenAI') hasKey = !!(await getDynamicKey('openai', OPENAI_API_KEY));
+        else if (p.name === 'DeepSeek') hasKey = !!(await getDynamicKey('deepseek', DEEPSEEK_API_KEY));
+        else if (p.name === 'Cerebras') hasKey = !!(await getDynamicKey('cerebras', CEREBRAS_API_KEY));
+        else if (p.name === 'SambaNova') hasKey = !!(await getDynamicKey('sambanova', SAMBANOVA_API_KEY));
 
-    if (activeProviders.length === 0) throw new Error("No active AI providers available for this task");
+        return hasKey ? p : null;
+    }))).filter((p): p is { name: string; fn: (p: string) => Promise<string> } => p !== null);
+
+    if (activeProviders.length === 0) throw new Error("No active AI providers available for this task. Please check API Settings.");
 
     console.log(`🐝 [AI Swarm] Racing ${activeProviders.map(p => p.name).join(', ')}...`);
 

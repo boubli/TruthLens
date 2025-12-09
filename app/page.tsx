@@ -1,3 +1,7 @@
+/**
+ * TruthLens Application
+ * Developed by Youssef Boubli
+ */
 'use client';
 
 import React, { useState, useEffect } from 'react';

@@ -8,7 +8,8 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import DiamondIcon from '@mui/icons-material/Diamond';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { createPaymentRequest, getPendingPaymentRequest, simulateStripePayment, cancelPaymentRequest } from '@/services/paymentService';
+import { createPaymentRequest, getPendingPaymentRequest, cancelPaymentRequest } from '@/services/paymentService';
+import { createCheckoutSession } from '@/app/actions/stripe';
 import { PaymentRequest } from '@/types/payment';
 import PageTransition from '@/components/animation/PageTransition';
 import ScrollReveal from '@/components/animation/ScrollReveal';
@@ -52,18 +53,23 @@ export default function UpgradePage() {
                     checkPendingRequest();
                 }, 1000);
             } else {
-                // Paid flow (Stripe Mock)
-                const success = await simulateStripePayment(user.uid, user.email || '', user.displayName || 'User', targetTier, billingCycle);
-                if (success) {
-                    await refreshProfile();
-                    router.push('/profile');
+                // Real Stripe Flow
+                const { url } = await createCheckoutSession({
+                    userId: user.uid,
+                    userEmail: user.email || '',
+                    tier: targetTier,
+                    billingCycle
+                });
+
+                if (url) {
+                    window.location.href = url; // Redirect to Stripe
                 } else {
-                    throw new Error('Payment failed');
+                    throw new Error('Failed to start checkout');
                 }
             }
         } catch (err: any) {
+            console.error(err);
             setError(err.message || 'Failed to process request');
-        } finally {
             setLoading(false);
         }
     };

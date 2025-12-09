@@ -1,35 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Box, TextField, Typography, Alert, Grid, Paper } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { signInWithCustomToken, sendEmailVerification } from 'firebase/auth'; // Changed import
+import { signInWithCustomToken, sendEmailVerification } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import AnimatedButton from '@/components/ui/AnimatedButton';
 import ScrollReveal from '@/components/animation/ScrollReveal';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { GoogleReCaptchaProvider, useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { registerUser } from '@/app/actions';
 
-const RECAPTCHA_SITE_KEY = '6LdVHyYsAAAAANvCa9Mq5ol8J2cV9Epewhm29Egp'; // Site Key (Client-side)
+const RECAPTCHA_SITE_KEY = '6LeYMiYsAAAAAJ4yVoBV_fuMTNQgO2eni4WSAc1P'; // v2 Site Key
 
-function SignupContent() {
+export default function SignupPage() {
     const [loading, setLoading] = useState(false);
     const [signedUp, setSignedUp] = useState(false);
     const [error, setError] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const router = useRouter();
 
-    // reCAPTCHA Hook
-    const { executeRecaptcha } = useGoogleReCaptcha();
+    const recaptchaRef = useRef<ReCAPTCHA>(null);
 
     const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const data = new FormData(e.currentTarget);
-        const email = data.get('email') as string;
         const password = data.get('password') as string;
         const confirmPassword = data.get('confirmPassword') as string;
 
@@ -47,19 +45,22 @@ function SignupContent() {
         setLoading(true);
 
         try {
-            if (!executeRecaptcha) {
-                console.warn('reCAPTCHA not ready');
+            // Execute invisible reCAPTCHA
+            // This will trigger the challenge if needed, or return token immediately
+            const token = await recaptchaRef.current?.executeAsync();
+
+            if (!token) {
+                console.warn('reCAPTCHA failed to generate token');
                 setError('Security check failed. Please refresh and try again.');
                 return;
             }
 
-            console.log("Executing reCAPTCHA...");
-            const token = await executeRecaptcha('signup');
-
-            console.log("Calling Server Action...");
+            console.log("reCAPTCHA Token obtained, calling server...");
             const result = await registerUser(data, token);
 
             if (!result.success) {
+                // If failed, reset captcha so user can try again
+                recaptchaRef.current?.reset();
                 throw new Error(result.error || 'Registration failed.');
             }
 
@@ -67,9 +68,6 @@ function SignupContent() {
                 console.log("Signing in with custom token...");
                 await signInWithCustomToken(auth, result.token);
 
-                // Optional: Send verification email if needed
-                // Note: User created via Admin SDK defaults to emailVerified: false
-                // But current user is now signed in as that user.
                 if (auth.currentUser) {
                     await sendEmailVerification(auth.currentUser);
                 }
@@ -80,6 +78,7 @@ function SignupContent() {
         } catch (err: any) {
             console.error('Signup error:', err);
             setError(err.message || 'Failed to create account.');
+            recaptchaRef.current?.reset();
         } finally {
             setLoading(false);
         }
@@ -162,6 +161,13 @@ function SignupContent() {
                                 autoComplete="new-password"
                             />
 
+                            {/* Invisible reCAPTCHA - ensure it is mounted */}
+                            <ReCAPTCHA
+                                ref={recaptchaRef}
+                                size="invisible"
+                                sitekey={RECAPTCHA_SITE_KEY}
+                            />
+
                             <AnimatedButton
                                 type="submit"
                                 fullWidth
@@ -214,13 +220,5 @@ function SignupContent() {
                 </ScrollReveal>
             </Grid>
         </Grid>
-    );
-}
-
-export default function SignupPage() {
-    return (
-        <GoogleReCaptchaProvider reCaptchaKey={RECAPTCHA_SITE_KEY}>
-            <SignupContent />
-        </GoogleReCaptchaProvider>
     );
 }

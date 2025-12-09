@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { markUserAsWelcomed } from '@/services/subscriptionService';
 import { Play } from 'lucide-react';
 
-const TARGET_EMAIL = 'youssefboubli71@gmail.com';
+const TARGET_EMAIL = 'fatimazahrafliou@gmail.com';
 const TOTAL_DURATION = 50000; // 50s failsafe check
 
 const LETTER_TEXT = "Mer7ba bik a Titim ❤️ ... Bghit nakhod had lweqt sghir bash ngoul lik thanks ... Nti machi ghir 'First User', nti awel wa7ed knt baghito ychouf had lkhdma ... Had l'project bditou b bzaf dyal l'efforts ... Walakin l fact annaki nti hna bash tjrbih ... 3ndo m3na special bzaf liya ... Ntmna ikon 3jbk l'experience kima 3jbni nswabha lik ... Welcome to TruthLens (DEAD ENGINE).";

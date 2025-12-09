@@ -200,7 +200,7 @@ export const getProductAction = async (barcode: string): Promise<EnhancedProduct
 // --- RECAPTCHA & REGISTRATION ---
 import { adminAuth } from '@/lib/firebaseAdmin';
 
-const RECAPTCHA_SECRET_KEY = '6LdVHyYsAAAAABg-NpLOqHMmagmwoBbAgNkpYKJD'; // Secret Key (Server-side)
+const RECAPTCHA_SECRET_KEY = '6LeYMiYsAAAAAKBrlgVd2DgpCa1NO285uPI8Jvib'; // v2 Secret Key
 
 interface RegisterResponse {
     success: boolean;
@@ -221,13 +221,13 @@ export async function registerUser(formData: FormData, token: string): Promise<R
         const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`;
         const recaptchaRes = await axios.post(verificationUrl);
 
-        const { success, score } = recaptchaRes.data;
+        const { success } = recaptchaRes.data;
 
-        console.log('reCAPTCHA Verification:', { success, score, email });
+        console.log('reCAPTCHA Verification:', { success, email });
 
-        if (!success || (score && score < 0.5)) {
-            console.warn('Blocked suspicious signup request:', email, score);
-            return { success: false, error: 'Registration blocked. Suspicious activity detected.' };
+        if (!success) {
+            console.warn('Blocked suspicious signup request:', email);
+            return { success: false, error: 'Security check failed. Please try again.' };
         }
 
         // 2. Create User in Firebase Admin
