@@ -367,6 +367,26 @@ export default function AdminSettingsPage() {
 
                 <Divider sx={{ my: 4 }} />
 
+                {/* Security Section */}
+                <Box sx={{ mb: 4, p: 3, bgcolor: 'rgba(244, 67, 54, 0.05)', borderRadius: 2, border: '1px solid rgba(244, 67, 54, 0.3)' }}>
+                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: '#d32f2f' }}>
+                        🛡️ Security & Recovery
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        Manage emergency access to your admin account. Setup 2FA recovery tokens in case you get locked out.
+                    </Typography>
+                    <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => router.push('/admin/settings/recovery')}
+                        startIcon={<KeyIcon />}
+                    >
+                        Manage Admin Recovery (2FA)
+                    </Button>
+                </Box>
+
+                <Divider sx={{ my: 4 }} />
+
                 {/* Secure API Keys Section (For Server-Side Only) */}
                 <Box sx={{ mb: 4, p: 3, bgcolor: 'rgba(76, 175, 80, 0.05)', borderRadius: 2, border: '2px solid rgba(76, 175, 80, 0.3)' }}>
                     <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: 'success.main' }}>

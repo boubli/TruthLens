@@ -20,6 +20,7 @@ export default function SetAdminPage() {
     const [success, setSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [token, setToken] = useState('');
+    const [code, setCode] = useState('');
 
     const setAsAdmin = async () => {
         if (!user) {
@@ -28,7 +29,7 @@ export default function SetAdminPage() {
         }
 
         if (!token) {
-            setError('Please enter a valid Admin Setup Token');
+            setError('Please enter a valid Token');
             return;
         }
 
@@ -41,10 +42,10 @@ export default function SetAdminPage() {
         setError(null);
 
         try {
-            console.log('Validating token for:', user.email);
+            console.log('Validating 2FA token for:', user.email);
 
-            // Use Server Action to bypass Client Rules
-            const result = await recoverAdminAccount(token, user.email, user.uid);
+            // Use Server Action Key + Code
+            const result = await recoverAdminAccount(token, code, user.email, user.uid);
 
             if (!result.success) {
                 throw new Error(result.message);
@@ -105,12 +106,24 @@ export default function SetAdminPage() {
 
                 <Box sx={{ mb: 3 }}>
                     <TextField
-                        label="Admin Setup Token"
+                        label="Recovery Token ID"
                         fullWidth
                         variant="outlined"
                         value={token}
                         onChange={(e) => setToken(e.target.value)}
-                        helperText="Get this token from an existing Admin"
+                        placeholder="e.g. admin-recovery-key"
+                    />
+                </Box>
+
+                <Box sx={{ mb: 3 }}>
+                    <TextField
+                        label="Authenticator Code (2FA)"
+                        fullWidth
+                        variant="outlined"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} // Integers only
+                        placeholder="000 000"
+                        inputProps={{ maxLength: 6 }}
                     />
                 </Box>
 
@@ -119,10 +132,10 @@ export default function SetAdminPage() {
                         variant="contained"
                         color="primary"
                         onClick={setAsAdmin}
-                        disabled={loading || success}
+                        disabled={loading || success || !token}
                         fullWidth
                     >
-                        {loading ? 'Setting...' : success ? '✅ Done!' : 'Set as Admin'}
+                        {loading ? 'Verifying...' : success ? '✅ Done!' : 'Verify & Recover'}
                     </Button>
 
                     <Button

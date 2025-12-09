@@ -2,8 +2,9 @@
 
 import { adminDb } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
+import * as OTPAuth from 'otpauth';
 
-export async function recoverAdminAccount(token: string, userEmail: string, userId: string): Promise<{ success: boolean; message: string }> {
+export async function recoverAdminAccount(token: string, totpCode: string, userEmail: string, userId: string): Promise<{ success: boolean; message: string }> {
     if (!adminDb) {
         console.error('Firebase Admin not initialized');
         return { success: false, message: 'Server configuration error. Contact support.' };
@@ -23,14 +24,12 @@ export async function recoverAdminAccount(token: string, userEmail: string, user
         const data = tokenSnap.data();
         if (!data) return { success: false, message: 'Token data corrupted.' };
 
-        // 2. Validate Token
+        // 2. Validate Token Status
         if (data.status !== 'pending') {
             return { success: false, message: `Token is ${data.status}.` };
         }
 
-        // Email check (Optional: recovery tokens might be generic, but code implies email binding)
-        // If the token has an email field, enforce it. If not, allow any.
-        // Based on existing adminService, it has email.
+        // Email check
         if (data.email && data.email.toLowerCase() !== userEmail.toLowerCase()) {
             return { success: false, message: 'This token is not for this email address.' };
         }
@@ -43,15 +42,40 @@ export async function recoverAdminAccount(token: string, userEmail: string, user
             return { success: false, message: 'Token has expired.' };
         }
 
-        // 3. Perform Promotion (Atomic if possible, or sequential)
-        // Update Token -> used
+        // 3. 🔐 Validate TOTP Code
+        if (data.secret) {
+            // Strict 2FA Mode
+            if (!totpCode) {
+                return { success: false, message: '2FA Code required for this token.' };
+            }
+
+            const totp = new OTPAuth.TOTP({
+                issuer: 'TruthLens',
+                label: 'Admin Recovery',
+                algorithm: 'SHA1',
+                digits: 6,
+                period: 30,
+                secret: OTPAuth.Secret.fromBase32(data.secret)
+            });
+
+            const delta = totp.validate({ token: totpCode, window: 1 });
+
+            if (delta === null) {
+                console.warn(`[AdminRecovery] Invalid TOTP code for token ${token}`);
+                return { success: false, message: 'Invalid 2FA Code.' };
+            }
+        } else {
+            // Emergency / Legacy Mode (No Secret in DB)
+            console.warn(`[AdminRecovery] allowing recovery without 2FA for token ${token} (Emergency Mode)`);
+        }
+
+        // 4. Perform Promotion
         await tokenRef.update({
             status: 'used',
             usedBy: userEmail,
             usedAt: FieldValue.serverTimestamp()
         });
 
-        // Update User -> admin
         await adminDb.collection('users').doc(userId).update({
             role: 'admin',
             adminTokenUsed: token,

@@ -14,21 +14,44 @@ export interface AdminInvite {
 /**
  * Generate a new random admin setup token linked to an email
  */
-export const generateAdminToken = async (email: string): Promise<string> => {
+import * as OTPAuth from 'otpauth';
+
+/**
+ * Generate a new random admin setup token linked to an email.
+ * Includes a TOTP Secret for 2FA.
+ */
+export const generateAdminToken = async (email: string): Promise<{ token: string; secret: string; otpAuthUrl: string }> => {
     try {
-        const token = Math.random().toString(36).substring(2, 10).toUpperCase(); // 8 chars
+        const token = Math.random().toString(36).substring(2, 10).toUpperCase(); // 8 chars (ID)
+
+        // Generate TOTP Secret (Base32)
+        const secret = new OTPAuth.Secret({ size: 20 });
+        const secretStr = secret.base32;
+
+        const totp = new OTPAuth.TOTP({
+            issuer: 'TruthLens',
+            label: `Admin Recovery (${email})`,
+            algorithm: 'SHA1',
+            digits: 6,
+            period: 30,
+            secret: secret
+        });
+
+        const otpAuthUrl = totp.toString(); // otpauth://totp/... URL for QR Code
+
         const now = new Date();
-        const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+        const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours
 
         await setDoc(doc(db, TOKENS_COLLECTION, token), {
             token,
             email: email.toLowerCase(),
+            secret: secretStr, // Store secret
             status: 'pending',
             createdAt: serverTimestamp(),
             expiresAt: Timestamp.fromDate(expiresAt),
         });
 
-        return token;
+        return { token, secret: secretStr, otpAuthUrl };
     } catch (error) {
         console.error('Error generating admin token:', error);
         throw error;
