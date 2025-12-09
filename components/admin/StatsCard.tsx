@@ -18,13 +18,15 @@ interface StatsCardProps {
     icon: React.ComponentType<SvgIconProps>;
     trend?: number;
     color?: string;
+    onClick?: () => void;
 }
 
-export default function StatsCard({ title, value, icon: Icon, trend, color = '#6C63FF' }: StatsCardProps) {
+export default function StatsCard({ title, value, icon: Icon, trend, color = '#6C63FF', onClick }: StatsCardProps) {
     return (
         <Paper
             component={motion.div}
             whileHover={{ scale: 1.02 }}
+            onClick={onClick}
             elevation={2}
             sx={{
                 p: 3,
@@ -33,6 +35,7 @@ export default function StatsCard({ title, value, icon: Icon, trend, color = '#6
                 borderLeft: `4px solid ${color}`,
                 borderRadius: 2,
                 transition: 'all 0.3s ease',
+                cursor: onClick ? 'pointer' : 'default',
             }}
         >
             <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>

@@ -127,3 +127,75 @@ export const getDashboardStats = async (): Promise<DashboardStats> => {
         };
     }
 };
+
+export interface ActivityData {
+    date: string;
+    activeUsers: number;
+    newUsers: number;
+}
+
+/**
+ * Get daily user activity for the last 30 days
+ */
+export const getUserActivityData = async (): Promise<ActivityData[]> => {
+    try {
+        const now = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(now.getDate() - 30);
+
+        // Fetch scans in last 30 days (Active Users = users who scanned)
+        const historyRef = collection(db, 'history');
+        const qHistory = query(historyRef, where('timestamp', '>=', Timestamp.fromDate(thirtyDaysAgo)));
+        const historySnap = await getDocs(qHistory);
+
+        // Fetch users created in last 30 days
+        const usersRef = collection(db, 'users');
+        const qUsers = query(usersRef, where('createdAt', '>=', Timestamp.fromDate(thirtyDaysAgo)));
+        const usersSnap = await getDocs(qUsers);
+
+        // Process data
+        const dailyStats: Record<string, { activeUsers: Set<string>, newUsers: number }> = {};
+
+        // Initialize last 30 days
+        for (let i = 0; i <= 30; i++) {
+            const d = new Date(thirtyDaysAgo);
+            d.setDate(d.getDate() + i);
+            const dateStr = d.toISOString().split('T')[0];
+            dailyStats[dateStr] = { activeUsers: new Set(), newUsers: 0 };
+        }
+
+        historySnap.forEach(doc => {
+            const data = doc.data();
+            if (data.timestamp && data.userId) {
+                const date = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+                const dateStr = date.toISOString().split('T')[0];
+                if (dailyStats[dateStr]) {
+                    dailyStats[dateStr].activeUsers.add(data.userId);
+                }
+            }
+        });
+
+        usersSnap.forEach(doc => {
+            const data = doc.data();
+            if (data.createdAt) {
+                const date = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+                const dateStr = date.toISOString().split('T')[0];
+                if (dailyStats[dateStr]) {
+                    dailyStats[dateStr].newUsers++;
+                }
+            }
+        });
+
+        return Object.entries(dailyStats)
+            .map(([date, stats]) => ({
+                date,
+                activeUsers: stats.activeUsers.size,
+                newUsers: stats.newUsers
+            }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+
+    } catch (error) {
+        console.error("Error fetching activity data:", error);
+        return [];
+    }
+};
