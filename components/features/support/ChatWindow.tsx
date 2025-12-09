@@ -91,21 +91,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, currentUserId, role }) 
                 {messages.map((msg, index) => {
                     const isMe = msg.senderId === currentUserId;
                     const showTime = index === 0 ||
-                        (messages[index - 1] && (msg.timestamp?.toMillis() - messages[index - 1].timestamp?.toMillis() > 300000)); // 5 mins
+                        (messages[index - 1] && (msg.createdAt?.toMillis() - messages[index - 1].createdAt?.toMillis() > 300000)); // 5 mins
 
                     return (
                         <div key={msg.id} className="w-full flex flex-col">
-                            {showTime && msg.timestamp && (
+                            {showTime && msg.createdAt && (
                                 <div className="text-[10px] text-gray-500 text-center uppercase tracking-wider mb-4 font-medium">
-                                    {msg.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </div>
                             )}
 
                             <div className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                                 <div
                                     className={`relative max-w-[75%] px-5 py-3 text-[15px] leading-relaxed break-words shadow-sm transition-all ${isMe
-                                            ? 'bg-[#6C63FF] text-white rounded-[22px] rounded-br-[4px]'
-                                            : 'bg-[#1F1F1F] text-gray-100/90 rounded-[22px] rounded-bl-[4px]'
+                                        ? 'bg-[#6C63FF] text-white rounded-[22px] rounded-br-[4px]'
+                                        : 'bg-[#1F1F1F] text-gray-100/90 rounded-[22px] rounded-bl-[4px]'
                                         }`}
                                 >
                                     {msg.text}
@@ -134,8 +134,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, currentUserId, role }) 
                         type="submit"
                         disabled={!newMessage.trim() || sending}
                         className={`p-2 rounded-full transition-all duration-200 ${newMessage.trim()
-                                ? 'bg-[#6C63FF] text-white scale-100'
-                                : 'bg-transparent text-gray-500 scale-90'
+                            ? 'bg-[#6C63FF] text-white scale-100'
+                            : 'bg-transparent text-gray-500 scale-90'
                             }`}
                     >
                         <Send size={20} fill={newMessage.trim() ? "currentColor" : "none"} />
