@@ -100,7 +100,7 @@ service cloud.firestore {
     }
     // Global Themes
     match /globalThemes/{themeId} {
-      allow read: if isAuth(); 
+      allow read: if true; // Publicly readable
       allow write: if isAdmin(); 
     }
 

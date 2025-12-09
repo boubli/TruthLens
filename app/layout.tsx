@@ -24,6 +24,8 @@ export const viewport = {
   userScalable: false,
 };
 
+import SpecialWelcome from '@/components/SpecialWelcome';
+
 export default function RootLayout({
   children,
 }: {
@@ -35,6 +37,7 @@ export default function RootLayout({
         <AuthProvider>
           <CompareProvider>
             <ThemeProvider>
+              <SpecialWelcome />
               {children}
               <CompareFloatingBar />
             </ThemeProvider>
