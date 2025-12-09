@@ -26,6 +26,7 @@
     "react": "19.2.0",
     "react-confetti": "^6.4.0",
     "react-dom": "19.2.0",
+    "react-google-recaptcha-v3": "^1.11.0",
     "react-qr-scanner": "^1.0.0-alpha.11",
     "server-only": "^0.0.1"
   },

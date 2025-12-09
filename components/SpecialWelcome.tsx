@@ -3,37 +3,54 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Confetti from 'react-confetti';
-import { useAuth } from '@/context/AuthContext'; // Adjust path if needed
-import { Play, Volume2, ShieldCheck, Terminal } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { markUserAsWelcomed } from '@/services/subscriptionService';
+import { Play } from 'lucide-react';
 
 const TARGET_EMAIL = 'youssefboubli71@gmail.com';
 const TOTAL_DURATION = 50000; // 50s failsafe check
 
-const LETTER_TEXT = "Mer7ba bik a Titim ❤️ ... Bghit nakhod had lweqt sghir bash n-goul lik thanks ... Nti machi ghir 'First User', nti awel wa7ed knt baghito ychouf had l-khdma ... Had l'project bditou b bzaf dyal l'efforts ... Walakin l fact annaki nti hna bash tjarbih ... 3ndu m3na special bzaf 3ndi ... Ntmna ikon 3jbk l'experience kima 3jbni nswabha lik ... Welcome to TruthLens DEAD ENGINE.";
+const LETTER_TEXT = "Mer7ba bik a Titim ❤️ ... Bghit nakhod had lweqt sghir bash ngoul lik thanks ... Nti machi ghir 'First User', nti awel wa7ed knt baghito ychouf had lkhdma ... Had l'project bditou b bzaf dyal l'efforts ... Walakin l fact annaki nti hna bash tjrbih ... 3ndo m3na special bzaf liya ... Ntmna ikon 3jbk l'experience kima 3jbni nswabha lik ... Welcome to TruthLens (DEAD ENGINE).";
 
 export default function SpecialWelcome() {
-    const { user, loading } = useAuth();
+    const { user, userProfile, loading } = useAuth();
     const [isVisible, setIsVisible] = useState(false);
     const [stage, setStage] = useState<'idle' | 'boot' | 'drop' | 'letter'>('idle');
     const [bootLines, setBootLines] = useState<string[]>([]);
     const [displayedText, setDisplayedText] = useState('');
     const [showButton, setShowButton] = useState(false);
 
-    // Refs for audio and confetti dimensions
+    // Refs for audio and confetti
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
 
     useEffect(() => {
-        // Initial checks
-        if (loading) return;
+        // Wait for profile to load
+        if (loading || !user || !userProfile) return;
 
-        const hasSeen = typeof window !== 'undefined' ? sessionStorage.getItem('hasSeenWelcome') : false;
+        // Check persistent flag in Firestore profile
+        const hasSeen = userProfile.hasSeenWelcome || false;
 
-        if (user?.email === TARGET_EMAIL && !hasSeen) {
+        if (user.email === TARGET_EMAIL && !hasSeen) {
             setIsVisible(true);
             startSequence();
+
+            // Mark as seen persistently in Firestore immediately to prevent repeat
+            if (user.uid) {
+                markUserAsWelcomed(user.uid).catch(err =>
+                    console.error("Failed to mark welcome as seen:", err)
+                );
+            }
         }
-    }, [user, loading]);
+    }, [user, userProfile, loading]);
+
+    // Cleanup sessionStorage usage as we now use Firestore
+    // (Optional: clear legacy storage if it exists)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('hasSeenWelcome');
+        }
+    }, []);
 
     useEffect(() => {
         // Window size for confetti
@@ -93,29 +110,16 @@ export default function SpecialWelcome() {
     const startLetterTypewriter = async () => {
         const words = LETTER_TEXT.split(' ');
 
-        // We have roughly 33 seconds (45s - 12s) to read the text.
-        // Total words ~50. Roughly 0.6s per word.
-
         for (let i = 0; i < words.length; i++) {
             setDisplayedText(prev => prev + (i === 0 ? '' : ' ') + words[i]);
-            // Vary speed slightly for natural feel
             const speed = 500 + Math.random() * 200;
             await new Promise(r => setTimeout(r, speed));
         }
-
-        // 45s+: Show Button (Ensure it shows even if typing finishes early)
-        // Calculating remaining time to hit 45s mark since start of sequence could be complex, 
-        // relying on the typing duration is accurately synced is safer or a separate timeout.
-        // Since we want strict 45s+, let's set a timeout from the start of the 'letter' phase.
     };
 
-    // Strict timing for button appearance relative to sequence start
+    // Strict timing for button appearance
     useEffect(() => {
         if (stage === 'idle') return;
-
-        // 45s from start (which is boot start). 
-        // Boot = 0s. Drop = 7s. Letter = 12s. Button = 45s.
-        // So 38s after drop starts, or 33s after letter starts.
 
         const timer = setTimeout(() => {
             setShowButton(true);
@@ -126,7 +130,8 @@ export default function SpecialWelcome() {
 
 
     const handleEnterApp = () => {
-        sessionStorage.setItem('hasSeenWelcome', 'true');
+        // No need to set sessionStorage anymore, Firestore handles it.
+
         // Fade out audio
         if (audioRef.current) {
             const fadeOut = setInterval(() => {

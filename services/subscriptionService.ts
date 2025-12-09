@@ -77,6 +77,7 @@ export const getUserProfile = async (userId: string, email: string, displayName:
                 },
                 dietaryPreferences: data.dietaryPreferences || DEFAULT_DIETARY_PREFERENCES,
                 createdAt: data.createdAt?.toDate() || new Date(),
+                hasSeenWelcome: data.hasSeenWelcome || false,
             };
         }
 
@@ -135,6 +136,20 @@ export const updateDietaryPreferences = async (userId: string, preferences: Diet
         });
     } catch (error) {
         console.error('Error updating dietary preferences:', error);
+        throw error;
+    }
+};
+
+/**
+ * Mark user as having seen the special welcome animation
+ */
+export const markUserAsWelcomed = async (userId: string): Promise<void> => {
+    try {
+        const userDocRef = doc(db, USERS_COLLECTION, userId);
+        await setDoc(userDocRef, { hasSeenWelcome: true }, { merge: true });
+        console.log(`[USER] Marked user ${userId} as welcomed`);
+    } catch (error) {
+        console.error('Error marking user as welcomed:', error);
         throw error;
     }
 };

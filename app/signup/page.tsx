@@ -1,23 +1,30 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Button, TextField, Typography, Alert, Grid, Paper } from '@mui/material';
+import { Box, TextField, Typography, Alert, Grid, Paper } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { signInWithCustomToken, sendEmailVerification } from 'firebase/auth'; // Changed import
 import { auth } from '@/lib/firebase';
 import AnimatedButton from '@/components/ui/AnimatedButton';
 import ScrollReveal from '@/components/animation/ScrollReveal';
 import QrCodeScannerIcon from '@mui/icons-material/QrCodeScanner';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { GoogleReCaptchaProvider, useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import { registerUser } from '@/app/actions';
 
-export default function SignupPage() {
+const RECAPTCHA_SITE_KEY = '6LdVHyYsAAAAANvCa9Mq5ol8J2cV9Epewhm29Egp'; // Site Key (Client-side)
+
+function SignupContent() {
     const [loading, setLoading] = useState(false);
     const [signedUp, setSignedUp] = useState(false);
     const [error, setError] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const router = useRouter();
+
+    // reCAPTCHA Hook
+    const { executeRecaptcha } = useGoogleReCaptcha();
 
     const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -40,9 +47,36 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            await sendEmailVerification(userCredential.user);
-            setSignedUp(true);
+            if (!executeRecaptcha) {
+                console.warn('reCAPTCHA not ready');
+                setError('Security check failed. Please refresh and try again.');
+                return;
+            }
+
+            console.log("Executing reCAPTCHA...");
+            const token = await executeRecaptcha('signup');
+
+            console.log("Calling Server Action...");
+            const result = await registerUser(data, token);
+
+            if (!result.success) {
+                throw new Error(result.error || 'Registration failed.');
+            }
+
+            if (result.token) {
+                console.log("Signing in with custom token...");
+                await signInWithCustomToken(auth, result.token);
+
+                // Optional: Send verification email if needed
+                // Note: User created via Admin SDK defaults to emailVerified: false
+                // But current user is now signed in as that user.
+                if (auth.currentUser) {
+                    await sendEmailVerification(auth.currentUser);
+                }
+
+                setSignedUp(true);
+            }
+
         } catch (err: any) {
             console.error('Signup error:', err);
             setError(err.message || 'Failed to create account.');
@@ -180,5 +214,13 @@ export default function SignupPage() {
                 </ScrollReveal>
             </Grid>
         </Grid>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <GoogleReCaptchaProvider reCaptchaKey={RECAPTCHA_SITE_KEY}>
+            <SignupContent />
+        </GoogleReCaptchaProvider>
     );
 }

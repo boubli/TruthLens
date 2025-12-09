@@ -61,8 +61,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
     const pathname = usePathname();
 
-    // Listen to System Settings (Maintenance Mode + Tier Config)
+    // Listen to System Settings (Maintenance Mode + Tier Config) - Only when authenticated
     useEffect(() => {
+        if (!user) {
+            // Reset to defaults or keep clean state when logged out
+            setMaintenanceMode(false);
+            setBetaMode(false);
+            setTierConfig(null);
+            return;
+        }
+
         const unsubscribe = subscribeToSystemSettings((settings) => {
             setMaintenanceMode(settings.maintenanceMode);
             setBetaMode(settings.betaAccess);
@@ -71,7 +79,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         });
         return () => unsubscribe();
-    }, []);
+    }, [user]);
 
     // Maintenance Mode & Admin Strict Isolation Guard
     useEffect(() => {

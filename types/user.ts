@@ -31,6 +31,7 @@ export interface UserProfile {
     subscription: UserSubscription;
     dietaryPreferences: DietaryPreferences;
     createdAt: Date;
+    hasSeenWelcome?: boolean;
 }
 
 // Default values for new users

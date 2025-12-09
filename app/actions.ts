@@ -196,3 +196,67 @@ export const getProductAction = async (barcode: string): Promise<EnhancedProduct
         return null;
     }
 };
+
+// --- RECAPTCHA & REGISTRATION ---
+import { adminAuth } from '@/lib/firebaseAdmin';
+
+const RECAPTCHA_SECRET_KEY = '6LdVHyYsAAAAABg-NpLOqHMmagmwoBbAgNkpYKJD'; // Secret Key (Server-side)
+
+interface RegisterResponse {
+    success: boolean;
+    token?: string; // Custom Firebase Token
+    error?: string;
+}
+
+export async function registerUser(formData: FormData, token: string): Promise<RegisterResponse> {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    if (!email || !password || !token) {
+        return { success: false, error: 'Missing required fields.' };
+    }
+
+    try {
+        // 1. Verify reCAPTCHA
+        const verificationUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${RECAPTCHA_SECRET_KEY}&response=${token}`;
+        const recaptchaRes = await axios.post(verificationUrl);
+
+        const { success, score } = recaptchaRes.data;
+
+        console.log('reCAPTCHA Verification:', { success, score, email });
+
+        if (!success || (score && score < 0.5)) {
+            console.warn('Blocked suspicious signup request:', email, score);
+            return { success: false, error: 'Registration blocked. Suspicious activity detected.' };
+        }
+
+        // 2. Create User in Firebase Admin
+        if (!adminAuth) {
+            console.error('Firebase Admin SDK not initialized.');
+            return { success: false, error: 'Internal server error.' };
+        }
+
+        const userRecord = await adminAuth.createUser({
+            email,
+            password,
+            emailVerified: false,
+            disabled: false,
+        });
+
+        // 3. Create Custom Token for immediate login
+        const customToken = await adminAuth.createCustomToken(userRecord.uid);
+
+        return { success: true, token: customToken };
+
+    } catch (error: any) {
+        console.error('Registration Error:', error);
+        // Map Firebase errors to user-friendly messages
+        if (error.code === 'auth/email-already-exists') {
+            return { success: false, error: 'Email is already in use.' };
+        }
+        if (error.code === 'auth/invalid-password') {
+            return { success: false, error: 'Password is too weak.' };
+        }
+        return { success: false, error: error.message || 'Failed to create account.' };
+    }
+}
