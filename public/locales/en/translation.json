@@ -1,0 +1,10 @@
+{
+    "welcome_title": "Welcome back",
+    "profile_settings_title": "Profile Settings",
+    "language_selection_label": "Select your preferred language",
+    "save_button": "Save Changes",
+    "current_language_label": "Current Language",
+    "language_updated_success": "Language updated successfully",
+    "error_saving_data": "Error saving data",
+    "home_feed_placeholder": "Your feed is empty"
+}

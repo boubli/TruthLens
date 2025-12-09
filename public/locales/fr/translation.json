@@ -1,0 +1,10 @@
+{
+    "welcome_title": "Bon retour",
+    "profile_settings_title": "Paramètres du profil",
+    "language_selection_label": "Sélectionnez votre langue préférée",
+    "save_button": "Enregistrer les modifications",
+    "current_language_label": "Langue actuelle",
+    "language_updated_success": "Langue mise à jour avec succès",
+    "error_saving_data": "Erreur lors de l'enregistrement",
+    "home_feed_placeholder": "Votre fil est vide"
+}

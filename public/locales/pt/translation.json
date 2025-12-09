@@ -1,0 +1,10 @@
+{
+    "welcome_title": "Bem-vindo de volta",
+    "profile_settings_title": "Configurações de perfil",
+    "language_selection_label": "Selecione seu idioma preferido",
+    "save_button": "Salvar alterações",
+    "current_language_label": "Idioma atual",
+    "language_updated_success": "Idioma atualizado com sucesso",
+    "error_saving_data": "Erro ao salvar dados",
+    "home_feed_placeholder": "Seu feed está vazio"
+}

@@ -76,6 +76,7 @@ export const getUserProfile = async (userId: string, email: string, displayName:
                     autoRenew: data.subscription?.autoRenew || false,
                 },
                 dietaryPreferences: data.dietaryPreferences || DEFAULT_DIETARY_PREFERENCES,
+                preferences: data.preferences, // Map preferences
                 createdAt: data.createdAt?.toDate() || new Date(),
                 hasSeenWelcome: data.hasSeenWelcome || false,
             };
@@ -89,6 +90,7 @@ export const getUserProfile = async (userId: string, email: string, displayName:
             photoURL,
             subscription: DEFAULT_SUBSCRIPTION,
             dietaryPreferences: DEFAULT_DIETARY_PREFERENCES,
+            preferences: { language: 'en' }, // Default language
             createdAt: new Date(),
         };
 
@@ -98,6 +100,7 @@ export const getUserProfile = async (userId: string, email: string, displayName:
             photoURL,
             subscription: DEFAULT_SUBSCRIPTION,
             dietaryPreferences: DEFAULT_DIETARY_PREFERENCES,
+            preferences: { language: 'en' }, // Persist default
             createdAt: serverTimestamp(),
         });
 

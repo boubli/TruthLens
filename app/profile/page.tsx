@@ -27,8 +27,11 @@ import ThemeSelector from '@/components/theme/ThemeSelector';
 import DietaryPreferencesSection from '@/components/user/DietaryPreferencesSection';
 import TierBadge from '@/components/subscription/TierBadge';
 import ApiKeyManager from '@/components/settings/ApiKeyManager';
+import LanguageSelector from '@/components/profile/LanguageSelector';
+import { useTranslation } from 'react-i18next';
 
 export default function ProfilePage() {
+    const { t } = useTranslation();
     const { user, userProfile, loading, logout, isPro, isFree, tier, refreshProfile, dietaryPreferences } = useAuth();
     const router = useRouter();
     const [savingPreferences, setSavingPreferences] = useState(false);
@@ -176,7 +179,7 @@ export default function ProfilePage() {
 
                         <Grid container spacing={4}>
                             <Grid size={{ xs: 12, md: 12 }}>
-                                <Typography variant="h6" gutterBottom fontWeight="bold">Account Settings</Typography>
+                                <Typography variant="h6" gutterBottom fontWeight="bold">{t('profile_settings_title')}</Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     <AnimatedButton
                                         variant="outlined"
@@ -214,10 +217,11 @@ export default function ProfilePage() {
                     </Paper>
                 </ScrollReveal>
 
-                {/* Appearance Section - Theme Settings */}
+                {/* Appearance Section - Theme Settings + Language */}
                 <ScrollReveal>
                     <Box sx={{ mt: 4 }}>
                         <ThemeSelector />
+                        <LanguageSelector />
                     </Box>
                 </ScrollReveal>
 

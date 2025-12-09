@@ -22,6 +22,10 @@ export interface DietaryPreferences {
     healthGoals: string[];      // e.g., ["High Protein", "Hair Growth"]
 }
 
+export interface UserPreferences {
+    language?: string;
+}
+
 export interface UserProfile {
     uid: string;
     email: string;
@@ -30,6 +34,7 @@ export interface UserProfile {
     role?: 'admin' | 'user';
     subscription: UserSubscription;
     dietaryPreferences: DietaryPreferences;
+    preferences?: UserPreferences;
     createdAt: Date;
     hasSeenWelcome?: boolean;
 }
