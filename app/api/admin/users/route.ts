@@ -27,20 +27,20 @@ export async function GET(req: NextRequest) {
             // Get Firestore Profile for additional data (like custom roles stored in DB vs Claims)
             // But usually Custom Claims 'role' is best.
             // Let's check Firestore 'users' collection too.
-            let role = 'user';
+            let role = (userRecord.customClaims?.role as string) || 'user';
             let tier = 'free';
 
-            // Try Custom Claims first
-            if (userRecord.customClaims?.role) {
-                role = userRecord.customClaims.role as string;
-            } else {
-                // Fallback: Check Firestore
-                const docSnap = await adminDb!.collection('users').doc(userRecord.uid).get();
-                if (docSnap.exists) {
-                    const data = docSnap.data();
+            const docSnap = await adminDb!.collection('users').doc(userRecord.uid).get();
+            if (docSnap.exists) {
+                const data = docSnap.data();
+                // Prioritize Firestore role if claims are missing, or use as secondary source
+                if (!userRecord.customClaims?.role) {
                     role = data?.role || 'user';
-                    tier = data?.subscription?.tier || 'free';
                 }
+
+                // Get tier from various possible locations for robustness
+                // Check subscription.tier first (new standard), then root tier (legacy?)
+                tier = data?.subscription?.tier || data?.tier || 'free';
             }
 
             return {

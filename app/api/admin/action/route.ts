@@ -58,11 +58,13 @@ export async function POST(req: NextRequest) {
             case 'updateTier':
                 // Update Firestore Subscription Tier
                 if (!data?.tier) return NextResponse.json({ error: 'Missing tier' }, { status: 400 });
-                // We update the nested 'subscription.tier' field
-                await adminDb.collection('users').doc(userId).update({
-                    'subscription.tier': data.tier,
-                    'subscription.updatedAt': new Date()
-                });
+                // We update (merge) the nested 'subscription' field to avoid errors if it doesn't exist
+                await adminDb.collection('users').doc(userId).set({
+                    subscription: {
+                        tier: data.tier,
+                        updatedAt: new Date()
+                    }
+                }, { merge: true });
 
                 // Optional: Set custom claim for tier if you want super-fast access without DB lookup
                 // const currentClaims = (await adminAuth.getUser(userId)).customClaims || {};
