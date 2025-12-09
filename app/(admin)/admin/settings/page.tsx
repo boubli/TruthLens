@@ -28,6 +28,8 @@ import { getSystemSettings, updateSystemSettings } from '@/services/systemServic
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import ThemeSelector from '@/components/theme/ThemeSelector';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function AdminSettingsPage() {
     const { userProfile, loading: authLoading } = useAuth();
@@ -42,7 +44,14 @@ export default function AdminSettingsPage() {
     const [maintenanceMode, setMaintenanceMode] = useState(false);
     const [betaMode, setBetaMode] = useState(false);
 
-    // API Keys
+    // Secure API Keys (stored in _system_secrets - backend only access)
+    const [secureKeys, setSecureKeys] = useState({
+        groq: '',
+        gemini: ''
+    });
+    const [savingSecure, setSavingSecure] = useState(false);
+
+    // Other API Keys (stored in system/settings - public access)
 
     const [apiKeys, setApiKeys] = useState({
         gemini: '',
@@ -131,6 +140,27 @@ export default function AdminSettingsPage() {
 
     const handleChange = (key: string, value: string) => {
         setApiKeys(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleSaveSecureKeys = async () => {
+        if (!userProfile?.email) return;
+        setSavingSecure(true);
+        try {
+            await setDoc(doc(db, '_system_secrets', 'ai_config'), {
+                groq: secureKeys.groq,
+                gemini: secureKeys.gemini,
+                updatedAt: new Date().toISOString(),
+                updatedBy: userProfile.email
+            }, { merge: true });
+
+            setMsg({ type: 'success', text: '🔐 Secure AI keys updated! Server actions will now use these keys.' });
+            setSecureKeys({ groq: '', gemini: '' }); // Clear for security
+        } catch (error: any) {
+            console.error('Failed to save secure keys:', error);
+            setMsg({ type: 'error', text: 'Failed to save secure keys. Ensure you have Admin privileges.' });
+        } finally {
+            setSavingSecure(false);
+        }
     };
 
     if (loading || authLoading) {
@@ -266,8 +296,73 @@ export default function AdminSettingsPage() {
 
                 <Divider sx={{ my: 4 }} />
 
+                {/* Secure API Keys Section (For Server-Side Only) */}
+                <Box sx={{ mb: 4, p: 3, bgcolor: 'rgba(76, 175, 80, 0.05)', borderRadius: 2, border: '2px solid rgba(76, 175, 80, 0.3)' }}>
+                    <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: 'success.main' }}>
+                        🔐 Secure AI Keys (Server-Side Vault)
+                    </Typography>
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                        <strong>High Security:</strong> These keys are stored in a protected Firestore collection that is <strong>inaccessible to client-side code</strong>.
+                        Only Server Actions can read them. Use for production-critical keys (Groq, Gemini).
+                    </Alert>
+
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <TextField
+                            label="🚀 Groq API Key (Server-Side)"
+                            fullWidth
+                            type={showKeys['secure_groq'] ? 'text' : 'password'}
+                            value={secureKeys.groq}
+                            onChange={(e) => setSecureKeys(prev => ({ ...prev, groq: e.target.value }))}
+                            placeholder="gsk_..."
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton onClick={() => toggleShow('secure_groq')} edge="end">
+                                            {showKeys['secure_groq'] ? <VisibilityOff /> : <Visibility />}
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            }}
+                            helperText="For security, existing keys are never shown. Enter new key to update."
+                        />
+
+                        <TextField
+                            label="🤖 Gemini API Key (Server-Side)"
+                            fullWidth
+                            type={showKeys['secure_gemini'] ? 'text' : 'password'}
+                            value={secureKeys.gemini}
+                            onChange={(e) => setSecureKeys(prev => ({ ...prev, gemini: e.target.value }))}
+                            placeholder="AIza..."
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton onClick={() => toggleShow('secure_gemini')} edge="end">
+                                            {showKeys['secure_gemini'] ? <VisibilityOff /> : <Visibility />}
+                                        </IconButton>
+                                    </InputAdornment>
+                                ),
+                            }}
+                            helperText="For security, existing keys are never shown. Enter new key to update."
+                        />
+
+                        <Button
+                            variant="contained"
+                            color="success"
+                            size="large"
+                            startIcon={savingSecure ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
+                            onClick={handleSaveSecureKeys}
+                            disabled={savingSecure || (!secureKeys.groq && !secureKeys.gemini)}
+                            sx={{ alignSelf: 'flex-start' }}
+                        >
+                            {savingSecure ? 'Securing...' : '🔐 Update Secure Keys'}
+                        </Button>
+                    </Box>
+                </Box>
+
+                <Divider sx={{ my: 4 }} />
+
                 <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <KeyIcon color="primary" /> API Key Configuration
+                    <KeyIcon color="primary" /> Legacy API Keys (Public Collection)
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
                     Manage dynamic API keys for the AI Swarm. Keys entered here will override the environment variables.
