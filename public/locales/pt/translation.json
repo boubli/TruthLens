@@ -151,5 +151,14 @@
     "type_your_answer": "Digite sua resposta...",
     "placeholder_add_allergens": "Adicionar alérgenos (ex. Amendoim)",
     "placeholder_add_ingredients": "Adicionar ingredientes (ex. Óleo de Palma)",
-    "placeholder_select_type": "Selecionar ou digitar (ex. Rica em Proteína)"
+    "placeholder_select_type": "Selecione ou digite (ex: Rico em proteínas)",
+    "scan_back_home": "Voltar ao início",
+    "scan_page_title": "Escanear produto",
+    "scan_page_instruction": "Centralize o código de barras",
+    "scan_limit_reached_title": "Limite diário atingido",
+    "scan_limit_reached_desc": "Atualize para Pro para varreduras ilimitadas e análise avançada de IA.",
+    "scan_upgrade_now": "Atualizar agora",
+    "scan_trouble_scanning": "Problemas ao escanear?",
+    "scan_simulate_button": "Simular escaneamento (Nutella)",
+    "scan_processing_message": "Processando código..."
 }

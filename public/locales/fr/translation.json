@@ -151,5 +151,14 @@
     "type_your_answer": "Tapez votre réponse...",
     "placeholder_add_allergens": "Ajouter allergènes (ex. Arachides)",
     "placeholder_add_ingredients": "Ajouter ingrédients (ex. Huile de Palme)",
-    "placeholder_select_type": "Sélectionner ou taper (ex. Riche en Protéines)"
+    "placeholder_select_type": "Sélectionnez ou tapez (ex: Riche en protéines)",
+    "scan_back_home": "Retour à l'accueil",
+    "scan_page_title": "Scanner un produit",
+    "scan_page_instruction": "Centrez le code-barres",
+    "scan_limit_reached_title": "Limite quotidienne atteinte",
+    "scan_limit_reached_desc": "Passez à Pro pour des scans illimités et une analyse IA avancée.",
+    "scan_upgrade_now": "Mettre à niveau",
+    "scan_trouble_scanning": "Problème de scan ?",
+    "scan_simulate_button": "Simuler un scan (Nutella)",
+    "scan_processing_message": "Traitement du code..."
 }

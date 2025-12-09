@@ -151,5 +151,14 @@
     "type_your_answer": "Type your answer...",
     "placeholder_add_allergens": "Add allergens (e.g. Peanuts)",
     "placeholder_add_ingredients": "Add ingredients (e.g. Palm Oil)",
-    "placeholder_select_type": "Select or type (e.g. High Protein)"
+    "placeholder_select_type": "Select or type (e.g. High Protein)",
+    "scan_back_home": "Back to Home",
+    "scan_page_title": "Scan Product",
+    "scan_page_instruction": "Center the barcode in the viewfinder",
+    "scan_limit_reached_title": "Daily Limit Reached",
+    "scan_limit_reached_desc": "Upgrade to Pro for unlimited scans and advanced AI analysis.",
+    "scan_upgrade_now": "Upgrade Now",
+    "scan_trouble_scanning": "Trouble scanning?",
+    "scan_simulate_button": "Simulate Scan (Nutella)",
+    "scan_processing_message": "Processing barcode..."
 }

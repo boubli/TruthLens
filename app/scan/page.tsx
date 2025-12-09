@@ -14,6 +14,7 @@ import StarIcon from '@mui/icons-material/Star';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import Link from 'next/link';
 import { getProductAction } from '@/app/actions';
+import { useTranslation } from 'react-i18next';
 
 // Dynamically import QrScanner
 const QrScanner = dynamic(() => import('react-qr-scanner'), {
@@ -22,6 +23,7 @@ const QrScanner = dynamic(() => import('react-qr-scanner'), {
 });
 
 export default function ScanPage() {
+    const { t } = useTranslation();
     const [loading, setLoading] = useState(false);
     const [initializing, setInitializing] = useState(true);
     const [scanAllowed, setScanAllowed] = useState(true);
@@ -97,16 +99,16 @@ export default function ScanPage() {
                         onClick={() => router.push('/')}
                         sx={{ color: 'text.secondary' }}
                     >
-                        Back to Home
+                        {t('scan_back_home')}
                     </AnimatedButton>
                 </Box>
 
                 <Box sx={{ mb: 4 }}>
                     <Typography variant="h4" fontWeight="bold" gutterBottom>
-                        Scan Product
+                        {t('scan_page_title')}
                     </Typography>
                     <Typography variant="body1" color="text.secondary">
-                        Center the barcode in the viewfinder
+                        {t('scan_page_instruction')}
                     </Typography>
 
                     {!isPro && remainingScans !== null && (
@@ -134,7 +136,7 @@ export default function ScanPage() {
                     }}
                 >
                     {loading ? (
-                        <LoadingSpinner message="Processing barcode..." />
+                        <LoadingSpinner message={t('scan_processing_message')} />
                     ) : !scanAllowed ? (
                         <Box sx={{
                             height: 320,
@@ -147,9 +149,9 @@ export default function ScanPage() {
                             background: 'linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%)'
                         }}>
                             <StarIcon sx={{ fontSize: 60, color: '#FCD34D', mb: 2 }} />
-                            <Typography variant="h6" gutterBottom>Daily Limit Reached</Typography>
+                            <Typography variant="h6" gutterBottom>{t('scan_limit_reached_title')}</Typography>
                             <Typography variant="body2" sx={{ opacity: 0.7, mb: 3 }}>
-                                Upgrade to Pro for unlimited scans and advanced AI analysis.
+                                {t('scan_limit_reached_desc')}
                             </Typography>
                             <AnimatedButton
                                 variant="contained"
@@ -157,7 +159,7 @@ export default function ScanPage() {
                                 component={Link}
                                 href="/upgrade"
                             >
-                                Upgrade Now
+                                {t('scan_upgrade_now')}
                             </AnimatedButton>
                         </Box>
                     ) : (
@@ -213,14 +215,14 @@ export default function ScanPage() {
                 </Paper>
 
                 <Box sx={{ mt: 4 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>Trouble scanning?</Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>{t('scan_trouble_scanning')}</Typography>
                     <AnimatedButton
                         variant="text"
                         color="warning"
                         onClick={() => handleScan('3017620422003')}
                         disabled={loading || !scanAllowed}
                     >
-                        Simulate Scan (Nutella)
+                        {t('scan_simulate_button')}
                     </AnimatedButton>
                 </Box>
             </Container>

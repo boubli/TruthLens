@@ -151,5 +151,14 @@
     "type_your_answer": "Ktb jawb dyalek...",
     "placeholder_add_allergens": "Zid hassasiya (mtlaan: Kawkw)",
     "placeholder_add_ingredients": "Zid mokonat (mtlaan: Zit Nakhil)",
-    "placeholder_select_type": "Khtar wla ktb (mtlaan: Protein 3ali)"
+    "placeholder_select_type": "Khtar wla ktb (mtlaan: Protein 3ali)",
+    "scan_back_home": "Rje3 Ldar",
+    "scan_page_title": "Scani Produit",
+    "scan_page_instruction": "Dir l code barre f lwasst",
+    "scan_limit_reached_title": "Salaw lik scans lyum",
+    "scan_limit_reached_desc": "Dir Pro bach tscani bla hdoud w tstafd mn tahlil AI dki.",
+    "scan_upgrade_now": "Dir Pro Daba",
+    "scan_trouble_scanning": "Mabghach itscana?",
+    "scan_simulate_button": "Jarreb Scan (Nutella)",
+    "scan_processing_message": "Kayqra l code..."
 }
