@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: 'TruthLens',
     description: 'AI-powered product analysis and recommendations',
-    manifest: '/manifest.webmanifest', // Next.js automatically serves manifest.ts here
+    // manifest: '/manifest.webmanifest', // Next.js automatically adds this for app/manifest.ts
     icons: {
       icon: branding.faviconUrl || '/favicon.ico',
       apple: branding.appleTouchIconUrl || '/apple-touch-icon.png',
