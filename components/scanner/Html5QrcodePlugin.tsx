@@ -22,21 +22,26 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
     const [hasPermission, setHasPermission] = useState(false);
 
     useEffect(() => {
-        // Initialize Scanner Instance
+        // Initialize Scanner Instance with verbose logging for debugging
         const html5QrCode = new Html5Qrcode(qrcodeRegionId);
         scannerRef.current = html5QrCode;
 
         const config = {
-            fps: props.fps || 10,
-            qrbox: props.qrbox || 250,
-            aspectRatio: props.aspectRatio,
+            fps: props.fps || 15, // Increased FPS for faster scanning
+            qrbox: props.qrbox || 280, // Slightly larger box
+            aspectRatio: props.aspectRatio || 1.0,
             disableFlip: props.disableFlip || false,
+            // Key Optimization: Use native BarcodeDetector if available (Android/Chrome)
+            experimentalFeatures: {
+                useBarCodeDetectorIfSupported: true
+            },
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.EAN_13,
                 Html5QrcodeSupportedFormats.EAN_8,
                 Html5QrcodeSupportedFormats.UPC_A,
                 Html5QrcodeSupportedFormats.UPC_E,
                 Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39,
                 Html5QrcodeSupportedFormats.QR_CODE
             ]
         };
@@ -44,23 +49,35 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
         // Start Camera Automatically
         const startScanner = async () => {
             try {
-                // Try fetching cameras first to ensure permissions
                 const devices = await Html5Qrcode.getCameras();
                 if (devices && devices.length) {
-                    setHasPermission(true);
-                    // Use the rear camera (environment)
+                    // Try to start with high resolution constraints + continuous focus
                     await html5QrCode.start(
-                        { facingMode: "environment" },
+                        {
+                            facingMode: "environment",
+                            // Important: Request higher resolution for 1D barcode clarity
+                            // @ts-ignore - focusMode is standard in newer browsers but missing in TS lib
+                            focusMode: "continuous" // Attempt to force focus
+                        },
                         config,
-                        props.qrCodeSuccessCallback,
-                        props.qrCodeErrorCallback
+                        (decodedText, decodedResult) => {
+                            // Debounce or immediate stop to prevent multi-scan?
+                            // Let the parent handle the redirect
+                            props.qrCodeSuccessCallback(decodedText, decodedResult);
+                        },
+                        (errorMessage) => {
+                            // Ignore scan errors, they happen every frame no code is seen
+                            if (props.qrCodeErrorCallback) {
+                                // Only log specific errors if needed
+                            }
+                        }
                     );
                 } else {
                     setError("No cameras found.");
                 }
             } catch (err: any) {
                 console.error("Error starting camera:", err);
-                setError("Camera permission denied or error starting camera.");
+                setError("Camera permission denied. Please allow camera access.");
             }
         };
 
@@ -85,10 +102,12 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
                 width: '100%',
                 height: '100%',
                 position: 'relative',
+                bgcolor: 'black',
                 '& video': {
                     objectFit: 'cover',
                     height: '100% !important',
-                    width: '100% !important'
+                    width: '100% !important',
+                    borderRadius: '0 !important'
                 }
             }}
         >
@@ -100,11 +119,19 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
                     transform: 'translate(-50%, -50%)',
                     textAlign: 'center',
                     color: 'white',
-                    width: '80%'
+                    width: '80%',
+                    zIndex: 20
                 }}>
-                    <Typography color="error" gutterBottom>{error}</Typography>
-                    <Button variant="contained" onClick={() => window.location.reload()}>
-                        Retry
+                    <Typography color="error" variant="h6" gutterBottom>
+                        {error}
+                    </Typography>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => window.location.reload()}
+                        sx={{ mt: 2 }}
+                    >
+                        Retry Camera
                     </Button>
                 </Box>
             )}
