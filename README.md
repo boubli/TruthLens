@@ -1,60 +1,103 @@
-# TruthLens 🔍🥗
 
-**TruthLens** is an advanced AI-powered nutrition assistant that helps you "see the truth" behind the food you eat. 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Food/Green%20Salad.png" alt="TruthLens Logo" width="120" />
+</p>
 
-Built as a modern Progressive Web App (PWA), it combines the power of **Google Gemini** and **Groq (Llama 3)** to instantly analyze food products, decode complex ingredient lists, and provide personalized health insights based on your specific dietary needs.
+<h1 align="center">TruthLens 🔍🥗</h1>
+
+<p align="center">
+  <strong>The Ultimate AI-Powered Nutrition Assistant</strong>
+</p>
+
+<p align="center">
+  <a href="https://truth-lens-plum.vercel.app/">
+    <img src="https://img.shields.io/badge/🚀_Live_Demo-TruthLens-blue?style=for-the-badge&logo=vercel" alt="Live Demo" />
+  </a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js" alt="Next.js" />
+  <img src="https://img.shields.io/badge/TypeScript-Ready-blue?style=flat-square&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Firebase-Powered-orange?style=flat-square&logo=firebase" alt="Firebase" />
+  <img src="https://img.shields.io/badge/AI-Groq_%7C_Gemini_%7C_Ollama-purple?style=flat-square&logo=openai" alt="AI Powered" />
+  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
+</p>
+
+---
+
+**TruthLens** isn't just a calorie counter. It's an intelligent nutrition companion that helps you "see the truth" behind the food you eat.
+
+Built as a modern **Progressive Web App (PWA)**, it combines the power of cloud AI (Groq, Gemini) with self-hosted privacy (Ollama, SearXNG) to instantly analyze products, decode ingredients, and generate personalized health quests.
 
 ## 🌟 Key Features
 
 ### 🥗 Smart Food Analysis
-*   **Instant Grading**: Our proprietary **Smart Grade** algorithm evaluates products on a scale from **A (Excellent)** to **E (Avoid)** based on ingredients, processing levels, and nutritional value.
-*   **Ingredient Decoder**: Instantly identifies harmful additives, allergens, and hidden sugars in any product.
-*   **Barcode Scanning**: Quick access to millions of products via camera scan.
+*   **🔎 Instant Grading**: Our proprietary **Smart Grade** algorithm evaluates products from **A (Excellent)** to **E (Avoid)** based on ingredients, processing, and nutrition.
+*   **🧪 Ingredient Decoder**: Instantly identifies harmful additives, allergens, and hidden sugars.
+*   **📷 Barcode Scanning**: Access millions of products via camera scan.
 
-### 🤖 Advanced AI Integration
-*   **AI Swarm Architecture**: Races multiple AI providers simultaneously for the fastest response.
-*   **Self-Hosted LLM**: Own Ollama instance running TinyLlama - completely free and unlimited!
-*   **Cloud AI Fallback**: Leverages **Groq** (Llama 3.3), **Gemini 1.5**, **DeepSeek**, and more.
-*   **Context-Aware Chat**: Specialized `/ai-chat` for real-time nutrition advice and meal planning.
-*   **Dynamic Greetings**: Smart home screen with context-aware, witty messages depending on the time of day.
-
-### 🏠 Self-Hosted Infrastructure
-TruthLens runs its own AI infrastructure for **zero API costs** and **unlimited usage**:
-
-| Service | Purpose | Model/Engine |
-|---------|---------|--------------|
-| **Ollama** | LLM Inference | TinyLlama 1.1B (CPU-optimized) |
-| **SearXNG** | Web Search | Metasearch (Brave, Startpage, DuckDuckGo) |
-
-*   🔒 **No API Rate Limits**: Self-hosted means unlimited requests
-*   💰 **Zero Recurring Costs**: No per-token billing from OpenAI/Anthropic
-*   🚀 **Configurable**: Change URLs in Admin Dashboard → Settings
+### 🤖 "AI Swarm" Intelligence
+TruthLens uses a unique **AI Swarm** architecture to race multiple AI providers for the fastest, most accurate response:
+*   **Self-Hosted First**: Prioritizes your own **Ollama** instance (TinyLlama) for free, private inference.
+*   **Cloud Fallback**: Seamlessly switches to **Groq (Llama 3)** or **Gemini 1.5** for complex reasoning.
+*   **Context-Aware**: The `/ai-chat` remembers your dietary preferences and health goals.
 
 ### 💎 Flexible & Lifetime Access
-*   **Fair Pricing**: We offer both Monthly subscriptions and a unique **Lifetime Deal** for permanent access.
+*   **Fair Pricing**: Monthly subscriptions or a unique **Lifetime Deal**.
 *   **Tiered Features**:
-    *   **Explorer (Free)**: Basic scanning and manual entry.
-    *   **Pro**: Unlimited scans, detailed AI analysis, and Priority Support.
-    *   **Ultimate**: All Pro features + Exclusive "Global Search" and Beta access.
+    *   **Explorer (Free)**: Basic scanning.
+    *   **Pro**: Unlimited AI analysis, Priority Support.
+    *   **Ultimate**: Global Search + Beta Access.
 
 ### 🛠️ Powerful Admin Dashboard
-*   **Full Control**: A dedicated Admin Interface to manage Users, Subscription Tiers, and App Configurations in real-time.
-*   **Dynamic Logic**: Toggle features, enable maintenance mode, or adjust pricing instantly without redeploying.
-*   **Self-Hosted Config**: Configure Ollama and SearXNG URLs directly from the UI.
+*   **Control Center**: Manage users, subscriptions, and app config in real-time.
+*   **Dynamic Logic**: Toggle maintenance mode or adjust pricing without redeploying.
+*   **Infrastructure Config**: Configure your self-hosted AI endpoints directly from the UI.
 
-## 🚀 Technical Stack
+## 🏠 Self-Hosted Infrastructure
 
-Built with cutting-edge web technologies for performance and scale:
+TruthLens is designed to run its own AI infrastructure for **zero API costs** and **unlimited usage**.
 
-*   **Frontend**: Next.js 14 (App Router), TypeScript, Material UI (MUI).
-*   **Backend & Auth**: Firebase (Firestore, Authentication, Security Rules).
-*   **AI Services**: 
-    *   Self-hosted: Ollama (TinyLlama)
-    *   Cloud: Groq SDK, Google Generative AI SDK (Gemini), DeepSeek, Cerebras, SambaNova
-*   **Search**: Self-hosted SearXNG (replaces paid SerpAPI)
-*   **State Management**: React Context + Hooks.
-*   **Animations**: Framer Motion for buttery smooth UI transitions.
-*   **Styling**: Responsive Design supporting dark/light modes and mobile-first layouts.
+| Service | Purpose | Model/Engine | Status |
+|---------|---------|--------------|--------|
+| **Ollama** | LLM Inference | `tinyllama` (1.1B) | ✅ Integrated |
+| **SearXNG** | Web Search | Metasearch | ✅ Integrated |
+
+*   🔒 **Privacy First**: Your queries stay on your server when using self-hosted models.
+*   💰 **Zero Recurring Costs**: No per-token billing.
+*   🚀 **Configurable**: Update URLs in `Admin > Settings`.
+
+## 💻 Developer API Guide
+
+TruthLens exposes a modular service architecture. Here's how to interact with the core systems:
+
+### 1. AI Service (`services/aiService.ts`)
+The central hub for all intelligence.
+```typescript
+import { getSwarmResponse } from '@/services/aiService';
+
+// Races Ollama, Groq, and Gemini to answer
+const response = await getSwarmResponse("Is Red Dye 40 bad for kids?");
+```
+
+### 2. Product Search (`app/actions.ts`)
+Unified interface for OpenFoodFacts + External Search.
+```typescript
+import { getProductAction } from '@/app/actions';
+
+// Fetches from DB or scrapes web via SearXNG
+const product = await getProductAction("barcode_or_name");
+```
+
+### 3. System Config (`services/systemService.ts`)
+Dynamic configuration engine backed by Firestore.
+```typescript
+import { getSystemSettings } from '@/services/systemService';
+
+// Get dynamic API keys (including self-hosted URLs)
+const settings = await getSystemSettings();
+console.log(settings.apiKeys.ollamaUrl);
+```
 
 ## 🛠️ Getting Started
 
@@ -70,7 +113,7 @@ Built with cutting-edge web technologies for performance and scale:
     ```
 
 3.  **Environment Setup**:
-    Create a `.env.local` file with your keys:
+    Create `.env.local`:
     ```env
     NEXT_PUBLIC_FIREBASE_API_KEY=...
     NEXT_PUBLIC_GEMINI_API_KEY=...
@@ -87,4 +130,6 @@ Built with cutting-edge web technologies for performance and scale:
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-*Empowering healthier choices, one scan at a time.*
+<p align="center">
+  <em>Empowering healthier choices, one scan at a time.</em>
+</p>
