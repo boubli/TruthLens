@@ -22,6 +22,7 @@ export interface AIChatError {
 export interface UserApiKeys {
     groq?: string;
     gemini?: string;
+    ollama?: string;
     preferredProvider?: AIProvider;
     preferredLanguage?: AILanguage;
 }
