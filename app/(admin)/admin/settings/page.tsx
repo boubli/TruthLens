@@ -60,7 +60,8 @@ export default function AdminSettingsPage() {
         deepseek: '',
         cerebras: '',
         sambanova: '',
-        serpapi: ''
+        serpapi: '',
+        searxngUrl: ''
     });
 
     const [branding, setBranding] = useState({
@@ -92,7 +93,8 @@ export default function AdminSettingsPage() {
                 deepseek: process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY || '',
                 cerebras: process.env.NEXT_PUBLIC_CEREBRAS_API_KEY || '',
                 sambanova: process.env.NEXT_PUBLIC_SAMBANOVA_API_KEY || '',
-                serpapi: process.env.NEXT_PUBLIC_SERPAPI_API_KEY || ''
+                serpapi: process.env.NEXT_PUBLIC_SERPAPI_API_KEY || '',
+                searxngUrl: ''
             };
 
             // Merge: Firebase overrides take precedence, env keys as fallback
@@ -103,7 +105,8 @@ export default function AdminSettingsPage() {
                 deepseek: settings.apiKeys?.deepseek || envKeys.deepseek,
                 cerebras: settings.apiKeys?.cerebras || envKeys.cerebras,
                 sambanova: settings.apiKeys?.sambanova || envKeys.sambanova,
-                serpapi: settings.apiKeys?.serpapi || envKeys.serpapi
+                serpapi: settings.apiKeys?.serpapi || envKeys.serpapi,
+                searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080'
             };
 
             setApiKeys(mergedKeys);
@@ -485,6 +488,25 @@ export default function AdminSettingsPage() {
                             />
                         </Box>
                     ))}
+                </Box>
+
+                {/* SearXNG Self-Hosted Search */}
+                <Box sx={{ mt: 4, p: 3, bgcolor: 'rgba(0, 200, 83, 0.05)', borderRadius: 2, border: '1px solid rgba(0, 200, 83, 0.3)' }}>
+                    <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: '#00c853' }}>
+                        🔍 SearXNG Self-Hosted Search
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Use your own SearXNG instance for unlimited, free web searches. This replaces paid SerpAPI.
+                        Make sure JSON format is enabled in your SearXNG configuration.
+                    </Typography>
+                    <TextField
+                        label="SearXNG Instance URL"
+                        fullWidth
+                        value={apiKeys.searxngUrl}
+                        onChange={(e) => handleChange('searxngUrl', e.target.value)}
+                        placeholder="http://your-server:8080"
+                        helperText="Example: http://20.199.129.203:8080"
+                    />
                 </Box>
 
                 <Divider sx={{ my: 4 }} />

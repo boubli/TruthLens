@@ -424,11 +424,26 @@ export const getSwarmRecommendations = async (historyContext: string): Promise<R
 };
 
 export const searchExternalDatabases = async (query: string): Promise<any> => {
-    if (!SERPAPI_API_KEY) return null;
+    // Import SearXNG service dynamically to avoid circular deps
+    const { searchProductInfo } = await import('./searxngService');
+
     try {
-        const trustedSites = "site:fdc.nal.usda.gov OR site:ewg.org OR site:nutritionix.com OR site:foodb.ca";
-        const searchUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(query + " " + trustedSites)}&api_key=${SERPAPI_API_KEY}`;
-        if (query) {
+        console.log(`[External Search] Searching for: ${query}`);
+
+        // Try SearXNG first (free, unlimited)
+        const searxngResult = await searchProductInfo(query);
+
+        if (searxngResult && searxngResult.description) {
+            // Synthesize the results with AI
+            const synthesisPrompt = `Synthesize product info from these search results for "${query}": ${searxngResult.description}. Return JSON keys: name, brand, nutrition_grades (A-E), description.`;
+            const synthesis = await getSwarmResponse(synthesisPrompt);
+            return JSON.parse(synthesis.replace(/```json/g, '').replace(/```/g, '').trim());
+        }
+
+        // Fallback to SerpAPI if configured and SearXNG failed
+        if (SERPAPI_API_KEY) {
+            const trustedSites = "site:fdc.nal.usda.gov OR site:ewg.org OR site:nutritionix.com OR site:foodb.ca";
+            const searchUrl = `https://serpapi.com/search.json?q=${encodeURIComponent(query + " " + trustedSites)}&api_key=${SERPAPI_API_KEY}`;
             const response = await axios.get(searchUrl);
             if (response.data.organic_results?.length > 0) {
                 const snippets = response.data.organic_results.slice(0, 3).map((r: any) => r.snippet).join("\n");
@@ -437,6 +452,7 @@ export const searchExternalDatabases = async (query: string): Promise<any> => {
                 return JSON.parse(synthesis.replace(/```json/g, '').replace(/```/g, '').trim());
             }
         }
+
         return null;
     } catch (error) {
         console.error("[External Search] Error:", error);

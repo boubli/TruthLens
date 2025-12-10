@@ -34,6 +34,7 @@ export interface ExtendedSystemSettings {
         cerebras?: string;
         sambanova?: string;
         serpapi?: string;
+        searxngUrl?: string; // Self-hosted SearXNG instance URL
     };
     tierConfig: SystemTierConfig;
     branding?: {
