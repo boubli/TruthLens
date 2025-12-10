@@ -86,6 +86,45 @@ export const chatWithOllama = async (
 };
 
 /**
+ * Chat completion using Ollama with full history (for AI Chat)
+ */
+export const chatWithOllamaMessages = async (
+    messages: { role: string; content: string }[],
+    model: string = 'tinyllama'
+): Promise<string> => {
+    try {
+        const baseUrl = await getOllamaUrl();
+
+        console.log(`[Ollama] Sending chat request to ${baseUrl} with model ${model}`);
+
+        const response = await axios.post<OllamaResponse>(
+            `${baseUrl}/api/chat`,
+            {
+                model: model,
+                messages: messages,
+                stream: false
+            },
+            {
+                timeout: 60000,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        if (response.data.message?.content) {
+            console.log(`[Ollama] Response received (${response.data.message.content.length} chars)`);
+            return response.data.message.content;
+        }
+
+        throw new Error('Empty response from Ollama');
+    } catch (error: any) {
+        console.error('[Ollama] Chat Error:', error.message);
+        throw error;
+    }
+};
+
+/**
  * Simple generate endpoint (non-chat)
  */
 export const generateWithOllama = async (

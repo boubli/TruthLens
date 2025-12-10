@@ -1,6 +1,7 @@
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { getSystemSettings } from './systemService';
+import { chatWithOllamaMessages } from './ollamaService';
 import { AIProvider, AILanguage, AIChatError, UserApiKeys, AI_LANGUAGES } from '@/types/aiChat';
 import { UserTier } from '@/types/user';
 
@@ -144,6 +145,11 @@ export const resolveApiKey = async (
         return { key: platformKey, source: 'platform' };
     }
 
+    // Azure AI (Ollama) is self-hosted and free, so it doesn't need a user key
+    if (provider === 'ollama') {
+        return { key: 'azure-internal', source: 'platform' };
+    }
+
     // Free and Plus users must use their own key
     const userKeys = await getUserApiKeys(userId);
     const userKey = userKeys[provider];
@@ -209,6 +215,8 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
     try {
         if (provider === 'groq') {
             return await callGroqAPI(key, messages);
+        } else if (provider === 'ollama') {
+            return await chatWithOllamaMessages(messages);
         } else {
             return await callGeminiAPI(key, messages);
         }
@@ -222,7 +230,7 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
         if (error?.isInvalidKey) {
             const chatError: AIChatError = {
                 code: 'INVALID_KEY',
-                message: `Your ${provider === 'groq' ? 'Groq' : 'Gemini'} API key is invalid. Please update it in Settings.`,
+                message: `Your ${provider === 'groq' ? 'Groq' : provider === 'ollama' ? 'Azure AI' : 'Gemini'} API key is invalid. Please update it in Settings.`,
                 provider
             };
             throw chatError;
@@ -237,7 +245,7 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
             error?.message?.includes('API key')) {
             const chatError: AIChatError = {
                 code: 'INVALID_KEY',
-                message: `Your ${provider === 'groq' ? 'Groq' : 'Gemini'} API key is invalid. Please update it in Settings.`,
+                message: `Your ${provider === 'groq' ? 'Groq' : provider === 'ollama' ? 'Azure AI' : 'Gemini'} API key is invalid. Please update it in Settings.`,
                 provider
             };
             throw chatError;

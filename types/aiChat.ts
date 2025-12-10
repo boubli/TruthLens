@@ -1,6 +1,6 @@
 // AI Chat types for the BYOK (Bring Your Own Key) chat feature
 
-export type AIProvider = 'groq' | 'gemini';
+export type AIProvider = 'groq' | 'gemini' | 'ollama';
 
 export type AILanguage = 'en' | 'ar' | 'fr' | 'es' | 'de' | 'zh' | 'ja' | 'ko' | 'pt' | 'ru' | 'hi' | 'it' | 'tr' | 'nl';
 
@@ -37,6 +37,11 @@ export const AI_PROVIDERS: Record<AIProvider, { name: string; color: string; ico
         name: 'Google Gemini',
         color: '#4285F4',
         icon: '✨'
+    },
+    ollama: {
+        name: 'Azure AI (Self-Hosted)',
+        color: '#0078D4',
+        icon: '☁️'
     }
 };
 
