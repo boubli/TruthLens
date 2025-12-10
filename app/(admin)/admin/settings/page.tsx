@@ -61,7 +61,8 @@ export default function AdminSettingsPage() {
         cerebras: '',
         sambanova: '',
         serpapi: '',
-        searxngUrl: ''
+        searxngUrl: '',
+        ollamaUrl: ''
     });
 
     const [branding, setBranding] = useState({
@@ -94,7 +95,8 @@ export default function AdminSettingsPage() {
                 cerebras: process.env.NEXT_PUBLIC_CEREBRAS_API_KEY || '',
                 sambanova: process.env.NEXT_PUBLIC_SAMBANOVA_API_KEY || '',
                 serpapi: process.env.NEXT_PUBLIC_SERPAPI_API_KEY || '',
-                searxngUrl: ''
+                searxngUrl: '',
+                ollamaUrl: ''
             };
 
             // Merge: Firebase overrides take precedence, env keys as fallback
@@ -106,7 +108,8 @@ export default function AdminSettingsPage() {
                 cerebras: settings.apiKeys?.cerebras || envKeys.cerebras,
                 sambanova: settings.apiKeys?.sambanova || envKeys.sambanova,
                 serpapi: settings.apiKeys?.serpapi || envKeys.serpapi,
-                searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080'
+                searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080',
+                ollamaUrl: settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434'
             };
 
             setApiKeys(mergedKeys);
@@ -506,6 +509,25 @@ export default function AdminSettingsPage() {
                         onChange={(e) => handleChange('searxngUrl', e.target.value)}
                         placeholder="http://your-server:8080"
                         helperText="Example: http://20.199.129.203:8080"
+                    />
+                </Box>
+
+                {/* Ollama Self-Hosted LLM */}
+                <Box sx={{ mt: 4, p: 3, bgcolor: 'rgba(156, 39, 176, 0.05)', borderRadius: 2, border: '1px solid rgba(156, 39, 176, 0.3)' }}>
+                    <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: '#9c27b0' }}>
+                        🤖 Ollama Self-Hosted LLM
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Use your own Ollama instance for unlimited, free AI inference. No API keys needed!
+                        Model: TinyLlama (1.1B) - lightweight and fast on CPU.
+                    </Typography>
+                    <TextField
+                        label="Ollama Instance URL"
+                        fullWidth
+                        value={apiKeys.ollamaUrl}
+                        onChange={(e) => handleChange('ollamaUrl', e.target.value)}
+                        placeholder="http://your-server:11434"
+                        helperText="Example: http://20.199.129.203:11434"
                     />
                 </Box>
 

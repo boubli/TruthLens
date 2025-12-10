@@ -157,6 +157,19 @@ const callDeepSeek = (prompt: string) => callOpenAICompatible(prompt, DEEPSEEK_A
 const callCerebras = (prompt: string) => callOpenAICompatible(prompt, CEREBRAS_API_KEY, 'cerebras', "https://api.cerebras.ai/v1", "llama3.1-70b");
 const callSambaNova = (prompt: string) => callOpenAICompatible(prompt, SAMBANOVA_API_KEY, 'sambanova', "https://api.sambanova.ai/v1", "Meta-Llama-3.1-70B-Instruct");
 
+// Self-hosted Ollama (Free, Unlimited)
+const callOllama = async (prompt: string): Promise<string> => {
+    const { chatWithOllama, checkOllamaHealth } = await import('./ollamaService');
+
+    // Check if Ollama is available
+    const isHealthy = await checkOllamaHealth();
+    if (!isHealthy) {
+        throw new Error('Ollama is not available');
+    }
+
+    return chatWithOllama(prompt, 'tinyllama');
+};
+
 const callOpenAI = async (prompt: string): Promise<string> => {
     const { apiKey } = await getOpenAIClient();
     try {
@@ -179,8 +192,9 @@ const callOpenAI = async (prompt: string): Promise<string> => {
 // --- AI Swarm Logic (Generic) ---
 
 const getSwarmResponse = async (prompt: string, trustedProviders: Array<{ name: string, fn: (p: string) => Promise<string> }> = []): Promise<string> => {
-    // Default swarm if none provided
+    // Default swarm if none provided - Ollama first (free, self-hosted)
     const allProviders = [
+        { name: 'Ollama', fn: callOllama }, // Self-hosted, free, unlimited!
         { name: 'Groq', fn: callGroq },
         { name: 'Gemini', fn: callGemini },
         { name: 'DeepSeek', fn: callDeepSeek },
@@ -194,7 +208,12 @@ const getSwarmResponse = async (prompt: string, trustedProviders: Array<{ name: 
     // Check for keys asynchronously (Env OR Dynamic)
     const activeProviders = (await Promise.all(providersToRace.map(async (p) => {
         let hasKey = false;
-        if (p.name === 'Groq') hasKey = !!(await getDynamicKey('groq', GROQ_API_KEY));
+        if (p.name === 'Ollama') {
+            // Ollama doesn't need a key, just check if it's healthy
+            const { checkOllamaHealth } = await import('./ollamaService');
+            hasKey = await checkOllamaHealth();
+        }
+        else if (p.name === 'Groq') hasKey = !!(await getDynamicKey('groq', GROQ_API_KEY));
         else if (p.name === 'Gemini') hasKey = !!(await getDynamicKey('gemini', GEMINI_API_KEY));
         else if (p.name === 'OpenAI') hasKey = !!(await getDynamicKey('openai', OPENAI_API_KEY));
         else if (p.name === 'DeepSeek') hasKey = !!(await getDynamicKey('deepseek', DEEPSEEK_API_KEY));

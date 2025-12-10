@@ -35,6 +35,7 @@ export interface ExtendedSystemSettings {
         sambanova?: string;
         serpapi?: string;
         searxngUrl?: string; // Self-hosted SearXNG instance URL
+        ollamaUrl?: string; // Self-hosted Ollama instance URL
     };
     tierConfig: SystemTierConfig;
     branding?: {
