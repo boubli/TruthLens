@@ -49,42 +49,38 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
         // Start Camera Automatically
         const startScanner = async () => {
             try {
-                const devices = await Html5Qrcode.getCameras();
-                if (devices && devices.length) {
-                    // Try to start with high resolution constraints + continuous focus
-                    await html5QrCode.start(
-                        {
-                            facingMode: "environment",
-                            // Important: Request higher resolution for 1D barcode clarity
-                            // @ts-ignore - focusMode is standard in newer browsers but missing in TS lib
-                            focusMode: "continuous" // Attempt to force focus
-                        },
-                        config,
-                        (decodedText, decodedResult) => {
-                            // Debounce or immediate stop to prevent multi-scan?
-                            // Let the parent handle the redirect
-                            props.qrCodeSuccessCallback(decodedText, decodedResult);
-                        },
-                        (errorMessage) => {
-                            // Ignore scan errors, they happen every frame no code is seen
-                            if (props.qrCodeErrorCallback) {
-                                // Only log specific errors if needed
-                            }
-                        }
-                    );
-                } else {
-                    setError("No cameras found.");
-                }
+                // Direct start - lets the browser handle permissions and selection
+                // This is more robust than getCameras() on some mobile devices
+                await html5QrCode.start(
+                    {
+                        facingMode: "environment",
+                        // @ts-ignore
+                        focusMode: "continuous"
+                    },
+                    config,
+                    (decodedText, decodedResult) => {
+                        props.qrCodeSuccessCallback(decodedText, decodedResult);
+                    },
+                    (errorMessage) => {
+                        // Ignore frame errors
+                    }
+                );
+                setHasPermission(true);
             } catch (err: any) {
                 console.error("Error starting camera:", err);
-                setError("Camera permission denied. Please allow camera access.");
+                // Show the actual error message from the browser
+                setError(`Camera Error: ${err?.message || "Permission denied"}`);
             }
         };
 
-        startScanner();
+        // Small delay to ensure DOM is ready
+        const timer = setTimeout(() => {
+            startScanner();
+        }, 500);
 
         // Cleanup
         return () => {
+            clearTimeout(timer);
             if (html5QrCode.isScanning) {
                 html5QrCode.stop().then(() => {
                     html5QrCode.clear();
