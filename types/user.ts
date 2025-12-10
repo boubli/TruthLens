@@ -35,6 +35,7 @@ export interface UserProfile {
     subscription: UserSubscription;
     dietaryPreferences: DietaryPreferences;
     preferences?: UserPreferences;
+    customApiKeys?: import('./aiChat').UserApiKeys;
     createdAt: Date;
     hasSeenWelcome?: boolean;
 }

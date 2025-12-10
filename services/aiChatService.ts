@@ -218,6 +218,8 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
             return await callGroqAPI(key, messages);
         } else if (provider === 'ollama') {
             return await chatWithOllamaMessages(messages);
+        } else if (provider === 'deepseek') {
+            return await callDeepSeekAPI(key, messages);
         } else {
             return await callGeminiAPI(key, messages);
         }
@@ -243,10 +245,12 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
             error?.status === 403 ||
             error?.message?.includes('401') ||
             error?.message?.includes('invalid') ||
-            error?.message?.includes('API key')) {
+            error?.message?.includes('invalid') ||
+            error?.message?.includes('API key') ||
+            error?.message?.includes('authentication')) {
             const chatError: AIChatError = {
                 code: 'INVALID_KEY',
-                message: `Your ${provider === 'groq' ? 'Groq' : provider === 'ollama' ? 'Azure AI' : 'Gemini'} API key is invalid. Please update it in Settings.`,
+                message: `Your ${provider === 'groq' ? 'Groq' : provider === 'deepseek' ? 'DeepSeek' : provider === 'ollama' ? 'Azure AI' : 'Gemini'} API key is invalid or expired. Please update it in Settings.`,
                 provider
             };
             throw chatError;
@@ -369,5 +373,34 @@ const callGeminiAPI = async (
 
     const data = await response.json();
     return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
+};
+
+/**
+ * Call DeepSeek API
+ */
+const callDeepSeekAPI = async (
+    apiKey: string,
+    messages: { role: string; content: string }[]
+): Promise<string> => {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages,
+            stream: false
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw { status: response.status, message: errorText };
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || 'No response generated.';
 };
 

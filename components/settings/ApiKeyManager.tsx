@@ -46,17 +46,20 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
     const [apiKeys, setApiKeys] = useState<Record<AIProvider, string>>({
         groq: '',
         gemini: '',
-        ollama: ''
+        ollama: '',
+        deepseek: ''
     });
     const [originalKeys, setOriginalKeys] = useState<Record<AIProvider, string>>({
         groq: '',
         gemini: '',
-        ollama: ''
+        ollama: '',
+        deepseek: ''
     });
     const [showKey, setShowKey] = useState<Record<AIProvider, boolean>>({
         groq: false,
         gemini: false,
-        ollama: false
+        ollama: false,
+        deepseek: false
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -65,8 +68,8 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [providerToDelete, setProviderToDelete] = useState<AIProvider | null>(null);
 
-    // Only show for Free/Plus users
-    const showManager = isFree || isPlus;
+    // Show for everyone so Pro users can switch providers
+    const showManager = true;
 
     useEffect(() => {
         if (user && showManager) {
@@ -83,7 +86,8 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
             const loadedKeys = {
                 groq: keys.groq || '',
                 gemini: keys.gemini || '',
-                ollama: '' // Self-hosted, no key needed usually, or 'azure-internal'
+                ollama: '', // Self-hosted
+                deepseek: keys.deepseek || ''
             };
             setApiKeys(loadedKeys);
             setOriginalKeys(loadedKeys);
@@ -167,31 +171,14 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
         return !!originalKeys[provider];
     };
 
-    if (!showManager) {
-        return (
-            <Box
-                component={motion.div}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                sx={{
-                    p: 3,
-                    borderRadius: 3,
-                    bgcolor: 'rgba(16, 185, 129, 0.1)',
-                    border: '1px solid rgba(16, 185, 129, 0.3)'
-                }}
-            >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CheckCircleIcon sx={{ color: '#10B981' }} />
-                    <Typography fontWeight="bold" color="success.main">
-                        Premium Access Active
-                    </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                    As a {tier === 'ultimate' ? 'Ultimate' : 'Pro'} member, you have full access to AI Chat using our platform API keys.
-                </Typography>
-            </Box>
-        );
-    }
+    // Determine if user needs to provide their own key for selected provider
+    const needsOwnKey = (
+        (isFree || isPlus) &&
+        selectedProvider !== 'ollama' // Ollama is free for everyone
+    );
+
+    // If Pro/Ultimate and using platform key, keep text inputs hidden or disabled
+    const isUsingPlatformKey = !needsOwnKey && selectedProvider !== 'ollama';
 
     if (loading) {
         return (
@@ -216,11 +203,17 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
             </Box>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Select your preferred AI provider and add your API key to use AI Chat.
-                {' '}
-                <Typography component="span" color="warning.main" fontWeight="medium">
-                    Upgrade to Pro for unlimited access without your own key!
-                </Typography>
+                Select your preferred AI provider.
+                {isFree || isPlus ? (
+                    <>
+                        {' '}You can use Azure AI for free, or add your own key for other providers.
+                        <Typography component="span" color="warning.main" fontWeight="medium" sx={{ display: 'block', mt: 0.5 }}>
+                            Upgrade to Pro for unlimited access without your own key!
+                        </Typography>
+                    </>
+                ) : (
+                    " You have full access to all providers included in your plan."
+                )}
             </Typography>
 
             {/* Provider Selection with Status */}
@@ -234,9 +227,13 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
                     onChange={handleProviderChange}
                     fullWidth
                     sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr 1fr', sm: 'repeat(4, 1fr)' }, // Grid layout to fit 4 items
+                        gap: 1,
                         '& .MuiToggleButton-root': {
+                            border: '1px solid rgba(0, 0, 0, 0.12) !important', // Force border
                             py: 1.5,
-                            borderRadius: 2,
+                            borderRadius: '8px !important', // Force rounded corners
                             textTransform: 'none',
                             fontWeight: 600,
                             '&.Mui-selected': {
@@ -251,19 +248,19 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
                 >
                     {(Object.keys(AI_PROVIDERS) as AIProvider[]).map((provider) => (
                         <ToggleButton key={provider} value={provider}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <span>{AI_PROVIDERS[provider].icon}</span>
-                                <span>{AI_PROVIDERS[provider].name}</span>
-                                {hasExistingKey(provider) && (
-                                    <Chip
-                                        label="Saved"
-                                        size="small"
-                                        color="success"
+                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.5 }}>
+                                <span style={{ fontSize: '1.2rem' }}>{AI_PROVIDERS[provider].icon}</span>
+                                <span style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}>{AI_PROVIDERS[provider].name.split(' ')[0]}</span>
+                                {(hasExistingKey(provider) && (isFree || isPlus) && provider !== 'ollama') && (
+                                    <Box
                                         sx={{
-                                            ml: 0.5,
-                                            height: 20,
-                                            fontSize: '0.7rem',
-                                            '& .MuiChip-label': { px: 1 }
+                                            width: 6,
+                                            height: 6,
+                                            borderRadius: '50%',
+                                            bgcolor: 'success.main',
+                                            position: 'absolute',
+                                            top: 6,
+                                            right: 6
                                         }}
                                     />
                                 )}
@@ -288,18 +285,18 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
                         borderRadius: 3,
                         bgcolor: 'background.paper',
                         border: '1px solid',
-                        borderColor: hasExistingKey(selectedProvider) ? 'success.main' : 'divider'
+                        borderColor: hasExistingKey(selectedProvider) || isUsingPlatformKey || selectedProvider === 'ollama' ? 'success.main' : 'divider'
                     }}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                         <span style={{ fontSize: 24 }}>{AI_PROVIDERS[selectedProvider].icon}</span>
                         <Typography variant="subtitle1" fontWeight="bold">
-                            {AI_PROVIDERS[selectedProvider].name} API Key
+                            {AI_PROVIDERS[selectedProvider].name}
                         </Typography>
-                        {hasExistingKey(selectedProvider) && (
+                        {(hasExistingKey(selectedProvider) || isUsingPlatformKey || selectedProvider === 'ollama') && (
                             <Chip
                                 icon={<CheckCircleIcon sx={{ fontSize: 16 }} />}
-                                label="Configured"
+                                label={isUsingPlatformKey ? "Included in Plan" : selectedProvider === 'ollama' ? "Free Access" : "Configured"}
                                 size="small"
                                 color="success"
                                 variant="outlined"
@@ -308,66 +305,79 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
                         )}
                     </Box>
 
-                    <TextField
-                        fullWidth
-                        type={showKey[selectedProvider] ? 'text' : 'password'}
-                        placeholder={hasExistingKey(selectedProvider)
-                            ? 'Enter new key to update or leave empty to keep current'
-                            : `Enter your ${AI_PROVIDERS[selectedProvider].name} API key`
-                        }
-                        value={apiKeys[selectedProvider]}
-                        onChange={(e) => setApiKeys(prev => ({ ...prev, [selectedProvider]: e.target.value }))}
-                        InputProps={{
-                            endAdornment: (
-                                <InputAdornment position="end">
-                                    <IconButton
-                                        onClick={() => setShowKey(prev => ({ ...prev, [selectedProvider]: !prev[selectedProvider] }))}
-                                        edge="end"
+                    {/* Show Key Input ONLY if user needs to provide their own key */}
+                    {needsOwnKey ? (
+                        <>
+                            <TextField
+                                fullWidth
+                                type={showKey[selectedProvider] ? 'text' : 'password'}
+                                placeholder={hasExistingKey(selectedProvider)
+                                    ? 'Enter new key to update or leave empty to keep current'
+                                    : `Enter your ${AI_PROVIDERS[selectedProvider].name} API key`
+                                }
+                                value={apiKeys[selectedProvider]}
+                                onChange={(e) => setApiKeys(prev => ({ ...prev, [selectedProvider]: e.target.value }))}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                onClick={() => setShowKey(prev => ({ ...prev, [selectedProvider]: !prev[selectedProvider] }))}
+                                                edge="end"
+                                            >
+                                                {showKey[selectedProvider] ? <VisibilityOff /> : <Visibility />}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    )
+                                }}
+                                sx={{ mb: 2 }}
+                            />
+
+                            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+                                <Button
+                                    variant="contained"
+                                    startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
+                                    onClick={() => handleSave(selectedProvider)}
+                                    disabled={saving || !apiKeys[selectedProvider] || !hasKeyChanged(selectedProvider)}
+                                    sx={{ minWidth: 120 }}
+                                >
+                                    {saving ? 'Saving...' : hasExistingKey(selectedProvider) ? 'Update Key' : 'Save Key'}
+                                </Button>
+
+                                {hasExistingKey(selectedProvider) && (
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        startIcon={<DeleteIcon />}
+                                        onClick={() => openDeleteDialog(selectedProvider)}
+                                        disabled={deleting}
+                                        sx={{ minWidth: 120 }}
                                     >
-                                        {showKey[selectedProvider] ? <VisibilityOff /> : <Visibility />}
-                                    </IconButton>
-                                </InputAdornment>
-                            )
-                        }}
-                        sx={{ mb: 2 }}
-                    />
+                                        Delete Key
+                                    </Button>
+                                )}
 
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-                        <Button
-                            variant="contained"
-                            startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
-                            onClick={() => handleSave(selectedProvider)}
-                            disabled={saving || !apiKeys[selectedProvider] || !hasKeyChanged(selectedProvider)}
-                            sx={{ minWidth: 120 }}
-                        >
-                            {saving ? 'Saving...' : hasExistingKey(selectedProvider) ? 'Update Key' : 'Save Key'}
-                        </Button>
-
-                        {hasExistingKey(selectedProvider) && (
-                            <Button
-                                variant="outlined"
-                                color="error"
-                                startIcon={<DeleteIcon />}
-                                onClick={() => openDeleteDialog(selectedProvider)}
-                                disabled={deleting}
-                                sx={{ minWidth: 120 }}
-                            >
-                                Delete Key
-                            </Button>
-                        )}
-
-                        <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
-                            Get your API key from{' '}
-                            <a
-                                href={selectedProvider === 'groq' ? 'https://console.groq.com/keys' : 'https://aistudio.google.com/app/apikey'}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ color: AI_PROVIDERS[selectedProvider].color }}
-                            >
-                                {selectedProvider === 'groq' ? 'Groq Console' : 'Google AI Studio'}
-                            </a>
+                                <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+                                    Get your API key from{' '}
+                                    <a
+                                        href={selectedProvider === 'groq' ? 'https://console.groq.com/keys' : selectedProvider === 'deepseek' ? 'https://platform.deepseek.com/' : 'https://aistudio.google.com/app/apikey'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        style={{ color: AI_PROVIDERS[selectedProvider].color }}
+                                    >
+                                        {selectedProvider === 'groq' ? 'Groq Console' : selectedProvider === 'deepseek' ? 'DeepSeek Platform' : 'Google AI Studio'}
+                                    </a>
+                                </Typography>
+                            </Box>
+                        </>
+                    ) : (
+                        // Pro/Ultimate View or Free Ollama View
+                        <Typography variant="body2" color="text.secondary">
+                            {selectedProvider === 'ollama'
+                                ? "This provider is free to use for all users. No API key required."
+                                : "Your plan includes full access to this provider. No personal API key required."
+                            }
                         </Typography>
-                    </Box>
+                    )}
                 </Paper>
             </AnimatePresence>
 

@@ -173,6 +173,7 @@ export default function UpgradePage() {
             features: [
                 '20 Daily Scans',
                 'Advanced AI Insights',
+                'Bring Your Own Key (Premium AI)',
                 '3 Product Multi-Scan',
                 '50 History Items',
                 'CSV Export',
@@ -190,7 +191,8 @@ export default function UpgradePage() {
             icon: <WorkspacePremiumIcon fontSize="large" />,
             features: [
                 'Unlimited Scans',
-                'Premium AI Analysis',
+                'Premium AI (Groq/Gemini/DeepSeek) Included',
+                'Global Search Access',
                 '10 Product Multi-Scan',
                 'Unlimited History',
                 'PDF & CSV Export',

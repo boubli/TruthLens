@@ -29,7 +29,7 @@ import { addToHistory } from '@/services/historyService';
 import { calculateSmartGrade } from '@/services/gradingService';
 
 export default function UserHome() {
-    const { user, isPro, features: tierFeatures, dietaryPreferences } = useAuth();
+    const { user, tier, isPro, features: tierFeatures, dietaryPreferences } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -387,7 +387,17 @@ export default function UserHome() {
 
                             <StaggerList>
                                 <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-                                    {features.map((item, index) => (
+                                    {features.filter(item => {
+                                        // Global Search: Only for Pro and Ultimate
+                                        if (item.path === '/global-search') {
+                                            return tier === 'pro' || tier === 'ultimate';
+                                        }
+                                        // Upgrade: Hide for Ultimate (highest tier)
+                                        if (item.path === '/upgrade') {
+                                            return tier !== 'ultimate';
+                                        }
+                                        return true;
+                                    }).map((item, index) => (
                                         <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
                                             <StaggerItem>
                                                 <AnimatedCard

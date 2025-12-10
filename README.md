@@ -45,9 +45,9 @@ TruthLens uses a unique **AI Swarm** architecture to race multiple AI providers 
 ### 💎 Flexible & Lifetime Access
 *   **Fair Pricing**: Monthly subscriptions or a unique **Lifetime Deal**.
 *   **Tiered Features**:
-    *   **Explorer (Free)**: Basic scanning.
-    *   **Pro**: Unlimited AI analysis, Priority Support.
-    *   **Ultimate**: Global Search + Beta Access.
+    *   **Explorer (Free)**: Basic AI (Azure) + Bring Your Own Key (BYOK) for Premium.
+    *   **Pro**: Premium AI Models Included (Groq/Gemini/DeepSeek) + Global Search.
+    *   **Ultimate**: All Pro Features + White Label Reports.
 
 ### 🛠️ Powerful Admin Dashboard
 *   **Control Center**: Manage users, subscriptions, and app config in real-time.

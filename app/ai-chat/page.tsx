@@ -36,7 +36,7 @@ export default function AIChatPage() {
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<AIChatError | null>(null);
-    const [provider, setProvider] = useState<AIProvider>('groq');
+    const [provider, setProvider] = useState<AIProvider>('ollama'); // Default safe initial state
     const [language, setLanguage] = useState<AILanguage>('en');
     const [showSettings, setShowSettings] = useState(false);
     const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
@@ -57,10 +57,37 @@ export default function AIChatPage() {
         const loadPreferences = async () => {
             if (user) {
                 const keys = await getUserApiKeys(user.uid);
-                setProvider(keys.preferredProvider || 'groq');
-                setLanguage(keys.preferredLanguage || 'en');
+                const savedProvider = keys.preferredProvider;
+                const savedLanguage = keys.preferredLanguage || 'en';
+
+                setLanguage(savedLanguage);
+
+                // Set Provider Logic
+                if (savedProvider) {
+                    setProvider(savedProvider);
+                } else {
+                    // Smart Defaults
+                    if (requiresOwnKey(tier)) {
+                        // Free/Plus -> Default to Azure AI (Ollama) as it's free
+                        setProvider('ollama');
+                    } else {
+                        // Pro/Ultimate -> Default to Groq (Fastest)
+                        setProvider('groq');
+                    }
+                }
+
+                // Check API Key
+                // For Pro/Ultimate (not requiresOwnKey), they always have access via platform keys
+                // For Free/Plus (requiresOwnKey), check if they have key for CURRENT provider
                 if (requiresOwnKey(tier)) {
-                    setHasApiKey(!!(keys.groq || keys.gemini));
+                    // Azure AI (Ollama) is free for everyone
+                    if ((savedProvider || 'ollama') === 'ollama') {
+                        setHasApiKey(true);
+                    } else {
+                        // Check specific key
+                        const currentProvider = savedProvider || 'ollama';
+                        setHasApiKey(!!keys[currentProvider]);
+                    }
                 } else {
                     setHasApiKey(true);
                 }
@@ -141,7 +168,12 @@ export default function AIChatPage() {
     const handleApiKeysSaved = async () => {
         if (user) {
             const keys = await getUserApiKeys(user.uid);
-            setHasApiKey(!!(keys[provider] || keys.groq || keys.gemini));
+            // Re-check key status for current provider
+            if (provider === 'ollama' || !requiresOwnKey(tier)) {
+                setHasApiKey(true);
+            } else {
+                setHasApiKey(!!keys[provider]);
+            }
             setShowSettings(false);
             setError(null);
         }
