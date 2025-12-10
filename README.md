@@ -12,9 +12,23 @@ Built as a modern Progressive Web App (PWA), it combines the power of **Google G
 *   **Barcode Scanning**: Quick access to millions of products via camera scan.
 
 ### 🤖 Advanced AI Integration
-*   **Dual-AI Engine**: Leverages **Groq** for lightning-fast responses and **Gemini 1.5** for deep analytical reasoning.
-*   **Context-Aware Chat**: specialized `/ai-chat` for real-time nutrition advice and meal planning.
-*   **Dynamic Greetings**: A smart home screen that greets you with context-aware, witty messages depending on the time of day (e.g., "Scanning snacks at 3AM?").
+*   **AI Swarm Architecture**: Races multiple AI providers simultaneously for the fastest response.
+*   **Self-Hosted LLM**: Own Ollama instance running TinyLlama - completely free and unlimited!
+*   **Cloud AI Fallback**: Leverages **Groq** (Llama 3.3), **Gemini 1.5**, **DeepSeek**, and more.
+*   **Context-Aware Chat**: Specialized `/ai-chat` for real-time nutrition advice and meal planning.
+*   **Dynamic Greetings**: Smart home screen with context-aware, witty messages depending on the time of day.
+
+### 🏠 Self-Hosted Infrastructure
+TruthLens runs its own AI infrastructure for **zero API costs** and **unlimited usage**:
+
+| Service | Purpose | Model/Engine |
+|---------|---------|--------------|
+| **Ollama** | LLM Inference | TinyLlama 1.1B (CPU-optimized) |
+| **SearXNG** | Web Search | Metasearch (Brave, Startpage, DuckDuckGo) |
+
+*   🔒 **No API Rate Limits**: Self-hosted means unlimited requests
+*   💰 **Zero Recurring Costs**: No per-token billing from OpenAI/Anthropic
+*   🚀 **Configurable**: Change URLs in Admin Dashboard → Settings
 
 ### 💎 Flexible & Lifetime Access
 *   **Fair Pricing**: We offer both Monthly subscriptions and a unique **Lifetime Deal** for permanent access.
@@ -26,6 +40,7 @@ Built as a modern Progressive Web App (PWA), it combines the power of **Google G
 ### 🛠️ Powerful Admin Dashboard
 *   **Full Control**: A dedicated Admin Interface to manage Users, Subscription Tiers, and App Configurations in real-time.
 *   **Dynamic Logic**: Toggle features, enable maintenance mode, or adjust pricing instantly without redeploying.
+*   **Self-Hosted Config**: Configure Ollama and SearXNG URLs directly from the UI.
 
 ## 🚀 Technical Stack
 
@@ -33,7 +48,10 @@ Built with cutting-edge web technologies for performance and scale:
 
 *   **Frontend**: Next.js 14 (App Router), TypeScript, Material UI (MUI).
 *   **Backend & Auth**: Firebase (Firestore, Authentication, Security Rules).
-*   **AI Services**: Groq SDK, Google Generative AI SDK (Gemini).
+*   **AI Services**: 
+    *   Self-hosted: Ollama (TinyLlama)
+    *   Cloud: Groq SDK, Google Generative AI SDK (Gemini), DeepSeek, Cerebras, SambaNova
+*   **Search**: Self-hosted SearXNG (replaces paid SerpAPI)
 *   **State Management**: React Context + Hooks.
 *   **Animations**: Framer Motion for buttery smooth UI transitions.
 *   **Styling**: Responsive Design supporting dark/light modes and mobile-first layouts.
