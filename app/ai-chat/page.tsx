@@ -26,6 +26,7 @@ import { AIChatMessage, AIChatError, AIProvider, AILanguage, AI_PROVIDERS } from
 import ApiKeyManager from '@/components/settings/ApiKeyManager';
 import AIChatSettings from '@/components/settings/AIChatSettings';
 import ChatErrorCard from '@/components/chat/ChatErrorCard';
+import { generateChatSuggestions } from '@/app/actions';
 
 export default function AIChatPage() {
     const router = useRouter();
@@ -39,6 +40,7 @@ export default function AIChatPage() {
     const [language, setLanguage] = useState<AILanguage>('en');
     const [showSettings, setShowSettings] = useState(false);
     const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
+    const [suggestions, setSuggestions] = useState<string[]>([]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +68,15 @@ export default function AIChatPage() {
         };
         loadPreferences();
     }, [user, tier]);
+
+    // Load AI-generated suggestions
+    useEffect(() => {
+        const loadSuggestions = async () => {
+            const aiSuggestions = await generateChatSuggestions();
+            setSuggestions(aiSuggestions);
+        };
+        loadSuggestions();
+    }, []);
 
     // Scroll to bottom on new messages
     useEffect(() => {
@@ -268,11 +279,7 @@ export default function AIChatPage() {
 
                             {/* Quick Suggestions */}
                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', mt: 4 }}>
-                                {[
-                                    'What additives should I avoid?',
-                                    'Is palm oil bad for health?',
-                                    'Best protein sources for vegans'
-                                ].map((suggestion) => (
+                                {suggestions.map((suggestion) => (
                                     <Button
                                         key={suggestion}
                                         variant="outlined"

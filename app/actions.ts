@@ -226,7 +226,7 @@ export const getProductAction = async (barcode: string): Promise<EnhancedProduct
 };
 
 // --- RECAPTCHA & REGISTRATION ---
-import { adminAuth } from '@/lib/firebaseAdmin';
+import { adminAuth, adminDb } from '@/lib/firebaseAdmin';
 
 const RECAPTCHA_SECRET_KEY = '6LeYMiYsAAAAAKBrlgVd2DgpCa1NO285uPI8Jvib'; // v2 Secret Key
 
@@ -286,5 +286,82 @@ export async function registerUser(formData: FormData, token: string): Promise<R
             return { success: false, error: 'Password is too weak.' };
         }
         return { success: false, error: error.message || 'Failed to create account.' };
+    }
+}
+
+// --- AI SUGGESTIONS ---
+
+export async function generateChatSuggestions(): Promise<string[]> {
+    try {
+        console.log('[AI Action] Generating chat suggestions...');
+        let groqKey = process.env.GROQ_API_KEY || process.env.NEXT_PUBLIC_GROQ_API_KEY;
+
+        // 1. Try to fetch secure key from Admin Storage if available
+        if (adminDb) {
+            const secretDoc = await adminDb.collection('_system_secrets').doc('ai_config').get();
+            if (secretDoc.exists) {
+                const data = secretDoc.data();
+                if (data?.groq) {
+                    groqKey = data.groq;
+                    console.log('[AI Action] Using Secure Admin Key for Groq');
+                }
+            }
+        }
+
+        if (!groqKey) {
+            console.warn('[AI Action] No Groq API Key found. Returning defaults.');
+            return [
+                'What are healthy snacks for energy?',
+                'Is oatmeal good for weight loss?',
+                'How much water should I drink daily?'
+            ];
+        }
+
+        // 2. Call Groq API
+        const response = await axios.post(
+            'https://api.groq.com/openai/v1/chat/completions',
+            {
+                model: 'llama3-8b-8192',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are a helpful nutritionist assistant. Generate 3 short, engaging, diverse questions a user might ask you about food, health, or nutrition. Return ONLY a JSON array of strings. Example: ["Question 1?", "Question 2?", "Question 3?"]'
+                    },
+                    {
+                        role: 'user',
+                        content: 'Generate 3 suggestions.'
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 100
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${groqKey}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const content = response.data.choices[0]?.message?.content;
+        console.log('[AI Action] Raw Groq Response:', content);
+
+        if (content) {
+            const cleanContent = content.replace(/```json\n?|\n?```/g, '').trim();
+            const parsed = JSON.parse(cleanContent);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed.slice(0, 3);
+            }
+        }
+
+        throw new Error('Invalid AI response format');
+
+    } catch (error: any) {
+        console.error('[AI Action] Error generating suggestions:', error.message);
+        return [
+            'What are healthy snacks for energy?',
+            'Is oatmeal good for weight loss?',
+            'How much water should I drink daily?'
+        ];
     }
 }
