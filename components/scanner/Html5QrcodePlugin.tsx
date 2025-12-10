@@ -21,7 +21,13 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
     // State
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [debugLog, setDebugLog] = useState<string[]>([]); // New Debug Log
     const [hasPermission, setHasPermission] = useState(false);
+
+    const log = (msg: string) => {
+        console.log(`[Scanner] ${msg}`);
+        setDebugLog(prev => [msg, ...prev].slice(0, 5)); // Keep last 5 logs
+    };
 
     // Configuration
     const config = {
@@ -30,11 +36,11 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
             width: Math.min(typeof window !== 'undefined' ? window.innerWidth * 0.8 : 300, 350),
             height: 200
         },
-        // aspectRatio: undefined, // Native
         disableFlip: props.disableFlip || false,
-        experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true
-        },
+        // DISABLED experimental feature to rule out "Black Screen" bug on some Androids
+        // experimentalFeatures: {
+        //    useBarCodeDetectorIfSupported: true
+        // },
         formatsToSupport: [
             Html5QrcodeSupportedFormats.EAN_13,
             Html5QrcodeSupportedFormats.EAN_8,
@@ -47,16 +53,25 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
     };
 
     const startScanner = async () => {
-        if (!scannerRef.current) return;
+        if (!scannerRef.current) {
+            log("Scanner ref is null");
+            return;
+        }
+
+        log("Starting scanner...");
 
         // Check for HTTPS
         if (typeof window !== "undefined" && !window.isSecureContext) {
-            setError("Camera requires HTTPS (or localhost). It will not work on HTTP.");
+            const msg = "HTTPS Required. Camera blocked on HTTP.";
+            setError(msg);
+            log(msg);
             return;
         }
 
         try {
             setError(null);
+            log("Requesting cameras...");
+            // Use environment camera
             await scannerRef.current.start(
                 {
                     facingMode: "environment",
@@ -68,27 +83,30 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
                     props.qrCodeSuccessCallback(decodedText, decodedResult);
                 },
                 (errorMessage) => {
-                    // Ignore frame errors
+                    // ignore frame errors
                 }
             );
+            log("Camera started successfully");
             setHasPermission(true);
         } catch (err: any) {
             console.error("Error starting camera:", err);
-            setError(`Camera Error: ${err?.message || "Permission denied"}`);
+            const errMsg = err?.message || "Unknown Error";
+            log(`Start failed: ${errMsg}`);
+            setError(`Camera Error: ${errMsg}`);
         }
     };
 
     useEffect(() => {
-        // Initialize
+        log("Mounting...");
         const html5QrCode = new Html5Qrcode(qrcodeRegionId);
         scannerRef.current = html5QrCode;
 
-        // Auto-start
         const timer = setTimeout(() => {
             startScanner();
         }, 500);
 
         return () => {
+            log("Unmounting...");
             clearTimeout(timer);
             if (html5QrCode.isScanning) {
                 html5QrCode.stop().then(() => {
@@ -116,6 +134,23 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
                 }
             }}
         >
+            {/* Debug Overlay - Temporary for troubleshooting */}
+            <Box sx={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                bgcolor: 'rgba(0,0,0,0.5)',
+                color: '#0f0',
+                fontSize: '10px',
+                fontFamily: 'monospace',
+                p: 1,
+                zIndex: 9999,
+                pointerEvents: 'none'
+            }}>
+                {debugLog.map((l, i) => <div key={i}>{l}</div>)}
+            </Box>
+
             {error && (
                 <Box sx={{
                     position: 'absolute',
@@ -131,14 +166,13 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
                         {error}
                     </Typography>
 
-                    {/* Manual Retry Button - Triggers User Gesture */}
                     <Button
                         variant="contained"
                         color="primary"
                         onClick={startScanner}
                         sx={{ mt: 2 }}
                     >
-                        Start Camera
+                        Force Start Camera
                     </Button>
                 </Box>
             )}
