@@ -4,6 +4,7 @@
  */
 import type { Metadata } from 'next';
 import './globals.css';
+import { Analytics } from '@vercel/analytics/next';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AuthProvider } from '@/context/AuthContext';
 import { I18nProvider } from '@/components/providers/I18nProvider';
@@ -63,6 +64,7 @@ export default function RootLayout({
             </CompareProvider>
           </I18nProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

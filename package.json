@@ -19,6 +19,7 @@
     "@stripe/stripe-js": "^8.5.3",
     "@types/react-google-recaptcha": "^2.1.9",
     "@types/web-push": "^3.6.4",
+    "@vercel/analytics": "^1.6.1",
     "axios": "^1.13.2",
     "firebase": "^12.6.0",
     "framer-motion": "^12.23.25",
