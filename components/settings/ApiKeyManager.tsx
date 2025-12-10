@@ -45,15 +45,18 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
     const [selectedProvider, setSelectedProvider] = useState<AIProvider>('groq');
     const [apiKeys, setApiKeys] = useState<Record<AIProvider, string>>({
         groq: '',
-        gemini: ''
+        gemini: '',
+        ollama: ''
     });
     const [originalKeys, setOriginalKeys] = useState<Record<AIProvider, string>>({
         groq: '',
-        gemini: ''
+        gemini: '',
+        ollama: ''
     });
     const [showKey, setShowKey] = useState<Record<AIProvider, boolean>>({
         groq: false,
-        gemini: false
+        gemini: false,
+        ollama: false
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -79,7 +82,8 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
             const keys = await getUserApiKeys(user.uid);
             const loadedKeys = {
                 groq: keys.groq || '',
-                gemini: keys.gemini || ''
+                gemini: keys.gemini || '',
+                ollama: '' // Self-hosted, no key needed usually, or 'azure-internal'
             };
             setApiKeys(loadedKeys);
             setOriginalKeys(loadedKeys);
