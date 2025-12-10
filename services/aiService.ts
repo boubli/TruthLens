@@ -595,27 +595,45 @@ export interface Quest {
 
 export const generateLogoutQuest = async (userName: string, recentQuests: string[]): Promise<Quest | null> => {
     const prompt = `
-    Generate a witty, fun, and harmless "IRL Side Quest" for a user named "${userName}" who is logging out of an app.
+    You are a health and nutrition coach assistant for "TruthLens", a food scanning app.
+    Generate a meaningful, actionable health-related objective for the user "${userName}" before they leave.
     
-    Constraints:
-    - The task must be doable in < 5 minutes.
-    - It should be a real-world action (e.g., "High five a plant", "Drink water", "Stretch your back").
-    - Be creative, slightly humorous, or wholesome.
+    REQUIREMENTS:
+    - The quest MUST be related to health, nutrition, hydration, or wellness.
+    - It should be doable in < 10 minutes or be a daily goal.
+    - Be specific and practical (e.g., "Drink a full glass of water right now", "Eat a piece of fruit", "Check the ingredients on your next snack before eating").
+    - Make it encouraging and positive.
     - Avoid these recently given quests: ${recentQuests.join(', ')}.
-    - Choose a difficulty: easy, medium, or hard (subjective).
-    - Choose a type: social, physical, mindfulness, or creative.
+    - Choose difficulty: easy (quick action), medium (requires some effort), hard (commitment throughout day).
+    - Choose type: 
+      * physical (exercise, movement)
+      * mindfulness (mental health, stress relief)
+      * social (share health tips, cook with family)
+      * creative (try new healthy recipe, food presentation)
+
+    GOOD EXAMPLES:
+    - "Hydration Check" - Drink 2 glasses of water before your next meal
+    - "Label Detective" - Read the ingredient list on 3 products in your pantry
+    - "Fruit Boost" - Eat a fresh fruit within the next hour
+    - "Sugar Awareness" - Avoid added sugars for the rest of the day
+    - "Veggie Victory" - Include vegetables in your next meal
+
+    BAD EXAMPLES (DO NOT GENERATE THESE):
+    - "Whisper to a wall" - nonsensical
+    - "High five a plant" - not health related
+    - "Dance like nobody's watching" - not nutrition focused
 
     Return JSON ONLY:
     {
-        "title": "Short Title",
-        "description": "The specific instruction",
+        "title": "Short Title (2-4 words)",
+        "description": "Clear, specific health-related instruction",
         "difficulty": "easy/medium/hard",
         "type": "social/physical/mindfulness/creative"
     }
     `;
 
     try {
-        // Prefer Groq for speed and wit (Llama 3.3)
+        // Prefer Groq for speed (Llama 3.3)
         const text = await getSwarmResponse(prompt, [
             { name: 'Groq', fn: callGroq },
             { name: 'SambaNova', fn: callSambaNova },
@@ -626,7 +644,7 @@ export const generateLogoutQuest = async (userName: string, recentQuests: string
         const data = JSON.parse(cleaned);
 
         return {
-            id: Date.now().toString(), // Simple ID generation
+            id: Date.now().toString(),
             title: data.title,
             description: data.description,
             difficulty: data.difficulty,
@@ -637,13 +655,13 @@ export const generateLogoutQuest = async (userName: string, recentQuests: string
 
     } catch (e) {
         console.error("Quest Generation Error:", e);
-        // Fallback Quest if AI fails
+        // Fallback Quest - still health-focused
         return {
             id: 'fallback-' + Date.now(),
-            title: 'Take a Break',
-            description: 'Close your eyes and take 3 deep breaths.',
+            title: 'Hydration Boost',
+            description: 'Drink a full glass of water right now. Your body will thank you!',
             difficulty: 'easy',
-            type: 'mindfulness',
+            type: 'physical',
             completed: false,
             createdAt: new Date()
         };
