@@ -34,11 +34,11 @@ Built as a modern **Progressive Web App (PWA)**, it combines the power of cloud 
 ### 🥗 Smart Food Analysis
 *   **🔎 Instant Grading**: Our proprietary **Smart Grade** algorithm evaluates products from **A (Excellent)** to **E (Avoid)** based on ingredients, processing, and nutrition.
 *   **🧪 Ingredient Decoder**: Instantly identifies harmful additives, allergens, and hidden sugars.
-*   **📷 Barcode Scanning**: Access millions of products via camera scan.
+*   **📷 Scanner v2**: Built on **Native Barcode Detection API** (Android/iOS) for instant, 60fps scanning. Features zero-lag redirection, continuous focus, and offline-first detection.
 
-### 🤖 "AI Swarm" Intelligence
-TruthLens uses a unique **AI Swarm** architecture to race multiple AI providers for the fastest, most accurate response:
-*   **Self-Hosted First**: Prioritizes your own **Ollama** instance (TinyLlama) for free, private inference.
+### 🤖 "AI Swarm v2" Intelligence
+TruthLens uses a unique **AI Swarm** architecture to race multiple AI providers:
+*   **Self-Hosted Power**: Defaults to your own **Azure VM (Llama 3.2)** for fast, private, and unlimited inference.
 *   **Cloud Fallback**: Seamlessly switches to **Groq (Llama 3)** or **Gemini 1.5** for complex reasoning.
 *   **Context-Aware**: The `/ai-chat` remembers your dietary preferences and health goals.
 

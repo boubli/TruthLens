@@ -144,8 +144,5 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
             )}
         </Box>
     );
-// I will refactor the internal logic in the next step to be robust.
-
-// ABORTING THIS REPLACE to do a cleaner full-file refactor in next step for safety.
-// I'll return the same content for now to not break it, or just cancel this tool.
+}
 
