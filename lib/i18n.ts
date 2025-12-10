@@ -17,7 +17,7 @@ i18n
     .init({
         lng: undefined, // Let language be handled by detector
         fallbackLng: 'en',
-        supportedLngs: ['en', 'fr', 'es', 'pt', 'ar_MA'],
+        supportedLngs: ['en', 'fr', 'es', 'pt'],
         detection: {
             order: ['localStorage', 'navigator'],
             caches: ['localStorage'],

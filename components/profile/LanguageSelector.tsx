@@ -24,7 +24,7 @@ const LANGUAGES = [
     { code: 'fr', label: 'Français', flag: '🇫🇷' },
     { code: 'es', label: 'Español', flag: '🇪🇸' },
     { code: 'pt', label: 'Português', flag: '🇵🇹' },
-    { code: 'ar_MA', label: 'Darija', flag: '🇲🇦' },
+
 ];
 
 export default function LanguageSelector() {
