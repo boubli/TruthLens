@@ -144,7 +144,7 @@ const mapOpenFoodFactsToEnhanced = (product: any): EnhancedProductData => {
 export const searchProductsAction = async (query: string): Promise<EnhancedProductData[]> => {
     try {
         console.log(`Server Action Searching for: ${query}`);
-        const response = await apiClient.get(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${query}&search_simple=1&action=process&json=1&page_size=50`);
+        const response = await apiClient.get(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${query}&search_simple=1&action=process&json=1&page_size=24&fields=_id,code,product_name,brands,generic_name,image_small_url,image_front_small_url,image_url,nutrition_grades,ecoscore_grade,nova_group`, { timeout: 10000 });
 
         if (response.data.products) {
             // Map to new schema

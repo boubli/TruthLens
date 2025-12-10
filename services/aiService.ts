@@ -167,7 +167,7 @@ const callOllama = async (prompt: string): Promise<string> => {
         throw new Error('Ollama is not available');
     }
 
-    return chatWithOllama(prompt, 'tinyllama');
+    return chatWithOllama(prompt, 'llama3.2');
 };
 
 const callOpenAI = async (prompt: string): Promise<string> => {
