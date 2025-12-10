@@ -128,42 +128,25 @@ export const resolveApiKey = async (
     tier: UserTier,
     provider: AIProvider
 ): Promise<{ key: string; source: 'user' | 'platform' }> => {
-    // Pro and Ultimate users use platform key
-    if (!requiresOwnKey(tier)) {
-        const settings = await getSystemSettings();
-        const platformKey = settings.apiKeys?.[provider];
+    return { key: platformKey, source: 'platform' };
+}
 
-        if (!platformKey) {
-            const error: AIChatError = {
-                code: 'API_ERROR',
-                message: 'Platform API key not configured. Please contact support.',
-                provider
-            };
-            throw error;
-        }
+// Free and Plus users must use their own key
 
-        return { key: platformKey, source: 'platform' };
-    }
+// Free and Plus users must use their own key
+const userKeys = await getUserApiKeys(userId);
+const userKey = userKeys[provider];
 
-    // Azure AI (Ollama) is self-hosted and free, so it doesn't need a user key
-    if (provider === 'ollama') {
-        return { key: 'azure-internal', source: 'platform' };
-    }
+if (!userKey) {
+    const error: AIChatError = {
+        code: 'MISSING_KEY',
+        message: `Please add your ${provider === 'groq' ? 'Groq' : 'Gemini'} API key in Settings to use AI Chat.`,
+        provider
+    };
+    throw error;
+}
 
-    // Free and Plus users must use their own key
-    const userKeys = await getUserApiKeys(userId);
-    const userKey = userKeys[provider];
-
-    if (!userKey) {
-        const error: AIChatError = {
-            code: 'MISSING_KEY',
-            message: `Please add your ${provider === 'groq' ? 'Groq' : 'Gemini'} API key in Settings to use AI Chat.`,
-            provider
-        };
-        throw error;
-    }
-
-    return { key: userKey, source: 'user' };
+return { key: userKey, source: 'user' };
 };
 
 /**
