@@ -1,8 +1,8 @@
 'use client';
 
-import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from "html5-qrcode";
-import { useEffect, useRef } from "react";
-import { Box } from "@mui/material";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { useEffect, useRef, useState } from "react";
+import { Box, Typography, Button } from "@mui/material";
 
 const qrcodeRegionId = "html5qr-code-full-region";
 
@@ -17,24 +17,20 @@ interface Html5QrcodePluginProps {
 }
 
 export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
-    const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+    const scannerRef = useRef<Html5Qrcode | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    const [hasPermission, setHasPermission] = useState(false);
 
     useEffect(() => {
-        // cleanup previous instance if exists
-        if (scannerRef.current) {
-            scannerRef.current.clear().catch(error => {
-                console.error("Failed to clear html5QrcodeScanner. ", error);
-            });
-        }
+        // Initialize Scanner Instance
+        const html5QrCode = new Html5Qrcode(qrcodeRegionId);
+        scannerRef.current = html5QrCode;
 
         const config = {
             fps: props.fps || 10,
             qrbox: props.qrbox || 250,
             aspectRatio: props.aspectRatio,
             disableFlip: props.disableFlip || false,
-            videoConstraints: {
-                facingMode: "environment"
-            },
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.EAN_13,
                 Html5QrcodeSupportedFormats.EAN_8,
@@ -45,28 +41,42 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
             ]
         };
 
-        const verbose = props.verbose === true;
-
-        // Initialize Scanner
-        const html5QrcodeScanner = new Html5QrcodeScanner(
-            qrcodeRegionId,
-            config,
-            verbose
-        );
-        scannerRef.current = html5QrcodeScanner;
-
-        html5QrcodeScanner.render(
-            props.qrCodeSuccessCallback,
-            props.qrCodeErrorCallback
-        );
-
-        // Cleanup function
-        return () => {
-            html5QrcodeScanner.clear().catch(error => {
-                console.error("Failed to clear html5QrcodeScanner. ", error);
-            });
+        // Start Camera Automatically
+        const startScanner = async () => {
+            try {
+                // Try fetching cameras first to ensure permissions
+                const devices = await Html5Qrcode.getCameras();
+                if (devices && devices.length) {
+                    setHasPermission(true);
+                    // Use the rear camera (environment)
+                    await html5QrCode.start(
+                        { facingMode: "environment" },
+                        config,
+                        props.qrCodeSuccessCallback,
+                        props.qrCodeErrorCallback
+                    );
+                } else {
+                    setError("No cameras found.");
+                }
+            } catch (err: any) {
+                console.error("Error starting camera:", err);
+                setError("Camera permission denied or error starting camera.");
+            }
         };
-    }, []); // Empty dependency array to run once on mount
+
+        startScanner();
+
+        // Cleanup
+        return () => {
+            if (html5QrCode.isScanning) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                }).catch(err => console.error("Error stopping scanner", err));
+            } else {
+                html5QrCode.clear();
+            }
+        };
+    }, []);
 
     return (
         <Box
@@ -74,20 +84,30 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
             sx={{
                 width: '100%',
                 height: '100%',
+                position: 'relative',
                 '& video': {
                     objectFit: 'cover',
-                    height: '100% !important'
-                },
-                '& #html5qr-code-full-region__scan_region': {
-                    height: '100% !important'
-                },
-                '& img': {
-                    display: 'none' // Hide info icon
-                },
-                '& a': {
-                    display: 'none' // Hide info link
+                    height: '100% !important',
+                    width: '100% !important'
                 }
             }}
-        />
+        >
+            {error && (
+                <Box sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    textAlign: 'center',
+                    color: 'white',
+                    width: '80%'
+                }}>
+                    <Typography color="error" gutterBottom>{error}</Typography>
+                    <Button variant="contained" onClick={() => window.location.reload()}>
+                        Retry
+                    </Button>
+                </Box>
+            )}
+        </Box>
     );
 }
