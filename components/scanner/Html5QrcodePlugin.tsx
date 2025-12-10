@@ -17,68 +17,77 @@ interface Html5QrcodePluginProps {
 }
 
 export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
+
+    // State
     const scannerRef = useRef<Html5Qrcode | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [hasPermission, setHasPermission] = useState(false);
 
+    // Configuration
+    const config = {
+        fps: props.fps || 15,
+        qrbox: {
+            width: Math.min(typeof window !== 'undefined' ? window.innerWidth * 0.8 : 300, 350),
+            height: 200
+        },
+        // aspectRatio: undefined, // Native
+        disableFlip: props.disableFlip || false,
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+        },
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.QR_CODE
+        ]
+    };
+
+    const startScanner = async () => {
+        if (!scannerRef.current) return;
+
+        // Check for HTTPS
+        if (typeof window !== "undefined" && !window.isSecureContext) {
+            setError("Camera requires HTTPS (or localhost). It will not work on HTTP.");
+            return;
+        }
+
+        try {
+            setError(null);
+            await scannerRef.current.start(
+                {
+                    facingMode: "environment",
+                    // @ts-ignore
+                    focusMode: "continuous"
+                },
+                config,
+                (decodedText, decodedResult) => {
+                    props.qrCodeSuccessCallback(decodedText, decodedResult);
+                },
+                (errorMessage) => {
+                    // Ignore frame errors
+                }
+            );
+            setHasPermission(true);
+        } catch (err: any) {
+            console.error("Error starting camera:", err);
+            setError(`Camera Error: ${err?.message || "Permission denied"}`);
+        }
+    };
+
     useEffect(() => {
-        // Initialize Scanner Instance with verbose logging for debugging
+        // Initialize
         const html5QrCode = new Html5Qrcode(qrcodeRegionId);
         scannerRef.current = html5QrCode;
 
-        const config = {
-            fps: props.fps || 15, // Increased FPS for faster scanning
-            qrbox: props.qrbox || 280, // Slightly larger box
-            aspectRatio: props.aspectRatio || 1.0,
-            disableFlip: props.disableFlip || false,
-            // Key Optimization: Use native BarcodeDetector if available (Android/Chrome)
-            experimentalFeatures: {
-                useBarCodeDetectorIfSupported: true
-            },
-            formatsToSupport: [
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39,
-                Html5QrcodeSupportedFormats.QR_CODE
-            ]
-        };
-
-        // Start Camera Automatically
-        const startScanner = async () => {
-            try {
-                // Direct start - lets the browser handle permissions and selection
-                // This is more robust than getCameras() on some mobile devices
-                await html5QrCode.start(
-                    {
-                        facingMode: "environment",
-                        // @ts-ignore
-                        focusMode: "continuous"
-                    },
-                    config,
-                    (decodedText, decodedResult) => {
-                        props.qrCodeSuccessCallback(decodedText, decodedResult);
-                    },
-                    (errorMessage) => {
-                        // Ignore frame errors
-                    }
-                );
-                setHasPermission(true);
-            } catch (err: any) {
-                console.error("Error starting camera:", err);
-                // Show the actual error message from the browser
-                setError(`Camera Error: ${err?.message || "Permission denied"}`);
-            }
-        };
-
-        // Small delay to ensure DOM is ready
+        // Auto-start
         const timer = setTimeout(() => {
             startScanner();
         }, 500);
 
-        // Cleanup
         return () => {
             clearTimeout(timer);
             if (html5QrCode.isScanning) {
@@ -121,16 +130,22 @@ export default function Html5QrcodePlugin(props: Html5QrcodePluginProps) {
                     <Typography color="error" variant="h6" gutterBottom>
                         {error}
                     </Typography>
+
+                    {/* Manual Retry Button - Triggers User Gesture */}
                     <Button
                         variant="contained"
                         color="primary"
-                        onClick={() => window.location.reload()}
+                        onClick={startScanner}
                         sx={{ mt: 2 }}
                     >
-                        Retry Camera
+                        Start Camera
                     </Button>
                 </Box>
             )}
         </Box>
     );
-}
+// I will refactor the internal logic in the next step to be robust.
+
+// ABORTING THIS REPLACE to do a cleaner full-file refactor in next step for safety.
+// I'll return the same content for now to not break it, or just cancel this tool.
+
