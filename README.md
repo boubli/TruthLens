@@ -20,7 +20,7 @@
   <img src="https://img.shields.io/badge/TypeScript-Ready-blue?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Firebase-Powered-orange?style=flat-square&logo=firebase" alt="Firebase" />
   <img src="https://img.shields.io/badge/AI-Groq_%7C_Gemini_%7C_Ollama-purple?style=flat-square&logo=openai" alt="AI Powered" />
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
+  <img src="https://img.shields.io/badge/License-Proprietary-red?style=flat-square" alt="License" />
 </p>
 
 ---
@@ -127,7 +127,9 @@ console.log(settings.apiKeys.ollamaUrl);
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Copyright © 2024 Youssef Boubli via TRADMSS. All Rights Reserved.
+
+This software is proprietary and confidential. Unauthorized copying, distribution, or use of this file, via any medium, is strictly prohibited.
 
 ---
 <p align="center">
