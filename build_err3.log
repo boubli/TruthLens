@@ -1,0 +1,45 @@
+ ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\Youssef Boubli\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Youssef Boubli\Desktop\TruthLens\package-lock.json
+
+   Γû▓ Next.js 16.0.7 (webpack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Γ£ô (pwa) Compiling for server...
+ Γ£ô (pwa) Compiling for server...
+ Γ£ô (pwa) Compiling for client (static)...
+ Γùï (pwa) Service worker: C:\Users\Youssef Boubli\Desktop\TruthLens\public\sw.js
+ Γùï (pwa)   URL: /sw.js
+ Γùï (pwa)   Scope: /
+ ΓÜá Compiled with warnings in 15.1s
+
+./app/request-access/page.tsx
+Attempted import error: 'storage' is not exported from '@/lib/firebase' (imported as 'storage').
+
+Import trace for requested module:
+./app/request-access/page.tsx
+
+./app/request-access/page.tsx
+Attempted import error: 'storage' is not exported from '@/lib/firebase' (imported as 'storage').
+
+Import trace for requested module:
+./app/request-access/page.tsx
+
+   Running TypeScript ...
+Failed to compile.
+
+./app/request-access/page.tsx:21:10
+Type error: Module '"@/lib/firebase"' has no exported member 'storage'.
+
+  19 | import { validateAccessCode, submitAccessRequest } from '@/services/accessRequestService';
+  20 | import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+> 21 | import { storage } from '@/lib/firebase';
+     |          ^
+  22 | import { motion } from 'framer-motion';
+  23 |
+  24 | const steps = ['Enter Code', 'Fill Details', 'Submit'];
+Next.js build worker exited with code: 1 and signal: null

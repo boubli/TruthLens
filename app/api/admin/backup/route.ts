@@ -4,15 +4,19 @@ import mysql from 'mysql2/promise';
 
 // Oracle VM MySQL Configuration
 const MYSQL_CONFIG = {
-    host: '129.151.245.242',
-    port: 3306,
-    user: 'truthlens',
-    password: 'TL_Backup_2024',
-    database: 'truthlens_backup'
+    host: process.env.BACKUP_DB_HOST || '129.151.245.242',
+    port: parseInt(process.env.BACKUP_DB_PORT || '3306'),
+    user: process.env.BACKUP_DB_USER || 'truthlens',
+    password: process.env.BACKUP_DB_PASSWORD, // Must be set in environment variables
+    database: process.env.BACKUP_DB_NAME || 'truthlens_backup'
 };
 
 // POST: Trigger manual backup
 export async function POST(req: NextRequest) {
+    if (!process.env.BACKUP_DB_PASSWORD) {
+        return NextResponse.json({ error: 'Server misconfiguration: Missing DB credentials' }, { status: 500 });
+    }
+
     try {
         // 1. Verify Access (Admin Token OR Secret Key)
         let authorized = false;
@@ -30,13 +34,17 @@ export async function POST(req: NextRequest) {
         // Case B: Manual Admin Trigger
         else if (authHeader?.startsWith('Bearer ')) {
             const idToken = authHeader.split('Bearer ')[1];
-            const decodedToken = await adminAuth!.verifyIdToken(idToken);
-            const userDoc = await adminDb!.collection('users').doc(decodedToken.uid).get();
-            const userData = userDoc.data();
+            try {
+                const decodedToken = await adminAuth!.verifyIdToken(idToken);
+                const userDoc = await adminDb!.collection('users').doc(decodedToken.uid).get();
+                const userData = userDoc.data();
 
-            if (userData?.role === 'admin') {
-                authorized = true;
-                triggeredBy = decodedToken.email || decodedToken.uid;
+                if (userData?.role === 'admin') {
+                    authorized = true;
+                    triggeredBy = decodedToken.email || decodedToken.uid;
+                }
+            } catch (e) {
+                console.error('Initial token verification failed', e);
             }
         }
 
@@ -107,10 +115,12 @@ export async function POST(req: NextRequest) {
 
         } catch (backupError: any) {
             // Update backup log as failed
-            await connection.execute(
-                'UPDATE backup_log SET completedAt=NOW(), status=?, error=? WHERE id=?',
-                ['failed', backupError.message, backupId]
-            );
+            if (backupId) {
+                await connection.execute(
+                    'UPDATE backup_log SET completedAt=NOW(), status=?, error=? WHERE id=?',
+                    ['failed', backupError.message, backupId]
+                );
+            }
             await connection.end();
             throw backupError;
         }
@@ -127,6 +137,23 @@ export async function POST(req: NextRequest) {
 // GET: Get backup status/history
 export async function GET(req: NextRequest) {
     try {
+        // AUTH CHECK ADDED
+        const authHeader = req.headers.get('Authorization');
+        if (!authHeader?.startsWith('Bearer ')) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const idToken = authHeader.split('Bearer ')[1];
+        try {
+            const decodedToken = await adminAuth!.verifyIdToken(idToken);
+            const userDoc = await adminDb!.collection('users').doc(decodedToken.uid).get();
+            if (userDoc.data()?.role !== 'admin') {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+            }
+        } catch (e) {
+            return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
+        }
+
         const connection = await mysql.createConnection(MYSQL_CONFIG);
 
         const [rows] = await connection.execute(

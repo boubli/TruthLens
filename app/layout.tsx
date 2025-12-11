@@ -42,6 +42,7 @@ export const viewport = {
 
 import SpecialWelcome from '@/components/SpecialWelcome';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
+import SeasonalEventManager from '@/components/events/SeasonalEventManager';
 
 export default function RootLayout({
   children,
@@ -56,6 +57,7 @@ export default function RootLayout({
             <CompareProvider>
               <ThemeProvider>
                 <SpecialWelcome />
+                <SeasonalEventManager />
                 <InstallPrompt />
                 {children}
                 <CompareFloatingBar />

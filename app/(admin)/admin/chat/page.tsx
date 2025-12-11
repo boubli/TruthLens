@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Chat } from '@/types/chat';
 import { Trash2, Search, Filter, MessageSquare, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Box, useTheme, alpha } from '@mui/material';
 
 export default function AdminChatPage() {
     const { user } = useAuth();
@@ -55,38 +56,46 @@ export default function AdminChatPage() {
 
     if (!user) return null;
 
+    const theme = useTheme();
+
     // View A: The Chat List
     const ChatListView = (
-        <div className="flex flex-col h-full bg-[#f5f7f9]">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#007bff] to-[#00c6ff] p-6 pb-12 rounded-b-[2.5rem] shadow-lg mb-[-2rem] z-10 relative">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-white tracking-wide">Messages</h1>
-                    <button
-                        onClick={handleClearAll}
-                        disabled={isClearing}
-                        className="text-white/80 hover:text-white p-2 hover:bg-white/10 rounded-full transition-all"
-                        title="Clear History"
-                    >
-                        <Trash2 size={20} />
-                    </button>
-                </div>
-
-                {/* Search Bar */}
+        <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            bgcolor: 'background.paper',
+            borderRight: 1,
+            borderColor: 'divider'
+        }}>
+            {/* Header - Search Only (Title Removed) */}
+            <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-300" size={18} />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                         type="text"
                         placeholder="Search conversations..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white/20 backdrop-blur-md text-white placeholder-blue-100 border border-white/30 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:bg-white/30 transition-all font-medium"
+                        className="w-full bg-transparent border border-gray-200 dark:border-gray-700 rounded-xl py-2 pl-10 pr-4 focus:outline-none focus:border-blue-500 transition-all font-medium text-sm"
+                        style={{ color: theme.palette.text.primary }}
                     />
                 </div>
-            </div>
+                <div className="flex justify-between items-center mt-2">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">Recent Chats</span>
+                    <button
+                        onClick={handleClearAll}
+                        disabled={isClearing}
+                        className="text-gray-400 hover:text-red-500 p-1 rounded-full transition-all"
+                        title="Clear History"
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
+            </Box>
 
             {/* List */}
-            <div className="flex-1 overflow-y-auto pt-10 px-4 space-y-3 z-0">
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {chats.filter(c =>
                     (c.userName?.toLowerCase().includes(searchQuery.toLowerCase())) ||
                     (c.userEmail?.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -103,17 +112,18 @@ export default function AdminChatPage() {
                             c.id.includes(searchQuery)
                         )
                         .map(chat => (
-                            <motion.button
+                            <motion.div
                                 key={chat.id}
+                                role="button"
+                                tabIndex={0}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
                                 onClick={() => setSelectedChatId(chat.id)}
-                                className={`w-full text-left p-4 rounded-2xl shadow-sm border transition-all flex items-center gap-4 group ${selectedChatId === chat.id
-                                    ? 'bg-white border-blue-400 shadow-blue-100'
-                                    : 'bg-white border-transparent hover:border-gray-200'
-                                    }`}
+                                onKeyDown={(e) => e.key === 'Enter' && setSelectedChatId(chat.id)}
+                                className={`w-full text-left p-3 rounded-xl transition-all flex items-center gap-3 group cursor-pointer relative`}
+                                style={{
+                                    backgroundColor: selectedChatId === chat.id ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                                }}
                             >
                                 <UserAvatarWithStatus
                                     userId={chat.userId}
@@ -122,44 +132,60 @@ export default function AdminChatPage() {
                                     isSelected={selectedChatId === chat.id}
                                 />
 
-                                {/* Delete Button - Visible on Group Hover */}
-                                <button
-                                    onClick={(e) => handleDeleteChat(chat.id, e)}
-                                    className="absolute right-2 top-2 p-2 bg-white/80 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10 shadow-sm"
-                                    title="Delete Conversation"
-                                >
-                                    <Trash2 size={16} />
-                                </button>
-
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-baseline mb-1">
-                                        <span className={`font-bold truncate ${selectedChatId === chat.id ? 'text-blue-900' : 'text-gray-800'}`}>
+                                    <div className="flex justify-between items-baseline mb-0.5">
+                                        <span className="font-semibold truncate" style={{ color: theme.palette.text.primary }}>
                                             {chat.userName || chat.userEmail || "Anonymous User"}
                                         </span>
                                         <span className="text-[10px] text-gray-400 font-medium">
                                             {chat.updatedAt?.toDate?.().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
-                                    <p className={`text-xs truncate ${selectedChatId === chat.id ? 'text-blue-600/80' : 'text-gray-500'}`}>
+                                    <p className="text-xs truncate" style={{ color: theme.palette.text.secondary }}>
                                         {chat.lastMessage?.text || "Started a new conversation"}
                                     </p>
                                 </div>
-                            </motion.button>
+
+                                {/* Delete Hover Action */}
+                                <button
+                                    onClick={(e) => handleDeleteChat(chat.id, e)}
+                                    className="absolute right-2 top-2 p-1.5 hover:bg-red-500 hover:text-white text-gray-400 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </motion.div>
                         ))
                 )}
             </div>
-        </div>
+        </Box>
     );
 
     return (
-        <div className="flex h-[calc(100vh-80px)] md:h-[calc(100vh-100px)] bg-[#f5f7f9] rounded-3xl overflow-hidden shadow-2xl max-w-[1600px] mx-auto">
+        // Full screen negative margin container to override AdminLayout padding
+        <Box sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', md: 'row' },
+            // Calculate height to fill remaining screen exactly (100vh - AppBar height)
+            height: { xs: 'calc(100vh - 64px)', md: 'calc(100vh - 72px)' },
+            // Negative margins to stretch to edges
+            mx: { xs: -2.5, sm: -4, md: -5 },
+            my: { xs: -2.5, sm: -4, md: -5 },
+            width: { xs: 'calc(100% + 20px)', sm: 'calc(100% + 32px)', md: 'calc(100% + 40px)' },
+            borderTop: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            overflow: 'hidden'
+        }}>
             {/* Desktop: Sidebar (List) */}
-            <div className={`
-                ${selectedChatId ? 'hidden md:block' : 'block'} 
-                w-full md:w-[350px] lg:w-[400px] border-r border-gray-100 bg-[#f5f7f9]
-            `}>
+            <Box sx={{
+                width: { md: 320, lg: 360 },
+                display: { xs: selectedChatId ? 'none' : 'block', md: 'block' },
+                borderRight: 1,
+                borderColor: 'divider',
+                height: '100%'
+            }}>
                 {ChatListView}
-            </div>
+            </Box>
 
             {/* Desktop & Mobile: Main Content (Conversation) */}
             <div className={`
@@ -199,7 +225,7 @@ export default function AdminChatPage() {
                     )}
                 </AnimatePresence>
             </div>
-        </div>
+        </Box>
     );
 }
 

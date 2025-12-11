@@ -98,8 +98,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         if (loading) return;
 
-        // Allow access to login page always
-        if (pathname === '/login') return;
+        // Allow access to login page BUT redirect if already logged in
+        if (pathname === '/login') {
+            if (user) {
+                // Determine destination based on role
+                // @ts-ignore - access role safely even if type is partial during load
+                const target = userProfile?.role === 'admin' ? '/admin' : '/';
+                router.replace(target);
+            }
+            return;
+        }
 
         const isAdminUser = userProfile?.role === 'admin';
 

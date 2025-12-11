@@ -19,6 +19,7 @@ const SIDEBAR_WIDTH = 280;
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [desktopOpen, setDesktopOpen] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -31,7 +32,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }, []);
 
     const handleDrawerToggle = () => {
-        setMobileOpen(!mobileOpen);
+        if (isMobile) {
+            setMobileOpen(!mobileOpen);
+        } else {
+            setDesktopOpen(!desktopOpen);
+        }
     };
 
     const getPageTitle = (path: string) => {
@@ -42,9 +47,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#F8FAFC' }}>
+        <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
             {/* Sidebar Navigation */}
-            <AdminSidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} unreadCount={unreadCount} />
+            <AdminSidebar
+                mobileOpen={mobileOpen}
+                setMobileOpen={setMobileOpen}
+                desktopOpen={desktopOpen} // Pass desktop state
+                unreadCount={unreadCount}
+            />
 
             {/* Main Content Area */}
             <Box
@@ -53,9 +63,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     flexGrow: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    // Safe area for sidebar on desktop
-                    width: { md: `calc(100% - ${SIDEBAR_WIDTH}px)` },
                     minHeight: '100vh',
+                    minWidth: 0, // Critical for text truncation in flex children
                     transition: 'width 0.3s ease',
                 }}
             >
@@ -64,15 +73,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     position="sticky"
                     elevation={0}
                     sx={{
-                        bgcolor: alpha('#F8FAFC', 0.8),
+                        bgcolor: alpha(theme.palette.background.default, 0.8),
                         backdropFilter: 'blur(12px)',
                         borderBottom: '1px solid',
-                        borderColor: alpha('#94A3B8', 0.2),
-                        color: '#0F172A',
+                        borderColor: 'divider',
+                        color: 'text.primary',
+                        transition: 'width 0.3s ease',
                     }}
                 >
                     <Toolbar sx={{ minHeight: { xs: 64, md: 72 } }}>
-                        {/* Hamburger Menu (Mobile Only) */}
+                        {/* Hamburger Menu (Visible on both now) */}
                         <IconButton
                             color="inherit"
                             aria-label="open drawer"
@@ -80,7 +90,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             onClick={handleDrawerToggle}
                             sx={{
                                 mr: 2,
-                                display: { md: 'none' },
+                                // display: { md: 'none' }, // Removed to show on desktop
                                 bgcolor: alpha('#0F172A', 0.05),
                                 borderRadius: '12px',
                                 '&:hover': {
@@ -88,7 +98,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 },
                             }}
                         >
-                            {mobileOpen ? <CloseIcon /> : <MenuIcon />}
+                            {(isMobile ? mobileOpen : desktopOpen) ? <CloseIcon /> : <MenuIcon />}
                         </IconButton>
 
                         <Typography variant="h6" component="h1" sx={{ flexGrow: 1, fontWeight: 700, letterSpacing: 0.5 }}>
@@ -98,8 +108,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         {/* Right Side Actions */}
                         <IconButton
                             sx={{
-                                color: '#64748B',
-                                '&:hover': { color: '#0F172A', bgcolor: alpha('#0F172A', 0.05) }
+                                color: 'text.secondary',
+                                '&:hover': { color: 'text.primary', bgcolor: 'action.hover' }
                             }}
                         >
                             <Badge badgeContent={unreadCount} color="error">

@@ -7,6 +7,7 @@ import { Send, MoreVertical, ChevronDown, Paperclip, Smile } from 'lucide-react'
 import { Box } from '@mui/material'; // Keeping imports clean, although using Tailwind mainly
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { useTheme } from '@mui/material';
 
 interface AdminChatWindowProps {
     chatId: string;
@@ -105,53 +106,67 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
         setNewMessage(prev => prev + emoji);
     };
 
-    return (
-        <div className="flex flex-col h-full bg-white rounded-3xl shadow-2xl overflow-hidden relative">
-            {/* Header - Tidio Style */}
-            <div className="bg-gradient-to-r from-[#007bff] to-[#00c6ff] p-4 text-white relative">
-                <div className="flex items-center justify-between z-10 relative">
-                    <div className="flex items-center gap-3">
-                        {/* Mobile Back Button */}
-                        <button
-                            onClick={onBack}
-                            className="md:hidden text-white/80 hover:text-white transition-colors"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
-                        </button>
+    const theme = useTheme();
 
-                        <div className="relative">
-                            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-lg font-bold border-2 border-white/30">
+    return (
+        <Box sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            bgcolor: 'background.default',
+            overflow: 'hidden',
+            position: 'relative'
+        }}>
+            {/* Header */}
+            <Box sx={{
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: 1,
+                borderColor: 'divider',
+                bgcolor: 'background.paper'
+            }}>
+                <div className="flex items-center gap-3">
+                    {/* Mobile Back Button */}
+                    <button
+                        onClick={onBack}
+                        className="md:hidden text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6" /></svg>
+                    </button>
+
+                    <div className="relative">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold border border-gray-200 dark:border-gray-700 overflow-hidden" style={{ backgroundColor: theme.palette.action.hover }}>
+                            <span style={{ color: theme.palette.text.primary }}>
                                 {(chatPartnerName || chatPartnerEmail || 'U')[0]?.toUpperCase()}
-                            </div>
-                            {/* Real Status Indicator */}
-                            <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-[#007bff] rounded-full ${partnerStatus === 'online' ? 'bg-green-400' : 'bg-gray-400'}`}></div>
+                            </span>
                         </div>
-                        <div>
-                            <h3 className="font-bold text-sm md:text-base leading-tight">
-                                {chatPartnerName || chatPartnerEmail || 'User'}
-                            </h3>
-                            <p className="text-xs text-blue-100/90">
-                                {partnerStatus === 'online' ? 'Online' : lastSeen ? `Last seen ${lastSeen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Offline'}
-                            </p>
-                        </div>
+                        {/* Real Status Indicator */}
+                        <div className={`absolute bottom-0 right-0 w-3 h-3 border-2 border-white dark:border-gray-800 rounded-full ${partnerStatus === 'online' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-sm md:text-base leading-tight" style={{ color: theme.palette.text.primary }}>
+                            {chatPartnerName || chatPartnerEmail || 'User'}
+                        </h3>
+                        <p className="text-xs" style={{ color: partnerStatus === 'online' ? theme.palette.success.main : theme.palette.text.secondary }}>
+                            {partnerStatus === 'online' ? 'Online' : lastSeen ? `Last seen ${lastSeen.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : 'Offline'}
+                        </p>
                     </div>
                 </div>
-                {/* Wave Shape at bottom - using CSS clip-path or simple absolute SVG */}
-                <div className="absolute -bottom-1 left-0 w-full h-4 bg-white" style={{ clipPath: 'ellipse(50% 100% at 50% 100%)', display: 'none' }}></div>
-                {/* CSS Curve hack or SVG... keeping it simple clean line for now or SVG if possible */}
-                <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0]">
-                    <svg className="relative block w-[calc(110%+1.3px)] h-[20px]" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                        <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" className="fill-white opacity-20 hidden"></path>
-                    </svg>
-                </div>
-            </div>
-            {/* Curved separator */}
-            <div className="h-6 bg-gradient-to-r from-[#007bff] to-[#00c6ff] rounded-b-[50px] mb-[-10px] z-0"></div>
+            </Box>
 
 
-            {/* Messages Area - Light Grey Background */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 z-10 pt-6">
-                {/* Greeting Placeholder */}
+            {/* Messages Area */}
+            <Box sx={{
+                flex: 1,
+                overflowY: 'auto',
+                p: 2,
+                bgcolor: 'background.default',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2
+            }}>
                 {messages.length === 0 && (
                     <div className="text-center text-gray-400 text-sm my-4">
                         This is the beginning of the conversation.
@@ -165,17 +180,27 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
                     return (
                         <div key={msg.id} className="flex flex-col">
                             <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} group mb-1`}>
-                                <div
-                                    className={`max-w-[80%] px-5 py-3 text-sm shadow-sm relative ${isMe
-                                        ? 'bg-[#007bff] text-white rounded-2xl rounded-br-sm'
-                                        : 'bg-white text-gray-800 rounded-2xl rounded-bl-sm border border-gray-100'
-                                        }`}
+                                <Box
+                                    sx={{
+                                        maxWidth: '80%',
+                                        px: 2,
+                                        py: 1.5,
+                                        fontSize: '0.875rem',
+                                        boxShadow: 1,
+                                        borderRadius: 2,
+                                        borderBottomRightRadius: isMe ? 4 : 16,
+                                        borderBottomLeftRadius: isMe ? 16 : 4,
+                                        bgcolor: isMe ? 'primary.main' : 'background.paper',
+                                        color: isMe ? 'primary.contrastText' : 'text.primary',
+                                        border: isMe ? 'none' : '1px solid',
+                                        borderColor: 'divider'
+                                    }}
                                 >
                                     {msg.text}
-                                    <div className={`text-[10px] mt-1 text-right ${isMe ? 'text-blue-100' : 'text-gray-400'}`}>
+                                    <div className={`text-[10px] mt-1 text-right ${isMe ? 'opacity-70' : 'text-gray-400'}`}>
                                         {msg.createdAt?.toDate ? msg.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                     </div>
-                                </div>
+                                </Box>
                             </div>
 
                             {/* Seen Indicator */}
@@ -188,29 +213,41 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
                     );
                 })}
                 <div ref={messagesEndRef} />
-            </div>
+            </Box>
 
-            {/* Input Area - White with floating button */}
-            <form onSubmit={handleSend} className="p-4 bg-white border-t border-gray-100 flex items-center gap-3 relative">
-                <div className="flex gap-2 text-gray-400 relative">
-                    <button type="button" className="hover:text-[#007bff] transition-colors"><Paperclip size={20} /></button>
+            {/* Input Area */}
+            <Box
+                component="form"
+                onSubmit={handleSend}
+                sx={{
+                    p: 2,
+                    borderTop: 1,
+                    borderColor: 'divider',
+                    bgcolor: 'background.paper',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5
+                }}
+            >
+                <div className="flex gap-2 relative">
+                    <button type="button" className="text-gray-400 hover:text-blue-500 transition-colors"><Paperclip size={20} /></button>
                     <button
                         type="button"
                         onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                        className={`hover:text-[#007bff] transition-colors ${showEmojiPicker ? 'text-[#007bff]' : ''}`}
+                        className={`transition-colors ${showEmojiPicker ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`}
                     >
                         <Smile size={20} />
                     </button>
 
                     {/* Simple Custom Emoji Picker */}
                     {showEmojiPicker && (
-                        <div className="absolute bottom-10 left-0 bg-white shadow-xl border border-gray-100 rounded-xl p-2 grid grid-cols-4 gap-2 w-48 z-50">
+                        <div className="absolute bottom-10 left-0 bg-white dark:bg-gray-800 shadow-xl border border-gray-100 dark:border-gray-700 rounded-xl p-2 grid grid-cols-4 gap-2 w-48 z-50">
                             {EMOJIS.map(emoji => (
                                 <button
                                     key={emoji}
                                     type="button"
                                     onClick={() => addEmoji(emoji)}
-                                    className="text-2xl hover:bg-gray-100 p-2 rounded-lg transition-colors"
+                                    className="text-2xl hover:bg-gray-100 dark:hover:bg-gray-700 p-2 rounded-lg transition-colors"
                                 >
                                     {emoji}
                                 </button>
@@ -224,18 +261,19 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Enter your message..."
-                    className="flex-1 py-3 px-2 bg-transparent focus:outline-none text-gray-700 placeholder-gray-400"
+                    className="flex-1 py-2 px-0 bg-transparent focus:outline-none placeholder-gray-400"
+                    style={{ color: theme.palette.text.primary }}
                 />
 
                 <button
                     type="submit"
                     disabled={!newMessage.trim()}
-                    className="p-3.5 rounded-full bg-gradient-to-r from-[#007bff] to-[#00c6ff] text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none"
+                    className="p-3 rounded-full bg-blue-500 text-white shadow-md hover:bg-blue-600 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:shadow-none flex items-center justify-center"
                 >
-                    <Send size={18} className="translate-x-[1px] translate-y-[1px]" />
+                    <Send size={18} />
                 </button>
-            </form>
-        </div>
+            </Box>
+        </Box>
     );
 };
 

@@ -16,7 +16,7 @@ service cloud.firestore {
 
     // User profiles
     match /users/{userId} {
-      allow read: if isAuth(); 
+      allow read: if request.auth.uid == userId || isAdmin(); 
       // Allow create if auth matches and strictly setting role to 'user' or not setting it
       allow create: if request.auth.uid == userId && 
                        (!('role' in request.resource.data) || request.resource.data.role == 'user');
@@ -98,7 +98,29 @@ service cloud.firestore {
       allow read: if isAdmin(); 
       allow write: if isAuth(); 
     }
-    
+
+    // Access Codes (Protected - Admin Only)
+    // NOTE: Validation and Submission for users is now handled via Server APIs
+    // Users should NOT have read access to this collection directly.
+    match /accessCodes/{codeId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Free Access Requests
+    match /freeAccessRequests/{requestId} {
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin(); // Admins approve/deny
+      allow delete: if isAdmin();
+    }
+
+    // Cancellation Requests
+    match /cancellationRequests/{requestId} {
+      allow create: if isAuth() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
 
     // Chat System
     match /chats/{chatId} {

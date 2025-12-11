@@ -121,9 +121,9 @@ const callGemini = async (prompt: string): Promise<string> => {
         return result.response.text();
     } catch (e: any) {
         if (e.message.includes('404') || e.message.includes('not found')) {
-            console.warn("⚠️ 'gemini-1.5-flash' alias failed, trying 'gemini-1.5-flash-001'");
-            // Fallback to specific version if alias fails
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+            console.warn("⚠️ 'gemini-1.5-flash' alias failed, trying 'gemini-1.5-flash-latest'");
+            // Fallback to latest variant
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
             const result = await model.generateContent(prompt);
             return result.response.text();
         }
@@ -201,58 +201,62 @@ const callOpenAI = async (prompt: string): Promise<string> => {
 
 // --- AI Swarm Logic (Generic) ---
 
+// --- AI Swarm Logic (Hybrid: Client Key or Server Action) ---
+
+import { serverSwarmResponse } from '@/app/actions/aiActions';
+
 const getSwarmResponse = async (prompt: string, trustedProviders: Array<{ name: string, fn: (p: string) => Promise<string> }> = []): Promise<string> => {
-    // Default swarm if none provided - Ollama first (free, self-hosted)
-    const allProviders = [
-        { name: 'Ollama', fn: callOllama }, // Self-hosted, free, unlimited!
-        { name: 'Groq', fn: callGroq },
-        { name: 'Gemini', fn: callGemini },
-        { name: 'DeepSeek', fn: callDeepSeek },
-        { name: 'OpenAI', fn: callOpenAI },
-        { name: 'Cerebras', fn: callCerebras },
-        { name: 'SambaNova', fn: callSambaNova },
-    ];
+    // 1. Check for User-Provided Keys (Client Side)
+    // If user has their own key, we use client-side calls (faster, no server load)
+    const userProviders: Array<{ name: string, fn: (p: string) => Promise<string> }> = [];
 
-    const providersToRace = trustedProviders.length > 0 ? trustedProviders : allProviders;
+    // Check keys concurrently
+    const [hasGroq, hasGemini, hasDeepSeek, hasCerebras, hasSambaNova, hasOpenAI] = await Promise.all([
+        getDynamicKey('groq', ''),
+        getDynamicKey('gemini', ''),
+        getDynamicKey('deepseek', ''),
+        getDynamicKey('cerebras', ''),
+        getDynamicKey('sambanova', ''),
+        getDynamicKey('openai', '')
+    ]);
 
-    // Check for keys asynchronously (Env OR Dynamic)
-    const activeProviders = (await Promise.all(providersToRace.map(async (p) => {
-        let hasKey = false;
-        if (p.name === 'Ollama') {
-            // Ollama doesn't need a key, just check if it's healthy
-            const { checkOllamaHealth } = await import('./ollamaService');
-            hasKey = await checkOllamaHealth();
+    if (hasGroq) userProviders.push({ name: 'Groq', fn: callGroq });
+    if (hasGemini) userProviders.push({ name: 'Gemini', fn: callGemini });
+    if (hasDeepSeek) userProviders.push({ name: 'DeepSeek', fn: callDeepSeek });
+    if (hasCerebras) userProviders.push({ name: 'Cerebras', fn: callCerebras });
+    if (hasSambaNova) userProviders.push({ name: 'SambaNova', fn: callSambaNova });
+    if (hasOpenAI) userProviders.push({ name: 'OpenAI', fn: callOpenAI });
+
+    // Always add Ollama (Free, Self-Hosted, Client-side proxy or direct)
+    // Actually Ollama is usually local or proxied. 
+    userProviders.push({ name: 'Ollama', fn: callOllama });
+
+    // Filter trusted if specified
+    const activeClientProviders = trustedProviders.length > 0
+        ? trustedProviders.filter(p => userProviders.some(up => up.name === p.name))
+        : userProviders;
+
+    // 2. If User has keys, race them
+    if (activeClientProviders.length > 0 && activeClientProviders.some(p => p.name !== 'Ollama')) { // Prefer user keys over server if valid
+        console.log(`🐝 [Client Swarm] Racing User Keys: ${activeClientProviders.map(p => p.name).join(', ')}...`);
+        try {
+            return await Promise.any(activeClientProviders.map(p => p.fn(prompt)));
+        } catch (e) {
+            console.warn("Client swarm failed, falling back to server...", e);
         }
-        else if (p.name === 'Groq') hasKey = !!(await getDynamicKey('groq', GROQ_API_KEY));
-        else if (p.name === 'Gemini') hasKey = !!(await getDynamicKey('gemini', GEMINI_API_KEY));
-        else if (p.name === 'OpenAI') hasKey = !!(await getDynamicKey('openai', OPENAI_API_KEY));
-        else if (p.name === 'DeepSeek') hasKey = !!(await getDynamicKey('deepseek', DEEPSEEK_API_KEY));
-        else if (p.name === 'Cerebras') hasKey = !!(await getDynamicKey('cerebras', CEREBRAS_API_KEY));
-        else if (p.name === 'SambaNova') hasKey = !!(await getDynamicKey('sambanova', SAMBANOVA_API_KEY));
+    }
 
-        return hasKey ? p : null;
-    }))).filter((p): p is { name: string; fn: (p: string) => Promise<string> } => p !== null);
-
-    if (activeProviders.length === 0) throw new Error("No active AI providers available for this task. Please check API Settings.");
-
-    console.log(`🐝 [AI Swarm] Racing ${activeProviders.map(p => p.name).join(', ')}...`);
-
+    // 3. Fallback to Server Swarm (System Keys)
+    // If no user keys, or client swarm failed, use Server Actions (which use hidden System Keys)
     try {
-        return await Promise.any(activeProviders.map(async (provider) => {
-            try {
-                const res = await provider.fn(prompt);
-                console.log(`✅ [AI Swarm] Winner: ${provider.name}`);
-                return res;
-            } catch (e: any) {
-                console.error(`❌ [AI Swarm] ${provider.name} failed:`, e.message);
-                throw e;
-            }
-        }));
+        const serverProviders = trustedProviders.length > 0
+            ? trustedProviders.map(p => p.name.toLowerCase()).filter(n => ['groq', 'gemini', 'deepseek', 'cerebras', 'sambanova'].includes(n))
+            : ['groq', 'gemini'];
+
+        return await serverSwarmResponse(prompt, serverProviders);
     } catch (error: any) {
-        console.error("☠️ [AI Swarm] All providers failed:", error);
-        // Construct a readable error message from the AggregateError
-        const errorDetails = error.errors ? error.errors.map((e: any) => e.message).join(' | ') : error.message;
-        return `[Swarm Failed] All providers failed. Details: ${errorDetails}`;
+        console.error("☠️ [Swarm Failed] Both Client and Server swarms failed:", error);
+        throw error;
     }
 };
 
@@ -620,8 +624,8 @@ export const repairProductMetadata = async (imageUrl: string, currentName: strin
             result = await model.generateContent([prompt, imagePart]);
         } catch (e: any) {
             if (e.message.includes('404') || e.message.includes('not found')) {
-                console.warn("⚠️ 'gemini-1.5-flash' alias failed, trying 'gemini-1.5-flash-001'");
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
+                console.warn("⚠️ 'gemini-1.5-flash' alias failed, trying 'gemini-1.5-flash-latest'");
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
                 result = await model.generateContent([prompt, imagePart]);
             } else {
                 throw e;

@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
                 if (!data?.role) return NextResponse.json({ error: 'Missing role' }, { status: 400 });
                 await adminAuth.setCustomUserClaims(userId, { role: data.role });
                 // Also update Firestore for consistency
-                await adminDb.collection('users').doc(userId).update({ role: data.role });
+                // Use set with merge to create doc if missing (avoids 500 error on update)
+                await adminDb.collection('users').doc(userId).set({ role: data.role }, { merge: true });
                 return NextResponse.json({ success: true, message: `Role updated to ${data.role}` });
 
             case 'updateTier':

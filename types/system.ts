@@ -47,4 +47,35 @@ export interface ExtendedSystemSettings {
         androidIcon192Url?: string;
         androidIcon512Url?: string;
     };
+    eventManager?: EventManagerConfig; // @deprecated: Use eventSchedule
+    eventSchedule?: EventManagerConfig[]; // [NEW] List of future events
+}
+
+export interface EventManagerConfig {
+    event_id: string;              // Unique ID (e.g., "NYE_2025")
+    is_active_global: boolean;     // Master Switch
+
+    // Theme Scheduling (UTC ISO Strings)
+    general_theme_start: string;
+    general_theme_end: string;
+
+    // Celebration Scheduling (UTC ISO Strings)
+    celebration_music_start: string;
+    celebration_climax_start: string; // [NEW] Explicit start for Fireworks
+    celebration_music_end: string;
+
+    // Attributes
+    countdown_seconds: number;     // e.g., 10
+    celebration_message: string;   // Main big text (e.g. "HAPPY NEW YEAR")
+    special_message?: string;      // Secondary detailed message
+    special_message_color?: string; // [NEW] e.g. "#ffffff" or "linear-gradient..."
+    special_message_image_url?: string; // [NEW] Image displayed alongside special message
+    music_file_url: string;        // Background Music URL to hosted audio
+
+    // Explicit Effects per Phase
+    theme_effect: 'snow_cold' | 'none' | string;       // Phase A Effect
+    climax_effect: 'fireworks' | 'confetti' | 'none' | string; // Phase B Effect
+
+    // Deprecated but kept for type safety if needed temporarily
+    // effect_type: ... (Removed)
 }

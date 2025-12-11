@@ -8,9 +8,7 @@ import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import DiamondIcon from '@mui/icons-material/Diamond';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { createPaymentRequest, getPendingPaymentRequest, cancelPaymentRequest } from '@/services/paymentService';
 import { createCheckoutSession } from '@/app/actions/stripe';
-import { PaymentRequest } from '@/types/payment';
 import PageTransition from '@/components/animation/PageTransition';
 import ScrollReveal from '@/components/animation/ScrollReveal';
 import AnimatedButton from '@/components/ui/AnimatedButton';
@@ -21,51 +19,33 @@ export default function UpgradePage() {
     const router = useRouter();
     const { user, tier, refreshProfile, tierConfig } = useAuth();
     const [loading, setLoading] = useState(false);
-    const [pendingRequest, setPendingRequest] = useState<PaymentRequest | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [success, setSuccess] = useState(false);
 
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'lifetime'>('monthly');
 
     useEffect(() => {
         if (!user) {
             router.push('/login');
-            return;
         }
-        checkPendingRequest();
     }, [user, router]);
 
-    const checkPendingRequest = async () => {
-        if (!user) return;
-        const request = await getPendingPaymentRequest(user.uid);
-        setPendingRequest(request);
-    };
-
-    const handleUpgradeRequest = async (targetTier: 'plus' | 'pro' | 'ultimate', type: 'manual' | 'paid') => {
+    const handleStripeCheckout = async (targetTier: 'plus' | 'pro' | 'ultimate') => {
         if (!user) return;
         setLoading(true);
         setError(null);
         try {
-            if (type === 'manual') {
-                await createPaymentRequest(user.uid, user.email || '', user.displayName || 'User', targetTier, 'manual', billingCycle);
-                setSuccess(true);
-                setTimeout(() => {
-                    checkPendingRequest();
-                }, 1000);
-            } else {
-                // Real Stripe Flow
-                const { url } = await createCheckoutSession({
-                    userId: user.uid,
-                    userEmail: user.email || '',
-                    tier: targetTier,
-                    billingCycle
-                });
+            // Real Stripe Flow
+            const { url } = await createCheckoutSession({
+                userId: user.uid,
+                userEmail: user.email || '',
+                tier: targetTier,
+                billingCycle
+            });
 
-                if (url) {
-                    window.location.href = url; // Redirect to Stripe
-                } else {
-                    throw new Error('Failed to start checkout');
-                }
+            if (url) {
+                window.location.href = url; // Redirect to Stripe
+            } else {
+                throw new Error('Failed to start checkout');
             }
         } catch (err: any) {
             console.error(err);
@@ -74,60 +54,7 @@ export default function UpgradePage() {
         }
     };
 
-    const handleCancelRequest = async () => {
-        if (!pendingRequest || !pendingRequest.id) return;
-        if (confirm('Are you sure you want to cancel this upgrade request?')) {
-            setLoading(true);
-            try {
-                await cancelPaymentRequest(pendingRequest.id);
-                setPendingRequest(null);
-                setSuccess(false); // Reset success state if any
-            } catch (err) {
-                console.error('Failed to cancel request:', err);
-                setError('Failed to cancel request');
-            } finally {
-                setLoading(false);
-            }
-        }
-    };
-
     if (!user) return <LoadingSpinner fullScreen />;
-
-    if (pendingRequest) {
-        return (
-            <PageTransition>
-                <Container maxWidth="md" sx={{ mt: 10, mb: 10 }}>
-                    <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 4 }}>
-                        <Alert severity="info" sx={{ mb: 3 }}>
-                            <Typography variant="h6" gutterBottom>Upgrade Request Pending</Typography>
-                            <Typography variant="body2">
-                                Your upgrade request for <strong>{pendingRequest.tier.toUpperCase()}</strong> ({pendingRequest.billingCycle || 'monthly'}) is awaiting admin approval.
-                            </Typography>
-                        </Alert>
-
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'center', mt: 4 }}>
-                            <Button
-                                variant="outlined"
-                                color="error"
-                                onClick={handleCancelRequest}
-                                disabled={loading}
-                            >
-                                {loading ? 'Cancelling...' : 'Cancel Request'}
-                            </Button>
-
-                            <Button
-                                variant="text"
-                                onClick={() => router.push('/')}
-                                sx={{ color: 'text.secondary' }}
-                            >
-                                Back to Home
-                            </Button>
-                        </Box>
-                    </Paper>
-                </Container>
-            </PageTransition>
-        );
-    }
 
     const tiers = tierConfig ? (['plus', 'pro', 'ultimate'] as const).map(id => {
         const def = tierConfig[id];
@@ -391,7 +318,7 @@ export default function UpgradePage() {
                                                     color={isPopular ? 'warning' : 'primary'}
                                                     fullWidth
                                                     size="large"
-                                                    onClick={() => handleUpgradeRequest(plan.id as any, 'paid')}
+                                                    onClick={() => handleStripeCheckout(plan.id as any)}
                                                     disabled={loading}
                                                 >
                                                     {loading ? 'Processing...' : billingCycle === 'lifetime' ? 'Get Lifetime Access' : `Subscribe Monthly`}
@@ -399,8 +326,7 @@ export default function UpgradePage() {
                                                 <Button
                                                     variant="text"
                                                     size="small"
-                                                    disabled={loading}
-                                                    onClick={() => handleUpgradeRequest(plan.id as any, 'manual')}
+                                                    onClick={() => router.push('/request-access')}
                                                     sx={{ color: 'text.secondary' }}
                                                 >
                                                     Request Free Access

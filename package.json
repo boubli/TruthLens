@@ -31,6 +31,7 @@
     "lucide-react": "^0.556.0",
     "mysql2": "^3.15.3",
     "next": "16.0.7",
+    "node-appwrite": "^21.0.0",
     "otpauth": "^9.4.1",
     "qrcode.react": "^4.2.0",
     "react": "19.2.0",

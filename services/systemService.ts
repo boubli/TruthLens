@@ -105,3 +105,26 @@ export const subscribeToSystemSettings = (callback: (settings: ExtendedSystemSet
     });
 };
 
+
+/**
+ * Public method to fetch event config + server time from API (for Frontend Time Sync)
+ */
+export const fetchEventConfigFromApi = async () => {
+    try {
+        const start = Date.now();
+        const res = await fetch('/api/v1/event_config', { cache: 'no-store' });
+        const end = Date.now();
+        const data = await res.json();
+
+        if (data.status === 'success') {
+            return {
+                ...data.data,
+                latency: (end - start) / 2
+            };
+        }
+        return null;
+    } catch (e) {
+        console.error('Failed to fetch event config api', e);
+        return null;
+    }
+};

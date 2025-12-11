@@ -1,0 +1,33 @@
+ ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\Youssef Boubli\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Youssef Boubli\Desktop\TruthLens\package-lock.json
+
+   Γû▓ Next.js 16.0.7 (webpack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Γ£ô (pwa) Compiling for server...
+ Γ£ô (pwa) Compiling for server...
+ Γ£ô (pwa) Compiling for client (static)...
+ Γùï (pwa) Service worker: C:\Users\Youssef Boubli\Desktop\TruthLens\public\sw.js
+ Γùï (pwa)   URL: /sw.js
+ Γùï (pwa)   Scope: /
+ Γ£ô Compiled successfully in 11.6s
+   Running TypeScript ...
+Failed to compile.
+
+./services/accessRequestService.ts:171:13
+Type error: Type 'string | false | null' is not assignable to type 'boolean | undefined'.
+  Type 'null' is not assignable to type 'boolean | undefined'.
+
+  169 |             success: true,
+  170 |             requestId: requestRef.id,
+> 171 |             autoApproved: isStudentWithProof
+      |             ^
+  172 |         };
+  173 |     } catch (error) {
+  174 |         console.error('[AccessRequest] Error submitting request:', error);
+Next.js build worker exited with code: 1 and signal: null
