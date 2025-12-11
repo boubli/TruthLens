@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
         }
         else if (action === 'delete') {
             await secretRef.update({
-                [provider]: adminDb!.app.firestore().FieldValue.delete()
+                [provider]: FieldValue.delete()
             });
             return NextResponse.json({ success: true, message: 'Key deleted securely' });
         }
