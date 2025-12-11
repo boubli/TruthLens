@@ -9,16 +9,21 @@ import { createWeeklyMealPlan, getLatestMealPlan } from '@/services/mealPlannerS
 import { MealPlanDay } from '@/services/aiService';
 
 export default function MealPlannerPage() {
-    const { user, isPro } = useAuth();
+    const { user, features } = useAuth();
     const [plan, setPlan] = useState<MealPlanDay[]>([]);
     const [loading, setLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
 
+    // Access check
+    const hasAccess = features.mealPlanning;
+
     useEffect(() => {
-        if (user) {
+        if (user && hasAccess) {
             loadPlan();
+        } else {
+            setLoading(false);
         }
-    }, [user]);
+    }, [user, hasAccess]);
 
     const loadPlan = async () => {
         setLoading(true);
@@ -44,6 +49,24 @@ export default function MealPlannerPage() {
     };
 
     if (!user) return <Container sx={{ mt: 10 }}>Please log in.</Container>;
+
+    // Premium feature gate
+    if (!hasAccess) {
+        return (
+            <Container maxWidth="sm" sx={{ mt: 10, textAlign: 'center' }}>
+                <Paper sx={{ p: 5, borderRadius: 4 }}>
+                    <RestaurantMenuIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
+                    <Typography variant="h5" fontWeight="bold" gutterBottom>Premium Feature</Typography>
+                    <Typography color="text.secondary" paragraph>
+                        AI Meal Planning is available for Pro and Ultimate members.
+                    </Typography>
+                    <Button variant="contained" color="warning" href="/upgrade">
+                        Upgrade Now
+                    </Button>
+                </Paper>
+            </Container>
+        );
+    }
 
     return (
         <Container maxWidth="lg" sx={{ mt: 5, mb: 10 }}>

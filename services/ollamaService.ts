@@ -72,6 +72,51 @@ const executeWithFallback = async <T>(
 };
 
 /**
+ * Task-based model routing configuration
+ * Maps task types to preferred models for optimal performance
+ */
+export const MODEL_ROUTING: Record<string, string> = {
+    'analysis': 'phi',           // Product/ingredient analysis - needs reasoning
+    'chat': 'stablelm2',         // AI Chat Assistant - conversational
+    'multilingual': 'qwen:1.8b', // French/Arabic translations
+    'quick': 'tinyllama',        // Fast suggestions, simple tasks
+    'general': 'llama3.2:1b'     // Default fallback
+};
+
+/**
+ * Get the best model for a specific task type
+ * Validates model is enabled, falls back to alternatives if not
+ */
+export const getModelForTask = async (taskType: keyof typeof MODEL_ROUTING): Promise<string> => {
+    const preferredModel = MODEL_ROUTING[taskType] || MODEL_ROUTING['general'];
+
+    try {
+        const settings = await getSystemSettings();
+        const enabledModels = settings.apiKeys?.ollamaModels || {};
+
+        // If preferred model is enabled, use it
+        if (enabledModels[preferredModel]) {
+            console.log(`[Ollama] Task '${taskType}' -> Using preferred model: ${preferredModel}`);
+            return preferredModel;
+        }
+
+        // Fallback: Find any enabled model from routing table
+        for (const [, model] of Object.entries(MODEL_ROUTING)) {
+            if (enabledModels[model]) {
+                console.log(`[Ollama] Task '${taskType}' -> Fallback to: ${model}`);
+                return model;
+            }
+        }
+
+        // Ultimate fallback
+        return await getPreferredModel();
+    } catch (e) {
+        console.warn(`[Ollama] getModelForTask error, using default: ${preferredModel}`);
+        return preferredModel;
+    }
+};
+
+/**
  * Get preferred model based on System Settings
  * Validates if the requested model is enabled by Admin.
  * If not, or if no model requested, returns the first enabled model.
@@ -205,4 +250,44 @@ export const checkOllamaHealth = async (): Promise<boolean> => {
     } catch (error) {
         return false;
     }
+};
+
+// ============================================
+// TASK-SPECIFIC CONVENIENCE FUNCTIONS
+// ============================================
+
+/**
+ * Chat optimized for product/ingredient analysis
+ * Uses 'phi' model for reasoning capabilities
+ */
+export const chatForAnalysis = async (prompt: string, systemPrompt?: string): Promise<string> => {
+    const model = await getModelForTask('analysis');
+    return chatWithOllama(prompt, model, systemPrompt);
+};
+
+/**
+ * Chat optimized for AI Assistant conversations
+ * Uses 'stablelm2' for natural conversation flow
+ */
+export const chatForAssistant = async (prompt: string, systemPrompt?: string): Promise<string> => {
+    const model = await getModelForTask('chat');
+    return chatWithOllama(prompt, model, systemPrompt);
+};
+
+/**
+ * Quick responses for simple tasks
+ * Uses 'tinyllama' for fast inference
+ */
+export const chatForQuick = async (prompt: string): Promise<string> => {
+    const model = await getModelForTask('quick');
+    return chatWithOllama(prompt, model);
+};
+
+/**
+ * Multilingual tasks (French, Arabic, etc.)
+ * Uses 'qwen:1.8b' for language capabilities
+ */
+export const chatForMultilingual = async (prompt: string, systemPrompt?: string): Promise<string> => {
+    const model = await getModelForTask('multilingual');
+    return chatWithOllama(prompt, model, systemPrompt);
 };

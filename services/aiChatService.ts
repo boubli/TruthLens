@@ -148,7 +148,7 @@ export const resolveApiKey = async (
             throw error;
         }
 
-        return { key: platformKey, source: 'platform' };
+        return { key: platformKey as string, source: 'platform' };
     }
 
     // Free and Plus users must use their own key

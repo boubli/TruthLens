@@ -13,7 +13,10 @@ import {
     InputAdornment,
     IconButton,
     Snackbar,
-    Divider
+    Divider,
+    Card,
+    CardContent,
+    CardHeader
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -23,6 +26,9 @@ import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import BuildIcon from '@mui/icons-material/Build';
 import ScienceIcon from '@mui/icons-material/Science';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
+import SearchIcon from '@mui/icons-material/Search';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import { Switch, FormControlLabel } from '@mui/material';
 import { getSystemSettings, updateSystemSettings } from '@/services/systemService';
 import { useAuth } from '@/context/AuthContext';
@@ -37,7 +43,6 @@ export default function AdminSettingsPage() {
     const router = useRouter();
 
     const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
     const [msg, setMsg] = useState({ type: 'success', text: '' });
     const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
 
@@ -52,24 +57,32 @@ export default function AdminSettingsPage() {
     });
     const [savingSecure, setSavingSecure] = useState(false);
 
-    // Other API Keys (stored in system/settings - public access)
-
-    const [apiKeys, setApiKeys] = useState({
+    // --- FREE API KEYS ---
+    const [freeApiKeys, setFreeApiKeys] = useState({
         gemini: '',
         groq: '',
         openai: '',
         deepseek: '',
         cerebras: '',
         sambanova: '',
-        serpapi: '',
-        searxngUrl: '',
-        searxngUrl: '',
+        serpapi: ''
+    });
+    const [savingFreeKeys, setSavingFreeKeys] = useState(false);
+
+    // --- SEARXNG SETTINGS ---
+    const [searxngConfig, setSearxngConfig] = useState({
+        searxngUrl: ''
+    });
+    const [savingSearxng, setSavingSearxng] = useState(false);
+
+    // --- OLLAMA SETTINGS ---
+    const [ollamaConfig, setOllamaConfig] = useState({
         ollamaUrl: '',
         ollamaFallbackUrl: '',
         defaultOllamaModel: '',
         ollamaModels: {} as Record<string, boolean>
     });
-
+    const [savingOllama, setSavingOllama] = useState(false);
     const [availableModels, setAvailableModels] = useState<string[]>([]);
     const [loadingModels, setLoadingModels] = useState(false);
 
@@ -79,6 +92,12 @@ export default function AdminSettingsPage() {
         androidIcon192Url: '',
         androidIcon512Url: ''
     });
+    const [savingBranding, setSavingBranding] = useState(false);
+
+    // --- BACKUP SETTINGS ---
+    const [runningBackup, setRunningBackup] = useState(false);
+    const [backupHistory, setBackupHistory] = useState<any[]>([]);
+    const [loadingBackupHistory, setLoadingBackupHistory] = useState(false);
 
     useEffect(() => {
         if (!authLoading) {
@@ -103,13 +122,9 @@ export default function AdminSettingsPage() {
                 cerebras: process.env.NEXT_PUBLIC_CEREBRAS_API_KEY || '',
                 sambanova: process.env.NEXT_PUBLIC_SAMBANOVA_API_KEY || '',
                 serpapi: process.env.NEXT_PUBLIC_SERPAPI_API_KEY || '',
-                searxngUrl: '',
-                ollamaUrl: '',
-                ollamaFallbackUrl: ''
             };
 
-            // Merge: Firebase overrides take precedence, env keys as fallback
-            const mergedKeys = {
+            setFreeApiKeys({
                 gemini: settings.apiKeys?.gemini || envKeys.gemini,
                 groq: settings.apiKeys?.groq || envKeys.groq,
                 openai: settings.apiKeys?.openai || envKeys.openai,
@@ -117,14 +132,24 @@ export default function AdminSettingsPage() {
                 cerebras: settings.apiKeys?.cerebras || envKeys.cerebras,
                 sambanova: settings.apiKeys?.sambanova || envKeys.sambanova,
                 serpapi: settings.apiKeys?.serpapi || envKeys.serpapi,
+            });
+
+            setSearxngConfig({
                 searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080',
+            });
+
+            setOllamaConfig({
                 ollamaUrl: settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434',
                 ollamaFallbackUrl: settings.apiKeys?.ollamaFallbackUrl || '',
-                ollamaModels: settings.apiKeys?.ollamaModels || {},
-                defaultOllamaModel: settings.apiKeys?.defaultOllamaModel || ''
-            };
+                defaultOllamaModel: settings.apiKeys?.defaultOllamaModel || '',
+                ollamaModels: settings.apiKeys?.ollamaModels || {}
+            });
 
-            setApiKeys(mergedKeys);
+            // Load Models list if Ollama URL exists
+            const currentOllamaUrl = settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434';
+            if (currentOllamaUrl) {
+                fetchOllamaModels(currentOllamaUrl, false);
+            }
 
             if (settings.branding) {
                 setBranding({
@@ -134,7 +159,6 @@ export default function AdminSettingsPage() {
                     androidIcon512Url: settings.branding.androidIcon512Url || ''
                 });
             }
-            console.log('[ADMIN] Current API keys loaded (from Firebase or env)');
 
             if (typeof settings.maintenanceMode !== 'undefined') {
                 setMaintenanceMode(settings.maintenanceMode);
@@ -150,66 +174,127 @@ export default function AdminSettingsPage() {
         }
     };
 
-    const handleSave = async () => {
-        setSaving(true);
-        console.log('[ADMIN] Saving API keys:', apiKeys);
-        try {
-            // Only save API keys - toggles auto-save themselves
-            await updateSystemSettings({
-                apiKeys,
-                branding
-            });
-            console.log('[ADMIN] API keys saved successfully!');
-            setMsg({ type: 'success', text: 'API keys updated successfully!' });
-        } catch (error) {
-            console.error(error);
-            setMsg({ type: 'error', text: 'Failed to save API keys' });
-        } finally {
-            setSaving(false);
-        }
-    };
-
     const toggleShow = (key: string) => {
         setShowKeys(prev => ({ ...prev, [key]: !prev[key] }));
     };
 
-    const handleChange = (key: string, value: string) => {
-        setApiKeys(prev => ({ ...prev, [key]: value }));
+    const handleSaveFreeKeys = async () => {
+        setSavingFreeKeys(true);
+        try {
+            // We need to merge with existing settings to avoid overwriting other keys
+            const currentSettings = await getSystemSettings();
+            const updatedApiKeys = {
+                ...currentSettings.apiKeys,
+                ...freeApiKeys
+            };
+
+            await updateSystemSettings({ apiKeys: updatedApiKeys });
+            setMsg({ type: 'success', text: 'Free API Keys updated!' });
+        } catch (error) {
+            console.error('Save Free Keys Error:', error);
+            setMsg({ type: 'error', text: 'Failed to save API keys' });
+        } finally {
+            setSavingFreeKeys(false);
+        }
     };
 
-    const fetchOllamaModels = async (url: string) => {
+    const handleSaveSearxng = async () => {
+        setSavingSearxng(true);
+        try {
+            const currentSettings = await getSystemSettings();
+            const updatedApiKeys = {
+                ...currentSettings.apiKeys,
+                ...searxngConfig
+            };
+            await updateSystemSettings({ apiKeys: updatedApiKeys });
+            setMsg({ type: 'success', text: 'SearXNG Settings updated!' });
+        } catch (error) {
+            console.error('Save SearXNG Error:', error);
+            setMsg({ type: 'error', text: 'Failed to save SearXNG settings' });
+        } finally {
+            setSavingSearxng(false);
+        }
+    };
+
+    const handleSaveOllama = async () => {
+        setSavingOllama(true);
+        try {
+            const currentSettings = await getSystemSettings();
+            const updatedApiKeys = {
+                ...currentSettings.apiKeys,
+                ...ollamaConfig
+            };
+            // Ensure ollamaModels is saved correctly even if empty
+            if (!updatedApiKeys.ollamaModels) {
+                updatedApiKeys.ollamaModels = {};
+            }
+            await updateSystemSettings({ apiKeys: updatedApiKeys });
+            setMsg({ type: 'success', text: 'Ollama Settings updated!' });
+        } catch (error) {
+            console.error('Save Ollama Error:', error);
+            setMsg({ type: 'error', text: 'Failed to save Ollama settings' });
+        } finally {
+            setSavingOllama(false);
+        }
+    };
+
+    const handleSaveBranding = async () => {
+        setSavingBranding(true);
+        try {
+            await updateSystemSettings({ branding });
+            setMsg({ type: 'success', text: 'Branding updated!' });
+        } catch (error) {
+            console.error('Save Branding Error:', error);
+            setMsg({ type: 'error', text: 'Failed to save branding' });
+        } finally {
+            setSavingBranding(false);
+        }
+    };
+
+    const fetchOllamaModels = async (url: string, showMsg = true) => {
         if (!url) return;
         setLoadingModels(true);
         try {
-            console.log('[ADMIN] Fetching models from:', url);
-            const response = await axios.get(`${url}/api/tags`);
-            const models = response.data.models?.map((m: any) => m.name) || [];
-            console.log('[ADMIN] Found models:', models);
-            setAvailableModels(models);
-
-            // Initialize enabled status for new models if not present
-            setApiKeys(prev => {
-                const currentModels = prev.ollamaModels || {};
-                const newModels = { ...currentModels };
-                models.forEach((m: string) => {
-                    if (newModels[m] === undefined) {
-                        newModels[m] = true; // Default to enabled
-                    }
-                });
-                return { ...prev, ollamaModels: newModels };
+            console.log('[ADMIN] Fetching models via proxy for:', url);
+            // Use local API proxy to avoid CORS issues
+            const response = await axios.get('/api/admin/ollama/models', {
+                params: { url: url }
             });
 
-            setMsg({ type: 'success', text: `Found ${models.length} AI models!` });
+            const models = response.data.models?.map((m: any) => m.name) || [];
+            if (models.length > 0) {
+                setAvailableModels(models);
+
+                // Merge with existing enabled status (don't overwrite user prefs if known)
+                setOllamaConfig(prev => {
+                    const currentModels = prev.ollamaModels || {};
+                    const newModels = { ...currentModels };
+
+                    // Ensure new models are tracked (default to enabled on discovery)
+                    models.forEach((m: string) => {
+                        if (newModels[m] === undefined) {
+                            newModels[m] = true;
+                        }
+                    });
+                    return { ...prev, ollamaModels: newModels };
+                });
+
+                if (showMsg) setMsg({ type: 'success', text: `Found ${models.length} AI models!` });
+            } else {
+                setAvailableModels([]);
+                if (showMsg) setMsg({ type: 'warning', text: 'Connected to server, but no models found installed.' });
+            }
+
         } catch (error) {
             console.error('[ADMIN] Failed to fetch models:', error);
-            setMsg({ type: 'error', text: 'Failed to connect to Ollama. Check URL and CORS.' });
+            if (showMsg) setMsg({ type: 'error', text: 'Failed to connect. Ensure your Ollama server is running and accessible from the backend.' });
         } finally {
             setLoadingModels(false);
         }
     };
 
     const toggleModel = (modelName: string) => {
-        setApiKeys(prev => ({
+        setOllamaConfig(prev => ({
             ...prev,
             ollamaModels: {
                 ...prev.ollamaModels,
@@ -248,429 +333,321 @@ export default function AdminSettingsPage() {
     }
 
     return (
-        <Box sx={{ maxWidth: 800, mx: 'auto', p: { xs: 1, sm: 2 } }}>
-            <Typography variant="h4" fontWeight="bold" sx={{ mb: { xs: 2, sm: 4 }, fontSize: { xs: '1.75rem', sm: '2.125rem' }, color: '#333' }}>
+        <Box sx={{ maxWidth: 1000, mx: 'auto', p: { xs: 1, sm: 2 } }}>
+            <Typography variant="h4" fontWeight="bold" sx={{ mb: 1, fontSize: { xs: '1.75rem', sm: '2.125rem' }, color: '#333' }}>
                 System Settings
             </Typography>
+            <Typography color="text.secondary" sx={{ mb: 4 }}>
+                Manage global configuration, AI services, and integrations.
+            </Typography>
 
-            <Paper sx={{ p: { xs: 2, sm: 3, md: 4 }, borderRadius: 2 }}>
+            {/* --- GENERAL SETTINGS --- */}
+            <Paper sx={{ p: 3, mb: 4, borderRadius: 2 }}>
                 <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                     <SettingsSuggestIcon color="warning" /> General Settings
                 </Typography>
 
-                <Box sx={{ mb: 4, p: 2, bgcolor: 'rgba(255, 152, 0, 0.05)', borderRadius: 2, border: '1px solid rgba(255, 152, 0, 0.2)' }}>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={maintenanceMode}
-                                onChange={async (e) => {
-                                    const newValue = e.target.checked;
-                                    setMaintenanceMode(newValue);
-                                    // Auto-save immediately
-                                    try {
-                                        await updateSystemSettings({ maintenanceMode: newValue });
-                                        console.log('[ADMIN] Maintenance Mode auto-saved:', newValue);
-                                        setMsg({ type: 'success', text: `Maintenance Mode ${newValue ? 'enabled' : 'disabled'}` });
-                                    } catch (error) {
-                                        console.error('[ADMIN] Failed to auto-save:', error);
-                                        setMsg({ type: 'error', text: 'Failed to update Maintenance Mode' });
-                                        // Revert on error
-                                        setMaintenanceMode(!newValue);
-                                    }
-                                }}
-                                color="warning"
-                            />
-                        }
-                        label={
-                            <Box>
-                                <Typography fontWeight="bold">Maintenance Mode</Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    When enabled, only Admins can access the application. Regular users will see a maintenance screen.
-                                </Typography>
-                            </Box>
-                        }
-                    />
-                </Box>
-
-                <Box sx={{ mb: 4, p: 2, bgcolor: 'rgba(108, 99, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(108, 99, 255, 0.2)' }}>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={betaMode}
-                                onChange={async (e) => {
-                                    const newValue = e.target.checked;
-                                    setBetaMode(newValue);
-                                    // Auto-save immediately
-                                    try {
-                                        await updateSystemSettings({ betaAccess: newValue });
-                                        console.log('[ADMIN] Beta Mode auto-saved:', newValue);
-                                        setMsg({ type: 'success', text: `Beta Features ${newValue ? 'enabled' : 'disabled'}` });
-                                    } catch (error) {
-                                        console.error('[ADMIN] Failed to auto-save:', error);
-                                        setMsg({ type: 'error', text: 'Failed to update Beta Features' });
-                                        setBetaMode(!newValue);
-                                    }
-                                }}
-                                color="secondary"
-                            />
-                        }
-                        label={
-                            <Box>
-                                <Typography fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                    <ScienceIcon fontSize="small" color="secondary" /> Beta Features Access
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                    When enabled, Pro and Ultimate/Admin users will see "Beta" features in the app.
-                                </Typography>
-                            </Box>
-                        }
-                    />
-                </Box>
-
-                {/* Theme Management Quick Access */}
-                <Box
-                    sx={{
-                        mb: 4,
-                        p: 2,
-                        bgcolor: 'rgba(255, 215, 0, 0.05)',
-                        borderRadius: 2,
-                        border: '1px solid rgba(255, 215, 0, 0.3)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                            bgcolor: 'rgba(255, 215, 0, 0.1)',
-                            transform: 'translateX(4px)'
-                        }
-                    }}
-                    onClick={() => router.push('/admin/themes')}
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Typography sx={{ fontSize: 28 }}>🎨</Typography>
-                        <Box sx={{ flex: 1 }}>
-                            <Typography fontWeight="bold">
-                                Theme Management
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                                Create and manage custom themes for all users
-                            </Typography>
-                        </Box>
-                        <KeyboardArrowRightIcon sx={{ color: 'text.secondary' }} />
-                    </Box>
-                </Box>
-
-                {/* Admin Theme Customization */}
-                <Box sx={{ mt: 4 }}>
-                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                        🎭 Admin Interface Theme
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Customize your admin panel theme. This is separate from the user app theme and only affects your admin interface. <strong>Default: System Default theme.</strong>
-                    </Typography>
-
-                    <ThemeSelector showCustomizer={false} />
-                </Box>
-
-                <Divider sx={{ my: 4 }} />
-
-                {/* Branding / PWA Settings */}
-                <Box sx={{ mb: 4, p: 3, bgcolor: 'rgba(255, 64, 129, 0.05)', borderRadius: 2, border: '1px solid rgba(255, 64, 129, 0.3)' }}>
-                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: '#ff4081' }}>
-                        📱 PWA & Branding Icons
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Set custom URLs for your app icons. These will be used for the browser tab, mobile home screen, and installation prompt.
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' } }}>
-                            <TextField
-                                label="Favicon URL (.ico/.png 32x32)"
-                                fullWidth
-                                value={branding.faviconUrl}
-                                onChange={(e) => setBranding(prev => ({ ...prev, faviconUrl: e.target.value }))}
-                                placeholder="https://..."
-                                helperText="Browser tab icon"
+                <Grid container spacing={3}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Box sx={{ p: 2, bgcolor: 'rgba(255, 152, 0, 0.05)', borderRadius: 2, border: '1px solid rgba(255, 152, 0, 0.2)' }}>
+                            <FormControlLabel
+                                control={<Switch checked={maintenanceMode} onChange={async (e) => { const v = e.target.checked; setMaintenanceMode(v); try { await updateSystemSettings({ maintenanceMode: v }); } catch { setMaintenanceMode(!v); } }} color="warning" />}
+                                label={<Box><Typography fontWeight="bold">Maintenance Mode</Typography><Typography variant="caption">Only Admins can access.</Typography></Box>}
                             />
                         </Box>
-                        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' } }}>
-                            <TextField
-                                label="Apple Touch Icon URL (.png 180x180)"
-                                fullWidth
-                                value={branding.appleTouchIconUrl}
-                                onChange={(e) => setBranding(prev => ({ ...prev, appleTouchIconUrl: e.target.value }))}
-                                placeholder="https://..."
-                                helperText="iPhone Home Screen"
+                    </Grid>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Box sx={{ p: 2, bgcolor: 'rgba(108, 99, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(108, 99, 255, 0.2)' }}>
+                            <FormControlLabel
+                                control={<Switch checked={betaMode} onChange={async (e) => { const v = e.target.checked; setBetaMode(v); try { await updateSystemSettings({ betaAccess: v }); } catch { setBetaMode(!v); } }} color="secondary" />}
+                                label={<Box><Typography fontWeight="bold">Beta Features</Typography><Typography variant="caption">Unlock experimental features.</Typography></Box>}
                             />
                         </Box>
-                        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' } }}>
-                            <TextField
-                                label="Android Icon 192px URL"
-                                fullWidth
-                                value={branding.androidIcon192Url}
-                                onChange={(e) => setBranding(prev => ({ ...prev, androidIcon192Url: e.target.value }))}
-                                placeholder="https://..."
-                                helperText="Low-res PWA icon"
-                            />
-                        </Box>
-                        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 45%' } }}>
-                            <TextField
-                                label="Android Icon 512px URL"
-                                fullWidth
-                                value={branding.androidIcon512Url}
-                                onChange={(e) => setBranding(prev => ({ ...prev, androidIcon512Url: e.target.value }))}
-                                placeholder="https://..."
-                                helperText="High-res PWA icon / Splash"
-                            />
-                        </Box>
-                    </Box>
+                    </Grid>
+                </Grid>
+            </Paper>
+
+
+            {/* --- SECURE KEYS (SERVER SIDE) --- */}
+            <Paper sx={{ mb: 4, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
+                <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <BuildIcon /> Secure AI Keys
+                    </Typography>
+                    <Typography variant="caption" sx={{ ml: 'auto', bgcolor: '#e8f5e9', color: 'success.dark', px: 1, py: 0.5, borderRadius: 1 }}>Server-Side Vault</Typography>
                 </Box>
-
-                <Divider sx={{ my: 4 }} />
-
-                {/* Security Section */}
-                <Box sx={{ mb: 4, p: 3, bgcolor: 'rgba(244, 67, 54, 0.05)', borderRadius: 2, border: '1px solid rgba(244, 67, 54, 0.3)' }}>
-                    <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: '#d32f2f' }}>
-                        🛡️ Security & Recovery
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Manage emergency access to your admin account. Setup 2FA recovery tokens in case you get locked out.
-                    </Typography>
-                    <Button
-                        variant="outlined"
-                        color="error"
-                        onClick={() => router.push('/admin/settings/recovery')}
-                        startIcon={<KeyIcon />}
-                    >
-                        Manage Admin Recovery (2FA)
-                    </Button>
-                </Box>
-
-                <Divider sx={{ my: 4 }} />
-
-                {/* Secure API Keys Section (For Server-Side Only) */}
-                <Box sx={{ mb: 4, p: 3, bgcolor: 'rgba(76, 175, 80, 0.05)', borderRadius: 2, border: '2px solid rgba(76, 175, 80, 0.3)' }}>
-                    <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: 'success.main' }}>
-                        🔐 Secure AI Keys (Server-Side Vault)
-                    </Typography>
-                    <Alert severity="info" sx={{ mb: 3 }}>
-                        <strong>High Security:</strong> These keys are stored in a protected Firestore collection that is <strong>inaccessible to client-side code</strong>.
-                        Only Server Actions can read them. Use for production-critical keys (Groq, Gemini).
-                    </Alert>
-
+                <Box sx={{ p: 3 }}>
+                    <Alert severity="info" sx={{ mb: 3 }}>Keys here are never exposed to the client. Used for production-critical LLMs.</Alert>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <TextField
-                            label="🚀 Groq API Key (Server-Side)"
-                            fullWidth
-                            type={showKeys['secure_groq'] ? 'text' : 'password'}
-                            value={secureKeys.groq}
-                            onChange={(e) => setSecureKeys(prev => ({ ...prev, groq: e.target.value }))}
-                            placeholder="gsk_..."
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <IconButton onClick={() => toggleShow('secure_groq')} edge="end">
-                                            {showKeys['secure_groq'] ? <VisibilityOff /> : <Visibility />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                ),
-                            }}
-                            helperText="For security, existing keys are never shown. Enter new key to update."
-                        />
+                        <TextField label="Groq API Key (Secure)" type="password" value={secureKeys.groq} onChange={(e) => setSecureKeys(prev => ({ ...prev, groq: e.target.value }))} fullWidth size="small" />
+                        <TextField label="Gemini API Key (Secure)" type="password" value={secureKeys.gemini} onChange={(e) => setSecureKeys(prev => ({ ...prev, gemini: e.target.value }))} fullWidth size="small" />
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                            <Button variant="contained" color="success" onClick={handleSaveSecureKeys} disabled={savingSecure || (!secureKeys.groq && !secureKeys.gemini)} startIcon={savingSecure ? <CircularProgress size={16} /> : <SaveIcon />}>
+                                {savingSecure ? 'Securing...' : 'Update Vault'}
+                            </Button>
+                        </Box>
+                    </Box>
+                </Box>
+            </Paper>
 
-                        <TextField
-                            label="🤖 Gemini API Key (Server-Side)"
-                            fullWidth
-                            type={showKeys['secure_gemini'] ? 'text' : 'password'}
-                            value={secureKeys.gemini}
-                            onChange={(e) => setSecureKeys(prev => ({ ...prev, gemini: e.target.value }))}
-                            placeholder="AIza..."
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <IconButton onClick={() => toggleShow('secure_gemini')} edge="end">
-                                            {showKeys['secure_gemini'] ? <VisibilityOff /> : <Visibility />}
-                                        </IconButton>
-                                    </InputAdornment>
-                                ),
-                            }}
-                            helperText="For security, existing keys are never shown. Enter new key to update."
-                        />
-
+            {/* --- FREE API KEYS CARD --- */}
+            <Card sx={{ mb: 4, borderRadius: 2, border: '1px solid #bbdefb' }}>
+                <CardHeader
+                    title="Legacy & Free API Keys"
+                    subheader="Public collection for client-side Swarm Logic"
+                    avatar={<CloudQueueIcon color="primary" />}
+                    sx={{ bgcolor: '#e3f2fd', borderBottom: '1px solid #bbdefb' }}
+                />
+                <CardContent sx={{ p: 3 }}>
+                    <Grid container spacing={2}>
+                        {Object.keys(freeApiKeys).map((key) => (
+                            <Grid size={{ xs: 12, sm: 6 }} key={key}>
+                                <TextField
+                                    label={`${key.charAt(0).toUpperCase() + key.slice(1)} Key`}
+                                    fullWidth
+                                    size="small"
+                                    type={showKeys[key] ? 'text' : 'password'}
+                                    // @ts-ignore
+                                    value={freeApiKeys[key]}
+                                    // @ts-ignore
+                                    onChange={(e) => setFreeApiKeys(prev => ({ ...prev, [key]: e.target.value }))}
+                                    InputProps={{
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton onClick={() => toggleShow(key)} edge="end" size="small">
+                                                    {showKeys[key] ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                            </Grid>
+                        ))}
+                    </Grid>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
                         <Button
                             variant="contained"
-                            color="success"
-                            size="large"
-                            startIcon={savingSecure ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                            onClick={handleSaveSecureKeys}
-                            disabled={savingSecure || (!secureKeys.groq && !secureKeys.gemini)}
-                            sx={{ alignSelf: 'flex-start' }}
+                            onClick={handleSaveFreeKeys}
+                            disabled={savingFreeKeys}
+                            startIcon={savingFreeKeys ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
                         >
-                            {savingSecure ? 'Securing...' : '🔐 Update Secure Keys'}
+                            Save Free Keys
                         </Button>
                     </Box>
-                </Box>
+                </CardContent>
+            </Card>
 
-                <Divider sx={{ my: 4 }} />
-
-                <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <KeyIcon color="primary" /> Legacy API Keys (Public Collection)
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                    Manage dynamic API keys for the AI Swarm. Keys entered here will override the environment variables.
-                </Typography>
-
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                    {(Object.keys(apiKeys) as Array<keyof typeof apiKeys>).map((key) => (
-                        <Box key={key} sx={{ flex: '1 1 300px' }}>
-                            <TextField
-                                label={`${key.charAt(0).toUpperCase() + key.slice(1)} API Key`}
-                                fullWidth
-                                type={showKeys[key] ? 'text' : 'password'}
-                                // @ts-ignore
-                                value={apiKeys[key]}
-                                onChange={(e) => handleChange(key, e.target.value)}
-                                InputProps={{
-                                    endAdornment: (
-                                        <InputAdornment position="end">
-                                            <IconButton
-                                                onClick={() => toggleShow(key)}
-                                                edge="end"
-                                            >
-                                                {showKeys[key] ? <VisibilityOff /> : <Visibility />}
-                                            </IconButton>
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                helperText={`Overrides NEXT_PUBLIC_${key.toUpperCase()}_API_KEY`}
-                            />
-                        </Box>
-                    ))}
-                </Box>
-
-                {/* SearXNG Self-Hosted Search */}
-                <Box sx={{ mt: 4, p: 3, bgcolor: 'rgba(0, 200, 83, 0.05)', borderRadius: 2, border: '1px solid rgba(0, 200, 83, 0.3)' }}>
-                    <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: '#00c853' }}>
-                        🔍 SearXNG Self-Hosted Search
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Use your own SearXNG instance for unlimited, free web searches. This replaces paid SerpAPI.
-                        Make sure JSON format is enabled in your SearXNG configuration.
-                    </Typography>
+            {/* --- SEARXNG CARD --- */}
+            <Card sx={{ mb: 4, borderRadius: 2, border: '1px solid #c8e6c9' }}>
+                <CardHeader
+                    title="SearXNG Search Engine"
+                    subheader="Self-hosted unlimited web search"
+                    avatar={<SearchIcon color="success" />}
+                    sx={{ bgcolor: '#e8f5e9', borderBottom: '1px solid #c8e6c9' }}
+                />
+                <CardContent sx={{ p: 3 }}>
                     <TextField
                         label="SearXNG Instance URL"
                         fullWidth
-                        value={apiKeys.searxngUrl}
-                        onChange={(e) => handleChange('searxngUrl', e.target.value)}
+                        value={searxngConfig.searxngUrl}
+                        onChange={(e) => setSearxngConfig(prev => ({ ...prev, searxngUrl: e.target.value }))}
                         placeholder="http://your-server:8080"
-                        helperText="Example: http://20.199.129.203:8080"
+                        helperText="Ensure JSON format is enabled in settings.yml"
+                        sx={{ mb: 2 }}
                     />
-                </Box>
-
-                {/* Ollama Self-Hosted LLM */}
-                <Box sx={{ mt: 4, p: 3, bgcolor: 'rgba(156, 39, 176, 0.05)', borderRadius: 2, border: '1px solid rgba(156, 39, 176, 0.3)' }}>
-                    <Typography variant="h6" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: '#9c27b0' }}>
-                        🤖 Ollama Self-Hosted LLM
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        Use your own Ollama instance for unlimited, free AI inference. No API keys needed!
-                        Model: TinyLlama (1.1B) - lightweight and fast on CPU.
-                    </Typography>
-                    <TextField
-                        label="Ollama Instance URL"
-                        fullWidth
-                        value={apiKeys.ollamaUrl}
-                        onChange={(e) => handleChange('ollamaUrl', e.target.value)}
-                        placeholder="http://your-server:11434"
-                        helperText="Example: http://20.199.129.203:11434"
-                    />
-
-                    <TextField
-                        label="Fallback Ollama URL (Optional)"
-                        fullWidth
-                        sx={{ mt: 2 }}
-                        value={apiKeys.ollamaFallbackUrl}
-                        onChange={(e) => handleChange('ollamaFallbackUrl', e.target.value)}
-                        placeholder="http://backup-server:11434"
-                        helperText="Used if the primary server is down"
-                    />
-
-
-                    <Box sx={{ mt: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                            <Typography variant="subtitle2" fontWeight="bold">
-                                Available AI Models
-                            </Typography>
-                            <Button
-                                size="small"
-                                variant="outlined"
-                                onClick={() => fetchOllamaModels(apiKeys.ollamaUrl)}
-                                disabled={loadingModels || !apiKeys.ollamaUrl}
-                                startIcon={loadingModels ? <CircularProgress size={16} /> : <SettingsSuggestIcon />}
-                            >
-                                Refresh Models
-                            </Button>
-                        </Box>
-
-                        {availableModels.length > 0 ? (
-                            <Grid container spacing={2}>
-                                {availableModels.map((model) => (
-                                    <Grid item xs={12} key={model}>
-                                        <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                <Box>
-                                                    <Typography variant="body2" fontWeight="bold">
-                                                        {model}
-                                                    </Typography>
-                                                    <Typography variant="caption" color={apiKeys.ollamaModels?.[model] ? 'success.main' : 'text.secondary'}>
-                                                        {apiKeys.ollamaModels?.[model] ? 'Active' : 'Disabled'}
-                                                    </Typography>
-                                                </Box>
-                                                {apiKeys.defaultOllamaModel === model && (
-                                                    <Box sx={{ bgcolor: 'primary.main', color: 'white', px: 1, borderRadius: 1, fontSize: '0.7rem' }}>
-                                                        DEFAULT
-                                                    </Box>
-                                                )}
-                                            </Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                                                <Button
-                                                    size="small"
-                                                    variant={apiKeys.defaultOllamaModel === model ? "contained" : "text"}
-                                                    disabled={!apiKeys.ollamaModels?.[model]}
-                                                    onClick={() => handleChange('defaultOllamaModel', model)}
-                                                >
-                                                    {apiKeys.defaultOllamaModel === model ? "Main" : "Set as Main"}
-                                                </Button>
-                                                <Switch
-                                                    checked={!!apiKeys.ollamaModels?.[model]}
-                                                    onChange={() => toggleModel(model)}
-                                                    color="secondary"
-                                                />
-                                            </Box>
-                                        </Paper>
-                                    </Grid>
-                                ))}
-                            </Grid>
-                        ) : (
-                            <Alert severity="info" variant="outlined">
-                                Click "Refresh Models" to detect installed models on your server.
-                            </Alert>
-                        )}
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                            variant="contained"
+                            color="success"
+                            onClick={handleSaveSearxng}
+                            disabled={savingSearxng}
+                            startIcon={savingSearxng ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                        >
+                            Save Internal Search
+                        </Button>
                     </Box>
-                </Box>
+                </CardContent>
+            </Card>
 
-                <Divider sx={{ my: 4 }} />
+            {/* --- OLLAMA CARD --- */}
+            <Card sx={{ mb: 4, borderRadius: 2, border: '1px solid #e1bee7' }}>
+                <CardHeader
+                    title="Ollama AI Models"
+                    subheader="Self-hosted LLM Inference Management"
+                    avatar={<SmartToyIcon color="secondary" />}
+                    sx={{ bgcolor: '#f3e5f5', borderBottom: '1px solid #e1bee7' }}
+                    action={
+                        <Button startIcon={<SettingsSuggestIcon />} onClick={() => fetchOllamaModels(ollamaConfig.ollamaUrl)}>
+                            Refresh Models
+                        </Button>
+                    }
+                />
+                <CardContent sx={{ p: 3 }}>
+                    <Grid container spacing={2} sx={{ mb: 3 }}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField
+                                label="Primary Ollama URL"
+                                fullWidth
+                                value={ollamaConfig.ollamaUrl}
+                                onChange={(e) => setOllamaConfig(prev => ({ ...prev, ollamaUrl: e.target.value }))}
+                                placeholder="http://primary-server:11434"
+                            />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField
+                                label="Fallback Ollama URL"
+                                fullWidth
+                                value={ollamaConfig.ollamaFallbackUrl}
+                                onChange={(e) => setOllamaConfig(prev => ({ ...prev, ollamaFallbackUrl: e.target.value }))}
+                                placeholder="http://backup-server:11434"
+                            />
+                        </Grid>
+                    </Grid>
 
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold', color: 'text.secondary' }}>
+                        DETECTED MODELS ({availableModels.length})
+                    </Typography>
+
+                    {availableModels.length > 0 ? (
+                        <Grid container spacing={2} sx={{ mb: 3 }}>
+                            {availableModels.map((model) => (
+                                <Grid size={{ xs: 12 }} key={model}>
+                                    <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: ollamaConfig.defaultOllamaModel === model ? 'rgba(156, 39, 176, 0.04)' : 'transparent', borderColor: ollamaConfig.defaultOllamaModel === model ? 'secondary.main' : 'divider' }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                            <Box>
+                                                <Typography variant="body2" fontWeight="bold">
+                                                    {model}
+                                                </Typography>
+                                                <Typography variant="caption" color={ollamaConfig.ollamaModels?.[model] ? 'success.main' : 'text.secondary'}>
+                                                    {ollamaConfig.ollamaModels?.[model] ? 'Enabled' : 'Disabled'}
+                                                </Typography>
+                                            </Box>
+                                            {ollamaConfig.defaultOllamaModel === model && (
+                                                <Box sx={{ bgcolor: 'secondary.main', color: 'white', px: 1, py: 0.2, borderRadius: 1, fontSize: '0.65rem', fontWeight: 'bold' }}>
+                                                    DEFAULT
+                                                </Box>
+                                            )}
+                                        </Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Button
+                                                size="small"
+                                                variant={ollamaConfig.defaultOllamaModel === model ? "contained" : "outlined"}
+                                                color="secondary"
+                                                disabled={!ollamaConfig.ollamaModels?.[model]}
+                                                onClick={() => setOllamaConfig(prev => ({ ...prev, defaultOllamaModel: model }))}
+                                                sx={{ fontSize: '0.7rem' }}
+                                            >
+                                                {ollamaConfig.defaultOllamaModel === model ? "Main" : "Set Main"}
+                                            </Button>
+                                            <Switch
+                                                checked={!!ollamaConfig.ollamaModels?.[model]}
+                                                onChange={() => toggleModel(model)}
+                                                color="success"
+                                            />
+                                        </Box>
+                                    </Paper>
+                                </Grid>
+                            ))}
+                        </Grid>
+                    ) : (
+                        <Alert severity="warning" sx={{ mb: 3 }}>No models detected. Ensure Ollama is running and accessible.</Alert>
+                    )}
+
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                            variant="contained"
+                            color="secondary"
+                            onClick={handleSaveOllama}
+                            disabled={savingOllama}
+                            startIcon={savingOllama ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                        >
+                            Save Model Config
+                        </Button>
+                    </Box>
+                </CardContent>
+            </Card>
+
+            {/* --- BRANDING / PWA --- */}
+            <Card sx={{ mb: 4, borderRadius: 2, border: '1px solid #ffcc80' }}>
+                <CardHeader
+                    title="Branding & PWA"
+                    subheader="App Icons and Identity"
+                    avatar={<Typography sx={{ fontSize: 24 }}>🎨</Typography>}
+                    sx={{ bgcolor: '#fff3e0', borderBottom: '1px solid #ffcc80' }}
+                />
+                <CardContent sx={{ p: 3 }}>
+                    <Grid container spacing={2}>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField label="Favicon URL" fullWidth value={branding.faviconUrl} onChange={(e) => setBranding(prev => ({ ...prev, faviconUrl: e.target.value }))} size="small" />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField label="Apple Touch Icon" fullWidth value={branding.appleTouchIconUrl} onChange={(e) => setBranding(prev => ({ ...prev, appleTouchIconUrl: e.target.value }))} size="small" />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField label="Android Icon 192px URL" fullWidth value={branding.androidIcon192Url} onChange={(e) => setBranding(prev => ({ ...prev, androidIcon192Url: e.target.value }))} size="small" />
+                        </Grid>
+                        <Grid size={{ xs: 12, md: 6 }}>
+                            <TextField label="Android Icon 512px URL" fullWidth value={branding.androidIcon512Url} onChange={(e) => setBranding(prev => ({ ...prev, androidIcon512Url: e.target.value }))} size="small" />
+                        </Grid>
+                    </Grid>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+                        <Button
+                            variant="contained"
+                            color="warning"
+                            onClick={handleSaveBranding}
+                            disabled={savingBranding}
+                            startIcon={savingBranding ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                        >
+                            Save Branding
+                        </Button>
+                    </Box>
+                </CardContent>
+            </Card>
+
+            {/* Backup Card - Oracle VM MySQL */}
+            <Card sx={{ mb: 3, border: '1px solid', borderColor: 'error.main', borderRadius: 3 }}>
+                <CardHeader
+                    title="🔄 Database Backup"
+                    titleTypographyProps={{ fontWeight: 'bold', color: 'error.main' }}
+                    subheader="Backup Firebase data to Oracle VM (MySQL)"
+                />
+                <CardContent>
+                    <Box sx={{ mb: 2, p: 2, bgcolor: 'background.default', borderRadius: 2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            <strong>Target:</strong> Oracle VM (129.151.245.242)
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            <strong>Database:</strong> truthlens_backup (MariaDB)
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            <strong>Schedule:</strong> Weekly (manual trigger available)
+                        </Typography>
+                    </Box>
                     <Button
                         variant="contained"
-                        size="large"
-                        startIcon={saving ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />}
-                        onClick={handleSave}
-                        disabled={saving}
+                        color="error"
+                        onClick={async () => {
+                            setRunningBackup(true);
+                            try {
+                                const token = await (window as any).firebase?.auth?.()?.currentUser?.getIdToken?.();
+                                const res = await axios.post('/api/admin/backup', {}, {
+                                    headers: { Authorization: `Bearer ${token}` }
+                                });
+                                setMsg({ type: 'success', text: `Backup completed! ${res.data.recordsBackedUp} records saved.` });
+                            } catch (e: any) {
+                                setMsg({ type: 'error', text: e.response?.data?.error || 'Backup failed' });
+                            } finally {
+                                setRunningBackup(false);
+                            }
+                        }}
+                        disabled={runningBackup}
+                        startIcon={runningBackup ? <CircularProgress size={16} color="inherit" /> : <CloudQueueIcon />}
+                        fullWidth
                     >
-                        {saving ? 'Saving...' : 'Save Changes'}
+                        {runningBackup ? 'Running Backup...' : 'Run Backup Now'}
                     </Button>
-                </Box>
-            </Paper>
+                </CardContent>
+            </Card>
 
             <Snackbar
                 open={!!msg.text}
@@ -681,6 +658,17 @@ export default function AdminSettingsPage() {
                     {msg.text}
                 </Alert>
             </Snackbar>
+
+            {/* Admin Theme Customization */}
+            <Box sx={{ mt: 4, mb: 4 }}>
+                <Typography variant="h6" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    🎭 Admin Interface Theme
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Customize your admin panel theme.
+                </Typography>
+                <ThemeSelector showCustomizer={false} />
+            </Box>
         </Box>
     );
 }

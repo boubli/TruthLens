@@ -83,6 +83,16 @@ export interface TierFeatures {
     prioritySupport: boolean;
     whiteLabel: boolean;
     betaAccess: boolean;
+
+    // NEW: Premium Feature Access
+    globalSearch: boolean;       // Global product database search
+    visualSearch: boolean;       // Search by photo/image
+    mealPlanning: boolean;       // AI meal planning
+    aiChat: boolean;             // AI conversational assistant
+    aiChatLimit: number;         // Daily AI chat messages (-1 unlimited)
+    productCompare: number;      // Max products to compare (0 = disabled)
+    ecoScore: boolean;           // Sustainability analysis
+    gamification: boolean;       // Quests and achievements
 }
 
 export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
@@ -100,7 +110,16 @@ export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
         customAlerts: false,
         prioritySupport: false,
         whiteLabel: false,
-        betaAccess: false
+        betaAccess: false,
+        // Premium Features
+        globalSearch: false,
+        visualSearch: false,
+        mealPlanning: false,
+        aiChat: false,
+        aiChatLimit: 0,
+        productCompare: 0,
+        ecoScore: false,
+        gamification: true
     },
     plus: {
         dailyScanLimit: 20,
@@ -116,7 +135,16 @@ export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
         customAlerts: true,
         prioritySupport: false,
         whiteLabel: false,
-        betaAccess: false
+        betaAccess: false,
+        // Premium Features
+        globalSearch: true,
+        visualSearch: false,
+        mealPlanning: false,
+        aiChat: true,
+        aiChatLimit: 10,
+        productCompare: 2,
+        ecoScore: false,
+        gamification: true
     },
     pro: {
         dailyScanLimit: -1, // Unlimited
@@ -132,7 +160,16 @@ export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
         customAlerts: true,
         prioritySupport: true,
         whiteLabel: false,
-        betaAccess: false
+        betaAccess: false,
+        // Premium Features
+        globalSearch: true,
+        visualSearch: true,
+        mealPlanning: true,
+        aiChat: true,
+        aiChatLimit: -1,
+        productCompare: 5,
+        ecoScore: true,
+        gamification: true
     },
     ultimate: {
         dailyScanLimit: -1,
@@ -148,7 +185,16 @@ export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
         customAlerts: true,
         prioritySupport: true,
         whiteLabel: true,
-        betaAccess: true
+        betaAccess: true,
+        // Premium Features
+        globalSearch: true,
+        visualSearch: true,
+        mealPlanning: true,
+        aiChat: true,
+        aiChatLimit: -1,
+        productCompare: -1,
+        ecoScore: true,
+        gamification: true
     }
 };
 

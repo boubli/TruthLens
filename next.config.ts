@@ -3,7 +3,8 @@ import withPWA from "@ducanh2912/next-pwa";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  // @ts-ignore
+  // @ts-ignore - silence Turbopack/Webpack config warning
+  turbopack: {},
   experimental: {
     // allowedDevOrigins: ["localhost:3000", "192.168.8.100:3000"],
   },

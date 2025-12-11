@@ -30,7 +30,7 @@ import { generateChatSuggestions } from '@/app/actions';
 
 export default function AIChatPage() {
     const router = useRouter();
-    const { user, tier, loading: authLoading, isFree, isPlus } = useAuth();
+    const { user, tier, loading: authLoading, isFree, isPlus, features } = useAuth();
 
     const [messages, setMessages] = useState<AIChatMessage[]>([]);
     const [input, setInput] = useState('');
@@ -183,6 +183,26 @@ export default function AIChatPage() {
         return (
             <Box className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">
                 <CircularProgress />
+            </Box>
+        );
+    }
+
+    // Feature gate - AI Chat access check
+    if (!features.aiChat) {
+        return (
+            <Box className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">
+                <Container maxWidth="sm">
+                    <Paper sx={{ p: 5, borderRadius: 4, textAlign: 'center' }}>
+                        <SmartToyIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
+                        <Typography variant="h5" fontWeight="bold" gutterBottom>Premium Feature</Typography>
+                        <Typography color="text.secondary" paragraph>
+                            AI Chat is available for Plus, Pro, and Ultimate members.
+                        </Typography>
+                        <Button variant="contained" color="warning" href="/upgrade">
+                            Upgrade Now
+                        </Button>
+                    </Paper>
+                </Container>
             </Box>
         );
     }

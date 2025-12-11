@@ -9,10 +9,10 @@ import Link from 'next/link';
 
 export default function SearchByPhotoPage() {
     const router = useRouter();
-    const { isPro, userProfile, loading } = useAuth();
+    const { features, userProfile, loading } = useAuth();
 
-    // Eligibility Check
-    const hasAccess = isPro || userProfile?.hasBetaAccess;
+    // Eligibility Check - Use tier-based feature flag
+    const hasAccess = features.visualSearch || userProfile?.hasBetaAccess;
 
     if (loading) {
         return <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">

@@ -29,6 +29,7 @@
     "i18next-resources-to-backend": "^1.2.1",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.556.0",
+    "mysql2": "^3.15.3",
     "next": "16.0.7",
     "otpauth": "^9.4.1",
     "qrcode.react": "^4.2.0",

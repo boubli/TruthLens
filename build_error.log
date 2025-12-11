@@ -1,0 +1,32 @@
+ ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\Youssef Boubli\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\Youssef Boubli\Desktop\TruthLens\package-lock.json
+
+   Γû▓ Next.js 16.0.7 (webpack)
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ Γ£ô (pwa) Compiling for server...
+ Γ£ô (pwa) Compiling for server...
+ Γ£ô (pwa) Compiling for client (static)...
+ Γùï (pwa) Service worker: C:\Users\Youssef Boubli\Desktop\TruthLens\public\sw.js
+ Γùï (pwa)   URL: /sw.js
+ Γùï (pwa)   Scope: /
+ Γ£ô Compiled successfully in 13.2s
+   Running TypeScript ...
+Failed to compile.
+
+./app/api/admin/backup/route.ts:53:39
+Type error: Cannot find name 'decodedToken'.
+
+  51 |         const [logResult] = await connection.execute(
+  52 |             'INSERT INTO backup_log (backupType, startedAt, status, triggeredBy) VALUES (?, NOW(), ?, ?)',
+> 53 |             ['manual', 'in_progress', decodedToken.email || decodedToken.uid]
+     |                                       ^
+  54 |         );
+  55 |         const backupId = (logResult as any).insertId;
+  56 |
+Next.js build worker exited with code: 1 and signal: null

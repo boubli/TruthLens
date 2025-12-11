@@ -27,7 +27,7 @@ export default function GlobalSearchPage() {
     const [loading, setLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const router = useRouter();
-    const { isUltimate } = useAuth(); // We need userProfile to check strict tier
+    const { features } = useAuth(); // Use tier-based feature flag
     const { t } = useTranslation();
 
     const handleSearch = async (e?: React.FormEvent) => {
@@ -52,8 +52,8 @@ export default function GlobalSearchPage() {
         setHasSearched(false);
     };
 
-    // 🚫 Restricted Access View
-    if (!isUltimate) {
+    // 🚫 Restricted Access View - Use tier feature flag
+    if (!features.globalSearch) {
         return (
             <PageTransition>
                 <Box sx={{

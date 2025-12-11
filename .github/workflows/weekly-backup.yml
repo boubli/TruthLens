@@ -1,0 +1,15 @@
+name: Weekly Database Backup
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at midnight UTC
+  workflow_dispatch: # Allow manual trigger from GitHub Actions tab
+
+jobs:
+  run-backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Backup API
+        run: |
+          curl -X POST ${{ secrets.APP_URL }}/api/admin/backup \
+          -H "x-backup-secret: ${{ secrets.BACKUP_SECRET }}" \
+          -H "Content-Type: application/json"
