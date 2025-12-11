@@ -38,15 +38,57 @@ const getOllamaUrl = async (): Promise<string> => {
 };
 
 /**
+ * Get preferred model based on System Settings
+ * Validates if the requested model is enabled by Admin.
+ * If not, or if no model requested, returns the first enabled model.
+ */
+export const getPreferredModel = async (requestedModel?: string): Promise<string> => {
+    try {
+        const settings = await getSystemSettings();
+        const enabledModels = settings.apiKeys?.ollamaModels || {};
+        const availableModels = Object.keys(enabledModels).filter(m => enabledModels[m]);
+
+        // Default fallback if no config exists yet
+        const DEFAULT_MODEL = 'llama3.2:1b';
+
+        // 1. If specific model requested and enabled, use it
+        if (requestedModel && enabledModels[requestedModel]) {
+            return requestedModel;
+        }
+
+        // 2. If requested model is NOT enabled, try to find a fallback
+        if (requestedModel && !enabledModels[requestedModel]) {
+            console.warn(`[Ollama] Requested model '${requestedModel}' is disabled. Finding fallback...`);
+        }
+
+        // 3. Return best available model
+        if (availableModels.length > 0) {
+            // Priority list for smart defaults
+            const priority = ['llama3.2:1b', 'qwen:1.8b', 'gemma:2b', 'tinyllama'];
+            for (const p of priority) {
+                if (enabledModels[p]) return p;
+            }
+            return availableModels[0]; // Any enabled model
+        }
+
+        return DEFAULT_MODEL; // Fallback to hardcoded default if nothing configured
+    } catch (e) {
+        return requestedModel || 'llama3.2:1b';
+    }
+};
+
+/**
  * Chat completion using Ollama
  */
 export const chatWithOllama = async (
     prompt: string,
-    model: string = 'llama3.2:1b',
+    model?: string,
     systemPrompt?: string
 ): Promise<string> => {
     try {
         const baseUrl = await getOllamaUrl();
+        const preferredModel = await getPreferredModel(model);
+
 
         const messages: OllamaMessage[] = [];
 

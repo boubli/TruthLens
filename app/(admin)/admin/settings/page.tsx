@@ -30,6 +30,7 @@ import { useRouter } from 'next/navigation';
 import ThemeSelector from '@/components/theme/ThemeSelector';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import axios from 'axios';
 
 export default function AdminSettingsPage() {
     const { userProfile, loading: authLoading } = useAuth();
@@ -62,8 +63,13 @@ export default function AdminSettingsPage() {
         sambanova: '',
         serpapi: '',
         searxngUrl: '',
-        ollamaUrl: ''
+        searxngUrl: '',
+        ollamaUrl: '',
+        ollamaModels: {} as Record<string, boolean>
     });
+
+    const [availableModels, setAvailableModels] = useState<string[]>([]);
+    const [loadingModels, setLoadingModels] = useState(false);
 
     const [branding, setBranding] = useState({
         faviconUrl: '',
@@ -109,7 +115,9 @@ export default function AdminSettingsPage() {
                 sambanova: settings.apiKeys?.sambanova || envKeys.sambanova,
                 serpapi: settings.apiKeys?.serpapi || envKeys.serpapi,
                 searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080',
-                ollamaUrl: settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434'
+                searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080',
+                ollamaUrl: settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434',
+                ollamaModels: settings.apiKeys?.ollamaModels || {}
             };
 
             setApiKeys(mergedKeys);
@@ -163,6 +171,47 @@ export default function AdminSettingsPage() {
 
     const handleChange = (key: string, value: string) => {
         setApiKeys(prev => ({ ...prev, [key]: value }));
+    };
+
+    const fetchOllamaModels = async (url: string) => {
+        if (!url) return;
+        setLoadingModels(true);
+        try {
+            console.log('[ADMIN] Fetching models from:', url);
+            const response = await axios.get(`${url}/api/tags`);
+            const models = response.data.models?.map((m: any) => m.name) || [];
+            console.log('[ADMIN] Found models:', models);
+            setAvailableModels(models);
+
+            // Initialize enabled status for new models if not present
+            setApiKeys(prev => {
+                const currentModels = prev.ollamaModels || {};
+                const newModels = { ...currentModels };
+                models.forEach((m: string) => {
+                    if (newModels[m] === undefined) {
+                        newModels[m] = true; // Default to enabled
+                    }
+                });
+                return { ...prev, ollamaModels: newModels };
+            });
+
+            setMsg({ type: 'success', text: `Found ${models.length} AI models!` });
+        } catch (error) {
+            console.error('[ADMIN] Failed to fetch models:', error);
+            setMsg({ type: 'error', text: 'Failed to connect to Ollama. Check URL and CORS.' });
+        } finally {
+            setLoadingModels(false);
+        }
+    };
+
+    const toggleModel = (modelName: string) => {
+        setApiKeys(prev => ({
+            ...prev,
+            ollamaModels: {
+                ...prev.ollamaModels,
+                [modelName]: !prev.ollamaModels?.[modelName]
+            }
+        }));
     };
 
     const handleSaveSecureKeys = async () => {
@@ -529,6 +578,52 @@ export default function AdminSettingsPage() {
                         placeholder="http://your-server:11434"
                         helperText="Example: http://20.199.129.203:11434"
                     />
+
+
+                    <Box sx={{ mt: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Typography variant="subtitle2" fontWeight="bold">
+                                Available AI Models
+                            </Typography>
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={() => fetchOllamaModels(apiKeys.ollamaUrl)}
+                                disabled={loadingModels || !apiKeys.ollamaUrl}
+                                startIcon={loadingModels ? <CircularProgress size={16} /> : <SettingsSuggestIcon />}
+                            >
+                                Refresh Models
+                            </Button>
+                        </Box>
+
+                        {availableModels.length > 0 ? (
+                            <Grid container spacing={2}>
+                                {availableModels.map((model) => (
+                                    <Grid item xs={12} sm={6} md={4} key={model}>
+                                        <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <Box>
+                                                <Typography variant="body2" fontWeight="bold">
+                                                    {model}
+                                                </Typography>
+                                                <Typography variant="caption" color={apiKeys.ollamaModels?.[model] ? 'success.main' : 'text.secondary'}>
+                                                    {apiKeys.ollamaModels?.[model] ? 'Active' : 'Disabled'}
+                                                </Typography>
+                                            </Box>
+                                            <Switch
+                                                checked={!!apiKeys.ollamaModels?.[model]}
+                                                onChange={() => toggleModel(model)}
+                                                color="secondary"
+                                            />
+                                        </Paper>
+                                    </Grid>
+                                ))}
+                            </Grid>
+                        ) : (
+                            <Alert severity="info" variant="outlined">
+                                Click "Refresh Models" to detect installed models on your server.
+                            </Alert>
+                        )}
+                    </Box>
                 </Box>
 
                 <Divider sx={{ my: 4 }} />
