@@ -6,7 +6,7 @@ import { fetchEventConfigFromApi } from '@/services/systemService';
 import { EventManagerConfig } from '@/types/system';
 import Lottie from 'lottie-react';
 import Confetti from 'react-confetti';
-import { useWindowSize } from '@/hooks/useWindowSize';
+import useWindowSize from '@/hooks/useWindowSize';
 import { Box, Typography, Button, IconButton } from '@mui/material';
 
 // Placeholder for verified Fireworks Lottie JSON URL

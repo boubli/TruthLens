@@ -6,7 +6,7 @@ import {
     Switch,
     FormControlLabel,
     TextField,
-    Grid,
+    // Grid,
     Button,
     Divider,
     IconButton,
@@ -17,6 +17,7 @@ import {
     Stack,
     Tooltip
 } from '@mui/material';
+import Grid from '@mui/material/GridLegacy';
 import { EventManagerConfig } from '@/types/system';
 import DateTimeSplitter from '@/components/admin/settings/DateTimeSplitter';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -222,7 +223,7 @@ export default function EventSettingsTab({
                 ) : (
                     <Grid container spacing={3}>
                         {schedule.map((evt, idx) => (
-                            <Grid xs={12} md={6} lg={4} key={evt.event_id || idx}>
+                            <Grid item xs={12} md={6} lg={4} key={evt.event_id || idx}>
                                 <Card sx={{
                                     height: '100%',
                                     background: 'rgba(30,30,40,0.7)',
@@ -346,7 +347,7 @@ export default function EventSettingsTab({
                 </Box>
 
                 <Grid container spacing={4}>
-                    <Grid xs={12}>
+                    <Grid item xs={12}>
                         <TextField
                             fullWidth
                             variant="filled"
@@ -359,7 +360,7 @@ export default function EventSettingsTab({
                     </Grid>
 
                     {/* PHASE A CARD */}
-                    <Grid xs={12}>
+                    <Grid item xs={12}>
                         <Box sx={{
                             p: 3,
                             borderRadius: 3,
@@ -374,7 +375,7 @@ export default function EventSettingsTab({
                             </Typography>
 
                             <Grid container spacing={3}>
-                                <Grid xs={12} md={4}>
+                                <Grid item xs={12} md={4}>
                                     <TextField
                                         select
                                         fullWidth
@@ -388,14 +389,14 @@ export default function EventSettingsTab({
                                         <option value="none">🚫 None</option>
                                     </TextField>
                                 </Grid>
-                                <Grid xs={12} md={4}>
+                                <Grid item xs={12} md={4}>
                                     <DateTimeSplitter
                                         label="Theme Start"
                                         value={editorState.general_theme_start}
                                         onChange={(val) => handleEditorChange('general_theme_start', val)}
                                     />
                                 </Grid>
-                                <Grid xs={12} md={4}>
+                                <Grid item xs={12} md={4}>
                                     <DateTimeSplitter
                                         label="Theme End"
                                         value={editorState.general_theme_end}
@@ -407,7 +408,7 @@ export default function EventSettingsTab({
                     </Grid>
 
                     {/* PHASE B CARD */}
-                    <Grid xs={12}>
+                    <Grid item xs={12}>
                         <Box sx={{
                             p: 3,
                             borderRadius: 3,
@@ -422,7 +423,7 @@ export default function EventSettingsTab({
                             </Typography>
 
                             <Grid container spacing={3}>
-                                <Grid xs={12} md={4}>
+                                <Grid item xs={12} md={4}>
                                     <TextField
                                         select
                                         fullWidth
@@ -438,7 +439,7 @@ export default function EventSettingsTab({
                                     </TextField>
                                 </Grid>
 
-                                <Grid xs={12} md={6}>
+                                <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="Climax Message (Big Text)"
@@ -450,7 +451,7 @@ export default function EventSettingsTab({
 
 
 
-                                <Grid xs={12} md={4}>
+                                <Grid item xs={12} md={4}>
                                     <TextField
                                         fullWidth
                                         type="number"
@@ -462,21 +463,21 @@ export default function EventSettingsTab({
 
 
 
-                                <Grid xs={12} md={4}>
+                                <Grid item xs={12} md={4}>
                                     <DateTimeSplitter
                                         label="Music Start (Fade In)"
                                         value={editorState.celebration_music_start}
                                         onChange={(val) => handleEditorChange('celebration_music_start', val)}
                                     />
                                 </Grid>
-                                <Grid xs={12} md={4}>
+                                <Grid item xs={12} md={4}>
                                     <DateTimeSplitter
                                         label="All Effects Start (Climax)"
                                         value={editorState.celebration_climax_start || editorState.celebration_music_start}
                                         onChange={(val) => handleEditorChange('celebration_climax_start', val)}
                                     />
                                 </Grid>
-                                <Grid xs={12} md={4}>
+                                <Grid item xs={12} md={4}>
                                     <DateTimeSplitter
                                         label="Event Stop (Fade Out)"
                                         value={editorState.celebration_music_end}
@@ -484,7 +485,7 @@ export default function EventSettingsTab({
                                     />
                                 </Grid>
 
-                                <Grid xs={12}>
+                                <Grid item xs={12}>
                                     <Divider sx={{ my: 2, borderColor: 'rgba(255,255,255,0.1)' }}>Special Message Configuration</Divider>
                                     <Box sx={{
                                         p: 3,
@@ -497,7 +498,7 @@ export default function EventSettingsTab({
                                         </Typography>
 
                                         <Grid container spacing={3}>
-                                            <Grid xs={12} md={6}>
+                                            <Grid item xs={12} md={6}>
                                                 <TextField
                                                     fullWidth
                                                     multiline
@@ -508,7 +509,7 @@ export default function EventSettingsTab({
                                                     placeholder="Use this space for a detailed message..."
                                                 />
                                             </Grid>
-                                            <Grid xs={12} md={6}>
+                                            <Grid item xs={12} md={6}>
                                                 <Stack spacing={3}>
                                                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                                                         <PaletteIcon color="action" />
@@ -560,7 +561,7 @@ export default function EventSettingsTab({
                     </Grid>
 
                     {/* MUSIC SECTION */}
-                    <Grid xs={12}>
+                    <Grid item xs={12}>
                         <Box sx={{ p: 3, bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, border: '1px solid rgba(255,255,255,0.1)' }}>
                             <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>
                                 <MusicNoteIcon color="primary" />
@@ -568,7 +569,7 @@ export default function EventSettingsTab({
                             </Box>
 
                             <Grid container spacing={2} alignItems="center">
-                                <Grid xs={12} md={8}>
+                                <Grid item xs={12} md={8}>
                                     <TextField
                                         fullWidth
                                         variant="outlined"
@@ -582,7 +583,7 @@ export default function EventSettingsTab({
                                         }}
                                     />
                                 </Grid>
-                                <Grid xs={12} md={4} sx={{ display: 'flex', gap: 1 }}>
+                                <Grid item xs={12} md={4} sx={{ display: 'flex', gap: 1 }}>
                                     <Button
                                         component="label"
                                         variant="contained"

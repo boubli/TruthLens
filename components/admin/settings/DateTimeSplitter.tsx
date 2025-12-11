@@ -45,13 +45,7 @@ export default function DateTimeSplitter({ label, value, onChange, helperText }:
             <Box sx={{ display: 'flex', gap: 1 }}>
                 <TextField
                     type="date"
-                    label={`${label.replace('Start', '').replace('End', '').trim()} Date`} // Intelligent short label? Or just "Date"
-                    // Actually, simpler: Use the full label context if possible, or just "Date"
-                    // Let's use the provided label + "Date" for clarity, but keep it tight.
-                    // If label is "Theme Start", result "Theme Start Date" is long.
-                    // Let's try to put the main label on the first input and "Time" on the second?
-                    // Better: "Date" and "Time" but put the main label as a hidden legend?
-                    // No, users need to know WHAT date.
+                    // Label logic simplified
                     label={`${label} Date`}
                     fullWidth
                     value={datePart}
