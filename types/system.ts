@@ -67,9 +67,17 @@ export interface EventManagerConfig {
     // Attributes
     countdown_seconds: number;     // e.g., 10
     celebration_message: string;   // Main big text (e.g. "HAPPY NEW YEAR")
+
+    // Explicit Message Timing
+    climax_message_start?: string; // [NEW] When the big text appears
+    climax_message_end?: string;   // [NEW] When the big text disappears
+
     special_message?: string;      // Secondary detailed message
     special_message_color?: string; // [NEW] e.g. "#ffffff" or "linear-gradient..."
     special_message_image_url?: string; // [NEW] Image displayed alongside special message
+    special_message_start?: string; // [NEW] When the special message appears
+    special_message_end?: string;   // [NEW] When the special message disappears
+
     music_file_url: string;        // Background Music URL to hosted audio
 
     // Explicit Effects per Phase

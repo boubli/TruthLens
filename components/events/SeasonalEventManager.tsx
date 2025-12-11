@@ -168,7 +168,39 @@ export default function SeasonalEventManager() {
 
     // Active means: inside window AND not locked
     const isFireActive = !isLocked && (now >= fireStart && now < musicEnd);
-    const showMessage = !isLocked && (now >= fireStart && now < musicEnd); // Strict window for message
+
+    // --- Message Visibility Logic ---
+
+    // 1. Climax Message (Big Text)
+    let showClimaxMessage = false;
+    if (config.climax_message_start && config.climax_message_end) {
+        const start = new Date(config.climax_message_start).getTime();
+        const end = new Date(config.climax_message_end).getTime();
+        showClimaxMessage = (now >= start && now < end);
+    } else {
+        // Fallback: Same window as Climax Mode
+        showClimaxMessage = (now >= fireStart && now < musicEnd);
+    }
+
+    // 2. Special Message (Secondary/Thank You)
+    let showSpecialMessage = false;
+    // Only verify if configured
+    if (config.special_message) {
+        if (config.special_message_start && config.special_message_end) {
+            const start = new Date(config.special_message_start).getTime();
+            const end = new Date(config.special_message_end).getTime();
+            showSpecialMessage = (now >= start && now < end);
+        } else {
+            // Fallback: Show if main message is showing OR post-event (Phase C)
+            // For "Separate" behavior requested: default to "Phase C" if no explicit time? 
+            // Or overlap? Let's default to overlap if no explicit time is set (safest).
+            showSpecialMessage = showClimaxMessage;
+        }
+    }
+
+    // Global Overlay Visibility
+    // Must be unlocked AND at least one message is active
+    const showOverlay = !isLocked && (showClimaxMessage || showSpecialMessage);
 
     // Render Logic using specific fields
     const themeEffect = config.theme_effect || 'snow_cold';
@@ -231,8 +263,8 @@ export default function SeasonalEventManager() {
                     </Typography>
                 )}
 
-                {/* Message (Personalized) */}
-                {showMessage && (
+                {/* Message Overlay */}
+                {showOverlay && (
                     <Box sx={{
                         background: 'rgba(0, 0, 0, 0.75)',
                         display: 'inline-flex',
@@ -253,22 +285,26 @@ export default function SeasonalEventManager() {
                         }}>
                             {firstName}
                         </Typography>
-                        <Typography variant="h2" sx={{
-                            background: 'linear-gradient(45deg, #FFD700, #FDB931)',
-                            backgroundClip: 'text',
-                            WebkitBackgroundClip: 'text',
-                            color: 'transparent',
-                            fontWeight: '900',
-                            mb: 4,
-                            textTransform: 'uppercase',
-                            textAlign: 'center',
-                            lineHeight: 1.1
-                        }}>
-                            {config.celebration_message}
-                        </Typography>
 
-                        {/* Special Message Sub-Header */}
-                        {config.special_message && (
+                        {/* 1. Climax Message */}
+                        {showClimaxMessage && (
+                            <Typography variant="h2" sx={{
+                                background: 'linear-gradient(45deg, #FFD700, #FDB931)',
+                                backgroundClip: 'text',
+                                WebkitBackgroundClip: 'text',
+                                color: 'transparent',
+                                fontWeight: '900',
+                                mb: 4,
+                                textTransform: 'uppercase',
+                                textAlign: 'center',
+                                lineHeight: 1.1
+                            }}>
+                                {config.celebration_message}
+                            </Typography>
+                        )}
+
+                        {/* 2. Special Message */}
+                        {showSpecialMessage && config.special_message && (
                             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
                                 {config.special_message_image_url && (
                                     <Box

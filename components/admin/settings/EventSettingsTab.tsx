@@ -52,6 +52,15 @@ const DEFAULT_EVENT_TEMPLATE: EventManagerConfig = {
     countdown_seconds: 10,
     celebration_message: 'HAPPY HOLIDAYS',
     special_message: '', // [NEW] Default empty
+    special_message_color: '#ffffff',
+    special_message_image_url: '',
+
+    // Default: undefined (implies fallbacks)
+    climax_message_start: '',
+    climax_message_end: '',
+    special_message_start: '',
+    special_message_end: '',
+
     music_file_url: '',
     theme_effect: 'snow_cold',
     climax_effect: 'fireworks'
@@ -448,6 +457,20 @@ export default function EventSettingsTab({
                                         placeholder="e.g. HAPPY NEW YEAR!"
                                     />
                                 </Grid>
+                                <Grid item xs={12} md={3}>
+                                    <DateTimeSplitter
+                                        label="Msg Start"
+                                        value={editorState.climax_message_start || ''}
+                                        onChange={(val) => handleEditorChange('climax_message_start', val)}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={3}>
+                                    <DateTimeSplitter
+                                        label="Msg End"
+                                        value={editorState.climax_message_end || ''}
+                                        onChange={(val) => handleEditorChange('climax_message_end', val)}
+                                    />
+                                </Grid>
 
 
 
@@ -494,10 +517,24 @@ export default function EventSettingsTab({
                                         border: '1px dashed rgba(255,255,255,0.2)'
                                     }}>
                                         <Typography variant="h6" sx={{ color: '#fff', mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <MessageIcon /> Enhanced Special Message
+                                            <MessageIcon /> Special Message
                                         </Typography>
 
                                         <Grid container spacing={3}>
+                                            <Grid item xs={12} md={4}>
+                                                <DateTimeSplitter
+                                                    label="Msg Start"
+                                                    value={editorState.special_message_start || ''}
+                                                    onChange={(val) => handleEditorChange('special_message_start', val)}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={12} md={4}>
+                                                <DateTimeSplitter
+                                                    label="Msg End"
+                                                    value={editorState.special_message_end || ''}
+                                                    onChange={(val) => handleEditorChange('special_message_end', val)}
+                                                />
+                                            </Grid>
                                             <Grid item xs={12} md={6}>
                                                 <TextField
                                                     fullWidth
