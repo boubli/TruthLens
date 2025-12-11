@@ -438,7 +438,7 @@ export default function UserHome() {
                                                             transition: 'all 0.3s'
                                                         }}
                                                     >
-                                                        {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: { xs: 28, sm: 40 }, color: (item.icon as React.ReactElement).props.sx.color } })}
+                                                        {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: { xs: 28, sm: 40 }, color: (item.icon as any).props?.sx?.color } } as any)}
                                                     </Box>
                                                     <Box sx={{ flex: 1, width: '100%' }}>
                                                         <Typography
@@ -457,12 +457,7 @@ export default function UserHome() {
                                                             color="text.secondary"
                                                             sx={{
                                                                 fontSize: { xs: '0.75rem', sm: '0.9rem' },
-                                                                display: { xs: 'none', sm: 'block' } // Hide description on mobile to save space? Or keep brief?
-                                                                // User asked for "two by two", usually space is tight.
-                                                                // Let's keep it but handle text-overflow if needed.
-                                                                // Actually better to hide generic description on very small tiles?
-                                                                // Let's keep it visible but maybe smaller.
-                                                                display: 'block'
+                                                                display: { xs: 'none', sm: 'block' } // Clean 2x2 grid on mobile
                                                             }}
                                                         >
                                                             {item.desc}
@@ -488,6 +483,6 @@ export default function UserHome() {
                     )}
                 </AnimatePresence>
             </Container>
-        </Box>
+        </Box >
     );
 }
