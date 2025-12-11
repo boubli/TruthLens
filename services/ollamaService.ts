@@ -42,7 +42,7 @@ const getOllamaUrl = async (): Promise<string> => {
  */
 export const chatWithOllama = async (
     prompt: string,
-    model: string = 'tinyllama',
+    model: string = 'llama3.2:1b',
     systemPrompt?: string
 ): Promise<string> => {
     try {
@@ -90,7 +90,7 @@ export const chatWithOllama = async (
  */
 export const chatWithOllamaMessages = async (
     messages: { role: string; content: string }[],
-    model: string = 'tinyllama'
+    model: string = 'llama3.2:1b'
 ): Promise<string> => {
     try {
         const baseUrl = await getOllamaUrl();
@@ -129,7 +129,7 @@ export const chatWithOllamaMessages = async (
  */
 export const generateWithOllama = async (
     prompt: string,
-    model: string = 'tinyllama'
+    model: string = 'llama3.2:1b'
 ): Promise<string> => {
     try {
         const baseUrl = await getOllamaUrl();
