@@ -38,6 +38,7 @@ export interface UserProfile {
     customApiKeys?: import('./aiChat').UserApiKeys;
     createdAt: Date;
     hasSeenWelcome?: boolean;
+    hasBetaAccess?: boolean; // Manual override for beta features
 }
 
 // Default values for new users

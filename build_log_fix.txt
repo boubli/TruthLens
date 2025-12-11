@@ -1,25 +1,36 @@
 
 > truth-lens@0.1.0 build
-> next build
+> next build --webpack
 
  ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
  We detected multiple lockfiles and selected the directory of C:\Users\Youssef Boubli\package-lock.json as the root directory.
- To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
-   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
  Detected additional lockfiles: 
    * C:\Users\Youssef Boubli\Desktop\TruthLens\package-lock.json
 
-   Γû▓ Next.js 16.0.7 (Turbopack)
+   Γû▓ Next.js 16.0.7 (webpack)
    - Environments: .env.local
 
    Creating an optimized production build ...
+ Γ£ô (pwa) Compiling for server...
+ Γ£ô (pwa) Compiling for server...
+ Γ£ô (pwa) Compiling for client (static)...
+ Γùï (pwa) Service worker: C:\Users\Youssef Boubli\Desktop\TruthLens\public\sw.js
+ Γùï (pwa)   URL: /sw.js
+ Γùï (pwa)   Scope: /
+ Γ£ô Compiled successfully in 13.5s
+   Running TypeScript ...
+Failed to compile.
 
-> Build error occurred
-Error: Turbopack build failed with 2 errors:
-./Desktop/TruthLens/app/admin
-You cannot have two parallel pages that resolve to the same path. Please check /(admin)/admin/settings and /admin.
+./app/api/search-by-image/route.ts:148:36
+Type error: Property 'app' does not exist on type 'Firestore'.
 
-./Desktop/TruthLens/app/admin
-You cannot have two parallel pages that resolve to the same path. Please check /(admin)/admin/users and /admin.
-
-    at ignore-listed frames
+  146 |             await adminDb.collection('search_history').add({
+  147 |                 userId: uid,
+> 148 |                 timestamp: adminDb.app.options.credential ?
+      |                                    ^
+  149 |                     require('firebase-admin').firestore.FieldValue.serverTimestamp() : new Date(),
+  150 |                 searchType: 'Visual_Search',
+  151 |                 searchQuery: searchQuery,
+Next.js build worker exited with code: 1 and signal: null
