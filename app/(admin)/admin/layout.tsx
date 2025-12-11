@@ -14,6 +14,9 @@ import NotificationsIcon from '@mui/icons-material/NotificationsNoneRounded';
 import { Badge } from '@mui/material';
 import { listenForAdminUnreadCount } from '@/services/supportService';
 
+import AdminNotificationsMenu from '@/components/admin/AdminNotificationsMenu';
+import { getPendingRequests } from '@/services/accessRequestService';
+
 const SIDEBAR_WIDTH = 280;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -21,12 +24,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const [mobileOpen, setMobileOpen] = useState(false);
     const [desktopOpen, setDesktopOpen] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     useEffect(() => {
+        // Listen for chat messages
         const unsubscribe = listenForAdminUnreadCount((count) => {
-            setUnreadCount(count);
+            // Also fetch pending requests count to update total badge
+            getPendingRequests().then(requests => {
+                setUnreadCount(count + requests.length);
+            }).catch(() => {
+                setUnreadCount(count);
+            });
         });
         return () => unsubscribe();
     }, []);
@@ -37,6 +47,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         } else {
             setDesktopOpen(!desktopOpen);
         }
+    };
+
+    const handleNotificationClick = (event: React.MouseEvent<HTMLElement>) => {
+        setNotificationAnchor(event.currentTarget);
+    };
+
+    const handleNotificationClose = () => {
+        setNotificationAnchor(null);
     };
 
     const getPageTitle = (path: string) => {
@@ -107,6 +125,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                         {/* Right Side Actions */}
                         <IconButton
+                            onClick={handleNotificationClick}
                             sx={{
                                 color: 'text.secondary',
                                 '&:hover': { color: 'text.primary', bgcolor: 'action.hover' }
@@ -116,6 +135,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                 <NotificationsIcon />
                             </Badge>
                         </IconButton>
+
+                        <AdminNotificationsMenu
+                            anchorEl={notificationAnchor}
+                            open={Boolean(notificationAnchor)}
+                            onClose={handleNotificationClose}
+                        />
                     </Toolbar>
                 </AppBar>
 
