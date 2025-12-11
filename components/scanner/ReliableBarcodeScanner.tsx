@@ -48,7 +48,7 @@ const ReliableBarcodeScanner: React.FC<ReliableBarcodeScannerProps> = ({
             // Attempt to decode from video device
             // undefined typically chooses the environment facing camera by default on mobile
             await codeReader.current.decodeFromVideoDevice(
-                undefined,
+                null,
                 videoRef.current,
                 (result, err) => {
                     if (result) {
