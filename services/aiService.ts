@@ -115,14 +115,15 @@ export interface MealPlanDay {
 const callGemini = async (prompt: string): Promise<string> => {
     const genAI = await getGeminiClient();
     try {
-        // Try Gemini 1.5 Flash first (fast, efficient)
+        // User enforced: Always use free gemini-1.5-flash
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
         const result = await model.generateContent(prompt);
         return result.response.text();
     } catch (e: any) {
         if (e.message.includes('404') || e.message.includes('not found')) {
-            console.warn("⚠️ Gemini 1.5 Flash unavailable, falling back to gemini-pro");
-            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+            console.warn("⚠️ 'gemini-1.5-flash' alias failed, trying 'gemini-1.5-flash-001'");
+            // Fallback to specific version if alias fails
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
             const result = await model.generateContent(prompt);
             return result.response.text();
         }
@@ -619,8 +620,8 @@ export const repairProductMetadata = async (imageUrl: string, currentName: strin
             result = await model.generateContent([prompt, imagePart]);
         } catch (e: any) {
             if (e.message.includes('404') || e.message.includes('not found')) {
-                console.warn("⚠️ Gemini 1.5 Flash unavailable for vision, falling back to gemini-1.5-pro");
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+                console.warn("⚠️ 'gemini-1.5-flash' alias failed, trying 'gemini-1.5-flash-001'");
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-001" });
                 result = await model.generateContent([prompt, imagePart]);
             } else {
                 throw e;
