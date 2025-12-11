@@ -68,7 +68,7 @@ export default function SeasonalEventManager() {
 
     // 2. Main Logic Loop
     useEffect(() => {
-        if (!config || !config.is_active_global || !user) return;
+        if (!config || !config.is_active_global) return;
 
         const loop = setInterval(() => {
             const now = Date.now() + timeOffset; // Current Server Time
@@ -82,14 +82,12 @@ export default function SeasonalEventManager() {
 
             const fireStart = config.celebration_climax_start
                 ? new Date(config.celebration_climax_start).getTime()
-                : musicStart + (10 * 60 * 1000);
+                : musicStart + (10 * 60 * 1000); // Fallback: 10m after music
 
             // Check Lock
             const lockedEventId = localStorage.getItem('truthlens_event_completed');
-            if (lockedEventId === config.event_id) {
-                setCurrentState('LOCKED');
-                return;
-            }
+            // If they locked the event, they still see Phase A (background), but NOT Phase B (Climax)
+            const isLocked = lockedEventId === config.event_id;
 
             // Global Window Check
             if (now < themeStart || now > themeEnd) {
@@ -99,8 +97,8 @@ export default function SeasonalEventManager() {
 
             // --- INDEPENDENT LOGIC BRANCHES ---
 
-            // 1. Music Logic (Looping)
-            const shouldPlayMusic = (now >= musicStart && now < musicEnd);
+            // 1. Music Logic (Looping) - Only plays during Phase B 'Music' window
+            const shouldPlayMusic = !isLocked && (now >= musicStart && now < musicEnd);
 
             if (audioRef.current && config.music_file_url) {
                 if (shouldPlayMusic) {
@@ -115,23 +113,26 @@ export default function SeasonalEventManager() {
                 }
             }
 
-            // 2. Countdown Logic
+            // 2. Countdown Logic (Only relevant approaching Phase B)
             const secondsUntilFire = (fireStart - now) / 1000;
             let currentCount = null;
-            const isFireActive = (now >= fireStart && now < musicEnd);
+            const isFireActive = !isLocked && (now >= fireStart && now < musicEnd);
 
-            if (secondsUntilFire > 0 && secondsUntilFire <= config.countdown_seconds) {
+            if (!isLocked && secondsUntilFire > 0 && secondsUntilFire <= config.countdown_seconds) {
                 currentCount = Math.ceil(secondsUntilFire);
-            } else if (secondsUntilFire <= 0 && isFireActive) {
+            } else if (!isLocked && secondsUntilFire <= 0 && isFireActive) {
                 currentCount = 0;
             }
 
             // --- STATE UPDATES ---
-            const isPostEvent = (now >= musicEnd && now < themeEnd);
 
-            if (isFireActive || currentCount !== null || isPostEvent) {
+            // Priority: Celebration > Theme
+            if (isFireActive || currentCount !== null) {
                 setCurrentState('CELEBRATION');
             } else {
+                // If we are in the theme window, show theme.
+                // Even if "post event" (after music ends but before theme ends), we show theme.
+                // Unless it's completely IDLE.
                 setCurrentState('THEME_ACTIVE');
             }
 
@@ -145,7 +146,8 @@ export default function SeasonalEventManager() {
 
     // RENDERERS
 
-    if (loading || !user || !config || !config.is_active_global || currentState === 'IDLE' || currentState === 'LOCKED') {
+    // Critical Change: Don't block on !user. Guests allowed.
+    if (loading || !config || !config.is_active_global || currentState === 'IDLE') {
         return null;
     }
 
@@ -159,15 +161,20 @@ export default function SeasonalEventManager() {
 
     const musicEnd = new Date(config.celebration_music_end).getTime();
     const fireStart = config.celebration_climax_start ? new Date(config.celebration_climax_start).getTime() : 0;
-    const isFireActive = (now >= fireStart && now < musicEnd);
 
-    const showMessage = (now >= fireStart && now < themeEnd);
+    // Check lock again for render
+    const lockedEventId = typeof window !== 'undefined' ? localStorage.getItem('truthlens_event_completed') : null;
+    const isLocked = lockedEventId === config.event_id;
+
+    // Active means: inside window AND not locked
+    const isFireActive = !isLocked && (now >= fireStart && now < musicEnd);
+    const showMessage = !isLocked && (now >= fireStart && now < musicEnd); // Strict window for message
 
     // Render Logic using specific fields
     const themeEffect = config.theme_effect || 'snow_cold';
     const climaxEffect = config.climax_effect || 'fireworks';
 
-    const firstName = user.displayName ? user.displayName.split(' ')[0] : (user.email?.split('@')[0] || 'Friend');
+    const firstName = user?.displayName ? user.displayName.split(' ')[0] : (user?.email?.split('@')[0] || 'Friend');
 
     return (
         <Box sx={{
