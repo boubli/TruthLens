@@ -199,8 +199,8 @@ export default function SeasonalEventManager() {
     }
 
     // Global Overlay Visibility
-    // Must be unlocked AND at least one message is active
-    const showOverlay = !isLocked && (showClimaxMessage || showSpecialMessage);
+    // Must be unlocked AND at least one message is active AND user is logged in
+    const showOverlay = !isLocked && (showClimaxMessage || showSpecialMessage) && !!user;
 
     // Render Logic using specific fields
     const themeEffect = config.theme_effect || 'snow_cold';
