@@ -114,11 +114,20 @@ export interface MealPlanDay {
 
 const callGemini = async (prompt: string): Promise<string> => {
     const genAI = await getGeminiClient();
-    // Gemini 1.5 Flash is the best free-tier model (multimodal, fast, 1M context)
-    // If this 404s again, fallback to "gemini-pro"
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    const result = await model.generateContent(prompt);
-    return result.response.text();
+    try {
+        // Try Gemini 1.5 Flash first (fast, efficient)
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+    } catch (e: any) {
+        if (e.message.includes('404') || e.message.includes('not found')) {
+            console.warn("⚠️ Gemini 1.5 Flash unavailable, falling back to gemini-pro");
+            const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+            const result = await model.generateContent(prompt);
+            return result.response.text();
+        }
+        throw e;
+    }
 };
 
 const callGroq = async (prompt: string): Promise<string> => {
@@ -591,8 +600,6 @@ export const repairProductMetadata = async (imageUrl: string, currentName: strin
         // 2. Prompt Gemini 1.5 Flash (Multimodal)
         // 2. Prompt Gemini 1.5 Flash (Multimodal)
         const genAI = await getGeminiClient();
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-
         const prompt = `
             Look at this product package.
             Extract the exact **Brand Name** and **Product Name** written on the packaging.
@@ -605,7 +612,20 @@ export const repairProductMetadata = async (imageUrl: string, currentName: strin
             }
         `;
 
-        const result = await model.generateContent([prompt, imagePart]);
+        let result;
+
+        try {
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            result = await model.generateContent([prompt, imagePart]);
+        } catch (e: any) {
+            if (e.message.includes('404') || e.message.includes('not found')) {
+                console.warn("⚠️ Gemini 1.5 Flash unavailable for vision, falling back to gemini-1.5-pro");
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+                result = await model.generateContent([prompt, imagePart]);
+            } else {
+                throw e;
+            }
+        }
         const response = result.response.text();
         const cleaned = response.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleaned);
