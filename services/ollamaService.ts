@@ -27,13 +27,47 @@ export interface OllamaResponse {
 /**
  * Get the configured Ollama URL from Admin settings or use default
  */
-const getOllamaUrl = async (): Promise<string> => {
+const getOllamaUrls = async (): Promise<{ primary: string; fallback?: string }> => {
     try {
         const settings = await getSystemSettings();
-        return settings.apiKeys?.ollamaUrl || DEFAULT_OLLAMA_URL;
+        return {
+            primary: settings.apiKeys?.ollamaUrl || DEFAULT_OLLAMA_URL,
+            fallback: settings.apiKeys?.ollamaFallbackUrl
+        };
     } catch (e) {
         console.warn('[Ollama] Could not fetch settings, using default URL');
-        return DEFAULT_OLLAMA_URL;
+        return { primary: DEFAULT_OLLAMA_URL };
+    }
+};
+
+/**
+ * Helper to execute an Ollama request with fallback to secondary URL
+ */
+const executeWithFallback = async <T>(
+    operationName: string,
+    operation: (baseUrl: string) => Promise<T>
+): Promise<T> => {
+    const urls = await getOllamaUrls();
+
+    // 1. Try Primary
+    try {
+        console.log(`[Ollama] ${operationName} -> Primary: ${urls.primary}`);
+        return await operation(urls.primary);
+    } catch (primaryError: any) {
+        console.warn(`[Ollama] Primary failed: ${primaryError.message}`);
+
+        // 2. Try Fallback if available
+        if (urls.fallback) {
+            console.log(`[Ollama] ${operationName} -> ⚠️ Switching to Fallback: ${urls.fallback}`);
+            try {
+                return await operation(urls.fallback);
+            } catch (fallbackError: any) {
+                console.error(`[Ollama] Fallback also failed: ${fallbackError.message}`);
+                throw fallbackError; // Throw final error
+            }
+        }
+
+        throw primaryError; // No fallback, throw original error
     }
 };
 
@@ -46,6 +80,7 @@ export const getPreferredModel = async (requestedModel?: string): Promise<string
     try {
         const settings = await getSystemSettings();
         const enabledModels = settings.apiKeys?.ollamaModels || {};
+        const defaultModel = settings.apiKeys?.defaultOllamaModel;
         const availableModels = Object.keys(enabledModels).filter(m => enabledModels[m]);
 
         // Default fallback if no config exists yet
@@ -61,7 +96,12 @@ export const getPreferredModel = async (requestedModel?: string): Promise<string
             console.warn(`[Ollama] Requested model '${requestedModel}' is disabled. Finding fallback...`);
         }
 
-        // 3. Return best available model
+        // 3. Use Administrator's Default Preference if Valid
+        if (defaultModel && enabledModels[defaultModel]) {
+            return defaultModel;
+        }
+
+        // 4. Return best available model
         if (availableModels.length > 0) {
             // Priority list for smart defaults
             const priority = ['llama3.2:1b', 'qwen:1.8b', 'gemma:2b', 'tinyllama'];
@@ -85,46 +125,22 @@ export const chatWithOllama = async (
     model?: string,
     systemPrompt?: string
 ): Promise<string> => {
-    try {
-        const baseUrl = await getOllamaUrl();
+    return executeWithFallback('Chat', async (baseUrl) => {
         const preferredModel = await getPreferredModel(model);
-
-
         const messages: OllamaMessage[] = [];
 
-        if (systemPrompt) {
-            messages.push({ role: 'system', content: systemPrompt });
-        }
-
+        if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
         messages.push({ role: 'user', content: prompt });
-
-        console.log(`[Ollama] Sending request to ${baseUrl} with model ${model}`);
 
         const response = await axios.post<OllamaResponse>(
             `${baseUrl}/api/chat`,
-            {
-                model: model,
-                messages: messages,
-                stream: false
-            },
-            {
-                timeout: 60000, // 60 second timeout (LLM can be slow on CPU)
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
+            { model: preferredModel, messages, stream: false },
+            { timeout: 60000 }
         );
 
-        if (response.data.message?.content) {
-            console.log(`[Ollama] Response received (${response.data.message.content.length} chars)`);
-            return response.data.message.content;
-        }
-
+        if (response.data.message?.content) return response.data.message.content;
         throw new Error('Empty response from Ollama');
-    } catch (error: any) {
-        console.error('[Ollama] Error:', error.message);
-        throw error;
-    }
+    });
 };
 
 /**
@@ -134,36 +150,16 @@ export const chatWithOllamaMessages = async (
     messages: { role: string; content: string }[],
     model: string = 'llama3.2:1b'
 ): Promise<string> => {
-    try {
-        const baseUrl = await getOllamaUrl();
-
-        console.log(`[Ollama] Sending chat request to ${baseUrl} with model ${model}`);
-
+    return executeWithFallback('Chat History', async (baseUrl) => {
         const response = await axios.post<OllamaResponse>(
             `${baseUrl}/api/chat`,
-            {
-                model: model,
-                messages: messages,
-                stream: false
-            },
-            {
-                timeout: 60000,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
+            { model, messages, stream: false },
+            { timeout: 60000 }
         );
 
-        if (response.data.message?.content) {
-            console.log(`[Ollama] Response received (${response.data.message.content.length} chars)`);
-            return response.data.message.content;
-        }
-
+        if (response.data.message?.content) return response.data.message.content;
         throw new Error('Empty response from Ollama');
-    } catch (error: any) {
-        console.error('[Ollama] Chat Error:', error.message);
-        throw error;
-    }
+    });
 };
 
 /**
@@ -173,29 +169,14 @@ export const generateWithOllama = async (
     prompt: string,
     model: string = 'llama3.2:1b'
 ): Promise<string> => {
-    try {
-        const baseUrl = await getOllamaUrl();
-
+    return executeWithFallback('Generate', async (baseUrl) => {
         const response = await axios.post(
             `${baseUrl}/api/generate`,
-            {
-                model: model,
-                prompt: prompt,
-                stream: false
-            },
-            {
-                timeout: 60000,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
+            { model, prompt, stream: false },
+            { timeout: 60000 }
         );
-
         return response.data.response || '';
-    } catch (error: any) {
-        console.error('[Ollama] Generate error:', error.message);
-        throw error;
-    }
+    });
 };
 
 /**
@@ -203,11 +184,11 @@ export const generateWithOllama = async (
  */
 export const listOllamaModels = async (): Promise<string[]> => {
     try {
-        const baseUrl = await getOllamaUrl();
-        const response = await axios.get(`${baseUrl}/api/tags`);
-        return response.data.models?.map((m: any) => m.name) || [];
+        return await executeWithFallback('List Models', async (baseUrl) => {
+            const response = await axios.get(`${baseUrl}/api/tags`);
+            return response.data.models?.map((m: any) => m.name) || [];
+        });
     } catch (error) {
-        console.error('[Ollama] Error listing models:', error);
         return [];
     }
 };
@@ -217,9 +198,10 @@ export const listOllamaModels = async (): Promise<string[]> => {
  */
 export const checkOllamaHealth = async (): Promise<boolean> => {
     try {
-        const baseUrl = await getOllamaUrl();
-        const response = await axios.get(`${baseUrl}/api/tags`, { timeout: 5000 });
-        return response.status === 200;
+        return await executeWithFallback('Health Check', async (baseUrl) => {
+            const response = await axios.get(`${baseUrl}/api/tags`, { timeout: 5000 });
+            return response.status === 200;
+        });
     } catch (error) {
         return false;
     }

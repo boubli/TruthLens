@@ -65,6 +65,8 @@ export default function AdminSettingsPage() {
         searxngUrl: '',
         searxngUrl: '',
         ollamaUrl: '',
+        ollamaFallbackUrl: '',
+        defaultOllamaModel: '',
         ollamaModels: {} as Record<string, boolean>
     });
 
@@ -102,7 +104,8 @@ export default function AdminSettingsPage() {
                 sambanova: process.env.NEXT_PUBLIC_SAMBANOVA_API_KEY || '',
                 serpapi: process.env.NEXT_PUBLIC_SERPAPI_API_KEY || '',
                 searxngUrl: '',
-                ollamaUrl: ''
+                ollamaUrl: '',
+                ollamaFallbackUrl: ''
             };
 
             // Merge: Firebase overrides take precedence, env keys as fallback
@@ -115,9 +118,10 @@ export default function AdminSettingsPage() {
                 sambanova: settings.apiKeys?.sambanova || envKeys.sambanova,
                 serpapi: settings.apiKeys?.serpapi || envKeys.serpapi,
                 searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080',
-                searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080',
                 ollamaUrl: settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434',
-                ollamaModels: settings.apiKeys?.ollamaModels || {}
+                ollamaFallbackUrl: settings.apiKeys?.ollamaFallbackUrl || '',
+                ollamaModels: settings.apiKeys?.ollamaModels || {},
+                defaultOllamaModel: settings.apiKeys?.defaultOllamaModel || ''
             };
 
             setApiKeys(mergedKeys);
@@ -579,6 +583,16 @@ export default function AdminSettingsPage() {
                         helperText="Example: http://20.199.129.203:11434"
                     />
 
+                    <TextField
+                        label="Fallback Ollama URL (Optional)"
+                        fullWidth
+                        sx={{ mt: 2 }}
+                        value={apiKeys.ollamaFallbackUrl}
+                        onChange={(e) => handleChange('ollamaFallbackUrl', e.target.value)}
+                        placeholder="http://backup-server:11434"
+                        helperText="Used if the primary server is down"
+                    />
+
 
                     <Box sx={{ mt: 3 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -599,21 +613,38 @@ export default function AdminSettingsPage() {
                         {availableModels.length > 0 ? (
                             <Grid container spacing={2}>
                                 {availableModels.map((model) => (
-                                    <Grid item xs={12} sm={6} md={4} key={model}>
+                                    <Grid item xs={12} key={model}>
                                         <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <Box>
-                                                <Typography variant="body2" fontWeight="bold">
-                                                    {model}
-                                                </Typography>
-                                                <Typography variant="caption" color={apiKeys.ollamaModels?.[model] ? 'success.main' : 'text.secondary'}>
-                                                    {apiKeys.ollamaModels?.[model] ? 'Active' : 'Disabled'}
-                                                </Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                <Box>
+                                                    <Typography variant="body2" fontWeight="bold">
+                                                        {model}
+                                                    </Typography>
+                                                    <Typography variant="caption" color={apiKeys.ollamaModels?.[model] ? 'success.main' : 'text.secondary'}>
+                                                        {apiKeys.ollamaModels?.[model] ? 'Active' : 'Disabled'}
+                                                    </Typography>
+                                                </Box>
+                                                {apiKeys.defaultOllamaModel === model && (
+                                                    <Box sx={{ bgcolor: 'primary.main', color: 'white', px: 1, borderRadius: 1, fontSize: '0.7rem' }}>
+                                                        DEFAULT
+                                                    </Box>
+                                                )}
                                             </Box>
-                                            <Switch
-                                                checked={!!apiKeys.ollamaModels?.[model]}
-                                                onChange={() => toggleModel(model)}
-                                                color="secondary"
-                                            />
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                                <Button
+                                                    size="small"
+                                                    variant={apiKeys.defaultOllamaModel === model ? "contained" : "text"}
+                                                    disabled={!apiKeys.ollamaModels?.[model]}
+                                                    onClick={() => handleChange('defaultOllamaModel', model)}
+                                                >
+                                                    {apiKeys.defaultOllamaModel === model ? "Main" : "Set as Main"}
+                                                </Button>
+                                                <Switch
+                                                    checked={!!apiKeys.ollamaModels?.[model]}
+                                                    onChange={() => toggleModel(model)}
+                                                    color="secondary"
+                                                />
+                                            </Box>
                                         </Paper>
                                     </Grid>
                                 ))}

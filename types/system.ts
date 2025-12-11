@@ -36,7 +36,9 @@ export interface ExtendedSystemSettings {
         serpapi?: string;
         searxngUrl?: string; // Self-hosted SearXNG instance URL
         ollamaUrl?: string; // Self-hosted Ollama instance URL
+        ollamaFallbackUrl?: string; // Secondary/Backup Ollama Instance URL
         ollamaModels?: Record<string, boolean>; // Enabled status for specific models
+        defaultOllamaModel?: string; // The explicitly selected default model
     };
     tierConfig: SystemTierConfig;
     branding?: {
