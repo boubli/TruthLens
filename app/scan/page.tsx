@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import ReliableBarcodeScanner from '@/components/scanner/ReliableBarcodeScanner';
+import ScanBarcode from '@/components/scanner/ScanBarcode';
 import { ArrowLeft } from 'lucide-react';
 
 // Simplified Scan Page - No Backend Logic
@@ -32,7 +32,7 @@ export default function ScanPage() {
             </div>
 
             {/* Immersive Scanner */}
-            <ReliableBarcodeScanner
+            <ScanBarcode
                 onResult={handleScanResult}
             />
         </div>

@@ -5,13 +5,13 @@ import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { Scan, Upload, Camera, Zap, Image as ImageIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface ReliableBarcodeScannerProps {
+interface ScanBarcodeProps {
     onResult: (result: string) => void;
     onError?: (error: Error) => void;
     autoStart?: boolean;
 }
 
-const ReliableBarcodeScanner: React.FC<ReliableBarcodeScannerProps> = ({
+const ScanBarcode: React.FC<ScanBarcodeProps> = ({
     onResult,
     onError,
     autoStart = true,
@@ -198,4 +198,4 @@ const ReliableBarcodeScanner: React.FC<ReliableBarcodeScannerProps> = ({
     );
 };
 
-export default ReliableBarcodeScanner;
+export default ScanBarcode;
