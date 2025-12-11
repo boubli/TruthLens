@@ -398,14 +398,18 @@ export default function UserHome() {
                                         }
                                         return true;
                                     }).map((item, index) => (
-                                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+                                        <Grid size={{ xs: 6, sm: 6, md: 4 }} key={index}>
                                             <StaggerItem>
                                                 <AnimatedCard
                                                     onClick={() => router.push(item.path)}
                                                     sx={{
                                                         p: { xs: 2, sm: 2.5 },
+                                                        height: '100%',
                                                         display: 'flex',
+                                                        flexDirection: { xs: 'column', sm: 'row' },
                                                         alignItems: 'center',
+                                                        justifyContent: { xs: 'center', sm: 'flex-start' },
+                                                        textAlign: { xs: 'center', sm: 'left' },
                                                         borderRadius: 3,
                                                         cursor: 'pointer',
                                                         border: '1px solid',
@@ -422,31 +426,44 @@ export default function UserHome() {
                                                         component={motion.div}
                                                         whileHover={{ rotate: 5 }}
                                                         sx={{
-                                                            width: { xs: 56, sm: 60 },
-                                                            height: { xs: 56, sm: 60 },
+                                                            width: { xs: 48, sm: 60 },
+                                                            height: { xs: 48, sm: 60 },
                                                             borderRadius: 2.5,
                                                             bgcolor: item.color,
                                                             display: 'flex',
                                                             alignItems: 'center',
                                                             justifyContent: 'center',
-                                                            mr: 2,
+                                                            mr: { xs: 0, sm: 2 },
+                                                            mb: { xs: 1.5, sm: 0 },
                                                             transition: 'all 0.3s'
                                                         }}
                                                     >
-                                                        {item.icon}
+                                                        {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: { xs: 28, sm: 40 }, color: (item.icon as React.ReactElement).props.sx.color } })}
                                                     </Box>
-                                                    <Box sx={{ flex: 1 }}>
+                                                    <Box sx={{ flex: 1, width: '100%' }}>
                                                         <Typography
                                                             variant="h6"
                                                             fontWeight="bold"
-                                                            sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}
+                                                            sx={{
+                                                                fontSize: { xs: '0.9rem', sm: '1.1rem' },
+                                                                lineHeight: 1.2,
+                                                                mb: { xs: 0.5, sm: 0 }
+                                                            }}
                                                         >
                                                             {item.title}
                                                         </Typography>
                                                         <Typography
                                                             variant="body2"
                                                             color="text.secondary"
-                                                            sx={{ fontSize: { xs: '0.85rem', sm: '0.9rem' } }}
+                                                            sx={{
+                                                                fontSize: { xs: '0.75rem', sm: '0.9rem' },
+                                                                display: { xs: 'none', sm: 'block' } // Hide description on mobile to save space? Or keep brief?
+                                                                // User asked for "two by two", usually space is tight.
+                                                                // Let's keep it but handle text-overflow if needed.
+                                                                // Actually better to hide generic description on very small tiles?
+                                                                // Let's keep it visible but maybe smaller.
+                                                                display: 'block'
+                                                            }}
                                                         >
                                                             {item.desc}
                                                         </Typography>
@@ -455,7 +472,8 @@ export default function UserHome() {
                                                         size="small"
                                                         sx={{
                                                             transition: 'transform 0.3s',
-                                                            '&:hover': { transform: 'translateX(4px)' }
+                                                            '&:hover': { transform: 'translateX(4px)' },
+                                                            display: { xs: 'none', sm: 'inline-flex' } // Hide arrow on mobile, redundant
                                                         }}
                                                     >
                                                         <KeyboardArrowRightIcon color="action" />
