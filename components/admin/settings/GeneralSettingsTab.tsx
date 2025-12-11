@@ -63,7 +63,7 @@ export default function GeneralSettingsTab({
                 </Typography>
 
                 <Grid container spacing={3}>
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                         <Box sx={{ p: 2, bgcolor: 'rgba(255, 152, 0, 0.05)', borderRadius: 2, border: '1px solid rgba(255, 152, 0, 0.2)' }}>
                             <FormControlLabel
                                 control={
@@ -81,7 +81,7 @@ export default function GeneralSettingsTab({
                             />
                         </Box>
                     </Grid>
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                         <Box sx={{ p: 2, bgcolor: 'rgba(108, 99, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(108, 99, 255, 0.2)' }}>
                             <FormControlLabel
                                 control={
@@ -112,16 +112,16 @@ export default function GeneralSettingsTab({
                 />
                 <CardContent sx={{ p: 3 }}>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <TextField label="Favicon URL" fullWidth value={branding.faviconUrl} onChange={(e) => setBranding(prev => ({ ...prev, faviconUrl: e.target.value }))} size="small" />
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <TextField label="Apple Touch Icon" fullWidth value={branding.appleTouchIconUrl} onChange={(e) => setBranding(prev => ({ ...prev, appleTouchIconUrl: e.target.value }))} size="small" />
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <TextField label="Android Icon 192px URL" fullWidth value={branding.androidIcon192Url} onChange={(e) => setBranding(prev => ({ ...prev, androidIcon192Url: e.target.value }))} size="small" />
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <TextField label="Android Icon 512px URL" fullWidth value={branding.androidIcon512Url} onChange={(e) => setBranding(prev => ({ ...prev, androidIcon512Url: e.target.value }))} size="small" />
                         </Grid>
                     </Grid>

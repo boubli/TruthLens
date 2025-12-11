@@ -30,8 +30,7 @@ export async function POST(req: NextRequest) {
                     undefined,
                     ['mp3', 'wav', 'ogg', 'm4a', 'jpg', 'jpeg', 'png', 'webp']
                 );
-                // Ensure permissions are set (redundant but safe)
-                await storage.updateBucketPermissions(bucketId, [Permission.read(Role.any())]);
+
             } else {
                 // If it's another error, throw it to the main catcher
                 throw e;

@@ -104,7 +104,7 @@ export default function AISettingsTab({
                 <CardContent sx={{ p: 3 }}>
                     <Grid container spacing={2}>
                         {Object.keys(freeApiKeys).map((key) => (
-                            <Grid item xs={12} sm={6} key={key}>
+                            <Grid xs={12} sm={6} key={key}>
                                 <TextField
                                     label={`${key.charAt(0).toUpperCase() + key.slice(1)} Key`}
                                     fullWidth
@@ -153,7 +153,7 @@ export default function AISettingsTab({
                 />
                 <CardContent sx={{ p: 3 }}>
                     <Grid container spacing={2} sx={{ mb: 3 }}>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <TextField
                                 label="Primary Ollama URL"
                                 fullWidth
@@ -162,7 +162,7 @@ export default function AISettingsTab({
                                 placeholder="http://primary-server:11434"
                             />
                         </Grid>
-                        <Grid item xs={12} md={6}>
+                        <Grid xs={12} md={6}>
                             <TextField
                                 label="Fallback Ollama URL"
                                 fullWidth
@@ -180,7 +180,7 @@ export default function AISettingsTab({
                     {availableModels.length > 0 ? (
                         <Grid container spacing={2} sx={{ mb: 3 }}>
                             {availableModels.map((model) => (
-                                <Grid item xs={12} key={model}>
+                                <Grid xs={12} key={model}>
                                     <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: ollamaConfig.defaultOllamaModel === model ? 'rgba(156, 39, 176, 0.04)' : 'transparent', borderColor: ollamaConfig.defaultOllamaModel === model ? 'secondary.main' : 'divider' }}>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                                             <Box>
