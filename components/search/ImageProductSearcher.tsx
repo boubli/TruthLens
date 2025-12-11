@@ -2,7 +2,6 @@
 
 import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BrowserMultiFormatReader } from '@zxing/library';
 import { Camera, Upload, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -11,11 +10,7 @@ export default function ImageProductSearcher() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const router = useRouter();
-    const { user } = useAuth(); // Needed for auth token call if we were doing it manually, but api route handles cookie/header check generally, 
-    // Next.js app router automatically passes cookies. 
-    // But for a custom backend call we might need ID token if using Bearer.
-    // We'll rely on session cookies if NextAuth, or getting token if Firebase.
-    // TruthLens uses Firebase client SDK, so we need to get the token.
+    const { user } = useAuth();
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -25,35 +20,13 @@ export default function ImageProductSearcher() {
         setError(null);
 
         try {
-            // 1. Attempt Local Barcode Decode
-            const code = await attemptLocalBarcodeDecode(file);
-
-            if (code) {
-                console.log('Use Local Barcode:', code);
-                router.push(`/products/${code}`);
-                return;
-            }
-
-            // 2. If Barcode Not Found, Send to Backend for Visual Search
+            // Updated: Direct Visual Search (No local barcode decoding)
             await performVisualSearch(file);
 
         } catch (err: any) {
             console.error('Search failed:', err);
             setError(err.message || 'Failed to process image. Please try again.');
             setIsProcessing(false);
-        }
-    };
-
-    const attemptLocalBarcodeDecode = async (file: File): Promise<string | null> => {
-        const reader = new BrowserMultiFormatReader();
-        try {
-            const imageUrl = URL.createObjectURL(file);
-            const result = await reader.decodeFromImageUrl(imageUrl);
-            URL.revokeObjectURL(imageUrl); // Cleanup
-            return result.getText();
-        } catch (err) {
-            // Not a barcode or failed to decode
-            return null;
         }
     };
 
@@ -112,8 +85,8 @@ export default function ImageProductSearcher() {
                 onClick={triggerFileInput}
                 disabled={isProcessing}
                 className={`w-full flex items-center justify-center gap-2 p-4 rounded-xl border-2 border-dashed transition-all ${isProcessing
-                        ? 'bg-gray-50 border-gray-300 cursor-wait'
-                        : 'bg-white hover:bg-gray-50 border-emerald-500/50 hover:border-emerald-500 text-emerald-700 dark:bg-zinc-900 dark:border-zinc-700 dark:hover:border-emerald-500/50 dark:text-emerald-400'
+                    ? 'bg-gray-50 border-gray-300 cursor-wait'
+                    : 'bg-white hover:bg-gray-50 border-emerald-500/50 hover:border-emerald-500 text-emerald-700 dark:bg-zinc-900 dark:border-zinc-700 dark:hover:border-emerald-500/50 dark:text-emerald-400'
                     }`}
             >
                 {isProcessing ? (

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 import { Scan, Upload, Camera, Zap, Image as ImageIcon, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,37 +18,37 @@ const ScanBarcode: React.FC<ScanBarcodeProps> = ({
     const [isScanning, setIsScanning] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
-    const codeReader = useRef<BrowserMultiFormatReader | null>(null);
+    const streamRef = useRef<MediaStream | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Initialize
+    // Initialize Camera (Native)
     useEffect(() => {
-        codeReader.current = new BrowserMultiFormatReader();
         return () => {
-            stopScanning();
+            stopCamera();
         };
     }, []);
 
     useEffect(() => {
-        if (autoStart) startScanning();
+        if (autoStart) startCamera();
     }, [autoStart]);
 
-    const startScanning = useCallback(async () => {
-        if (!codeReader.current || !videoRef.current) return;
+    const startCamera = useCallback(async () => {
         setError(null);
         setIsScanning(true);
 
         try {
-            await codeReader.current.decodeFromVideoDevice(
-                null,
-                videoRef.current,
-                (result, err) => {
-                    if (result) {
-                        handleSuccess(result.getText());
-                    }
-                    // Ignore noise errors
-                }
-            );
+            // Request Camera Access (Environment facing if available)
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+
+            streamRef.current = stream;
+
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+                videoRef.current.play();
+            }
+
         } catch (err) {
             console.error("Camera failed:", err);
             setError("Camera access failed. Switch to photo mode.");
@@ -58,8 +57,11 @@ const ScanBarcode: React.FC<ScanBarcodeProps> = ({
         }
     }, [onError]);
 
-    const stopScanning = useCallback(() => {
-        codeReader.current?.reset();
+    const stopCamera = useCallback(() => {
+        if (streamRef.current) {
+            streamRef.current.getTracks().forEach(track => track.stop());
+            streamRef.current = null;
+        }
         setIsScanning(false);
     }, []);
 
@@ -68,25 +70,24 @@ const ScanBarcode: React.FC<ScanBarcodeProps> = ({
             navigator.vibrate(200);
         }
         onResult(code);
-        stopScanning();
+        stopCamera();
     };
 
+    // Placeholder for File Upload (Logic removed as requested)
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file || !codeReader.current) return;
+        if (!file) return;
 
-        try {
-            const imageUrl = URL.createObjectURL(file);
-            const result = await codeReader.current.decodeFromImageUrl(imageUrl);
-            if (result) {
-                handleSuccess(result.getText());
-            }
-            URL.revokeObjectURL(imageUrl);
-        } catch (err) {
-            setError("Could not read barcode from image.");
-        } finally {
-            if (fileInputRef.current) fileInputRef.current.value = '';
+        // Visual feedback only
+        if (typeof navigator !== 'undefined' && navigator.vibrate) {
+            navigator.vibrate(50);
         }
+        console.log("Image selected:", file.name);
+
+        // FUTURE: Implement decoding here
+        // onResult("mock-result"); 
+
+        if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
     return (
@@ -114,6 +115,7 @@ const ScanBarcode: React.FC<ScanBarcodeProps> = ({
                     className={`w-full h-full object-cover transition-opacity duration-500 ${isScanning ? 'opacity-100' : 'opacity-0'}`}
                     playsInline
                     muted
+                    autoPlay
                 />
 
                 {/* AI Overlay / HUD */}
@@ -165,7 +167,7 @@ const ScanBarcode: React.FC<ScanBarcodeProps> = ({
 
                         <div className="space-y-3 w-full max-w-xs">
                             <button
-                                onClick={startScanning}
+                                onClick={startCamera}
                                 className="w-full py-3.5 px-6 rounded-xl bg-white text-black font-semibold hover:bg-gray-100 transition-all flex items-center justify-center gap-2 group"
                             >
                                 <Camera className="w-4 h-4 text-black" />
