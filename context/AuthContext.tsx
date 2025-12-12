@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 // import i18n from '@/lib/i18n';
 import { UserProfile, UserTier, DietaryPreferences, TierFeatures, DEFAULT_SUBSCRIPTION, DEFAULT_DIETARY_PREFERENCES, TIER_CONFIG } from '@/types/user';
@@ -181,6 +181,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             unsubscribe();
         };
     }, []);
+
+    // Real-time listener for tier changes - Auto-reload when admin changes user's tier
+    useEffect(() => {
+        if (!user) return;
+
+        console.log('[AUTH] Setting up tier change listener for user:', user.uid);
+
+        const userDocRef = doc(db, 'users', user.uid);
+        const unsubscribe = onSnapshot(userDocRef, (snapshot) => {
+            if (!snapshot.exists()) return;
+
+            const data = snapshot.data();
+            const newTier = data?.subscription?.tier?.toLowerCase();
+            const currentTier = userProfile?.subscription?.tier?.toLowerCase();
+
+            // Only reload if tier actually changed (and we have a previous value)
+            if (currentTier && newTier && newTier !== currentTier) {
+                console.log(`[AUTH] Tier changed from ${currentTier} to ${newTier} - Reloading page...`);
+
+                // Optional: Show a brief notification before reload
+                // You could add a toast here if you want
+
+                // Reload the page to apply new tier features
+                window.location.reload();
+            }
+        }, (error) => {
+            console.error('[AUTH] Tier change listener error:', error);
+        });
+
+        return () => unsubscribe();
+    }, [user, userProfile?.subscription?.tier]);
+
 
     const loadUserProfile = async (user: User) => {
         try {
