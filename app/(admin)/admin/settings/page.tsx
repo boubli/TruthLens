@@ -78,6 +78,13 @@ export default function AdminSettingsPage() {
     });
     const [savingSearxng, setSavingSearxng] = useState(false);
 
+    // --- GITHUB MODELS (PC BUILDER) ---
+    const [githubModelsConfig, setGithubModelsConfig] = useState({
+        githubModelsToken: '',
+        githubModelsModel: 'gpt-4o'
+    });
+    const [savingGithubModels, setSavingGithubModels] = useState(false);
+
     // --- OLLAMA SETTINGS ---
     const [ollamaConfig, setOllamaConfig] = useState({
         ollamaUrl: '',
@@ -140,6 +147,12 @@ export default function AdminSettingsPage() {
 
             setSearxngConfig({
                 searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080',
+            });
+
+            // Load GitHub Models config
+            setGithubModelsConfig({
+                githubModelsToken: settings.apiKeys?.githubModelsToken || '',
+                githubModelsModel: settings.apiKeys?.githubModelsModel || 'gpt-4o'
             });
 
             setModels(settings.apiKeys?.models || {});
@@ -243,6 +256,24 @@ export default function AdminSettingsPage() {
             setMsg({ type: 'error', text: 'Failed to save SearXNG settings' });
         } finally {
             setSavingSearxng(false);
+        }
+    };
+
+    const handleSaveGithubModels = async () => {
+        setSavingGithubModels(true);
+        try {
+            const currentSettings = await getSystemSettings();
+            const updatedApiKeys = {
+                ...currentSettings.apiKeys,
+                ...githubModelsConfig
+            };
+            await updateSystemSettings({ apiKeys: updatedApiKeys });
+            setMsg({ type: 'success', text: 'GitHub Models config saved!' });
+        } catch (error) {
+            console.error('Save GitHub Models Error:', error);
+            setMsg({ type: 'error', text: 'Failed to save GitHub Models config' });
+        } finally {
+            setSavingGithubModels(false);
         }
     };
 
@@ -502,6 +533,10 @@ export default function AdminSettingsPage() {
                         savingSearxng={savingSearxng}
                         handleRunBackup={handleRunBackup}
                         runningBackup={runningBackup}
+                        githubModelsConfig={githubModelsConfig}
+                        setGithubModelsConfig={setGithubModelsConfig}
+                        handleSaveGithubModels={handleSaveGithubModels}
+                        savingGithubModels={savingGithubModels}
                     />
                 )}
 

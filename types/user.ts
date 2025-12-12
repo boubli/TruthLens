@@ -24,6 +24,7 @@ export interface DietaryPreferences {
 
 export interface UserPreferences {
     language?: string;
+    location?: string; // For PC Builder pricing (e.g., "USA", "UK", "Canada")
 }
 
 export interface UserProfile {

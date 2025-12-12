@@ -28,6 +28,7 @@ import DietaryPreferencesSection from '@/components/user/DietaryPreferencesSecti
 import TierBadge from '@/components/subscription/TierBadge';
 import ApiKeyManager from '@/components/settings/ApiKeyManager';
 import LanguageSelector from '@/components/profile/LanguageSelector';
+import LocationSelector from '@/components/profile/LocationSelector';
 import NotificationsSection from '@/components/profile/NotificationsSection';
 import { useTranslation } from 'react-i18next';
 
@@ -230,6 +231,7 @@ export default function ProfilePage() {
                     <Box sx={{ mt: 4 }}>
                         <ThemeSelector />
                         <LanguageSelector />
+                        <LocationSelector />
                     </Box>
                 </ScrollReveal>
 

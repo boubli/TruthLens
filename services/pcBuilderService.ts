@@ -87,7 +87,17 @@ export async function generatePCBuild(
     request: GenerateBuildRequest
 ): Promise<SavedBuild> {
     const settings = await getSystemSettings();
-    const location = request.location || settings.apiKeys?.defaultPcBuilderLocation || 'USA';
+
+    // Get user's location preference from Firestore
+    let location = 'USA'; // Default fallback
+    try {
+        const userDoc = await adminDb?.collection('users').doc(userId).get();
+        const userData = userDoc?.data();
+        location = userData?.preferences?.location || 'USA';
+        console.log(`[PCBuilder] Using user location: ${location}`);
+    } catch (error) {
+        console.warn('[PCBuilder] Could not fetch user location, using default USD');
+    }
 
     // ===== Step A: Generate build with GitHub Models =====
     console.log('[PCBuilder] Step A: Consulting AI for build recommendations...');
