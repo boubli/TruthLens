@@ -47,19 +47,22 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
         groq: '',
         gemini: '',
         ollama: '',
-        deepseek: ''
+        deepseek: '',
+        openrouter: ''
     });
     const [originalKeys, setOriginalKeys] = useState<Record<AIProvider, string>>({
         groq: '',
         gemini: '',
         ollama: '',
-        deepseek: ''
+        deepseek: '',
+        openrouter: ''
     });
     const [showKey, setShowKey] = useState<Record<AIProvider, boolean>>({
         groq: false,
         gemini: false,
         ollama: false,
-        deepseek: false
+        deepseek: false,
+        openrouter: false
     });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -87,7 +90,8 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
                 groq: keys.groq || '',
                 gemini: keys.gemini || '',
                 ollama: '', // Self-hosted
-                deepseek: keys.deepseek || ''
+                deepseek: keys.deepseek || '',
+                openrouter: keys.openrouter || ''
             };
             setApiKeys(loadedKeys);
             setOriginalKeys(loadedKeys);

@@ -20,6 +20,23 @@ const float = keyframes`
 `;
 
 export default function SearchingAnimation() {
+    const [text, setText] = React.useState('Scanning Global Database...');
+
+    React.useEffect(() => {
+        const steps = [
+            { t: 'Scanning Global Database...', d: 0 },
+            { t: 'Checking FDA Medicine Registry...', d: 2500 },
+            { t: 'Consulting AI Models...', d: 5000 },
+            { t: 'Synthesizing Results...', d: 8000 }
+        ];
+
+        const timeouts = steps.map(step =>
+            setTimeout(() => setText(step.t), step.d)
+        );
+
+        return () => timeouts.forEach(clearTimeout);
+    }, []);
+
     return (
         <Box
             sx={{
@@ -83,8 +100,12 @@ export default function SearchingAnimation() {
                 }} />
             </Box>
 
-            <Typography variant="h6" fontWeight="bold" color="primary">
-                Scanning Global Database...
+            <Typography variant="h6" fontWeight="bold" color="primary" sx={{
+                transition: 'opacity 0.5s',
+                minWidth: 300,
+                textAlign: 'center'
+            }}>
+                {text}
             </Typography>
             <Typography variant="body2" color="text.secondary">
                 Analyzing ingredients & nutrition

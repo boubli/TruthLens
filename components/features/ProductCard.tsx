@@ -13,9 +13,10 @@ interface ProductCardProps {
     image: string; // URL
     description: string;
     grade: string;
+    searchQuery?: string; // For passing context to product page (AI Hydration)
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ id, name, image, description, grade }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ id, name, image, description, grade, searchQuery }) => {
     const router = useRouter();
     const { user } = useAuth();
     const [isFavorite, setIsFavorite] = useState(false);
@@ -152,7 +153,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ id, name, image, description,
                 <Button
                     size="small"
                     variant="contained"
-                    onClick={() => router.push(`/product/${id}`)}
+                    onClick={() => {
+                        const url = searchQuery
+                            ? `/product/${id}?source=dashboard&q=${encodeURIComponent(searchQuery)}`
+                            : `/product/${id}`;
+                        router.push(url);
+                    }}
                     sx={{
                         borderRadius: 4,
                         textTransform: 'none',

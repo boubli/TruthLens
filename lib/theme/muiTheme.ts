@@ -223,7 +223,7 @@ export function createCustomMuiTheme(customColors: CustomThemeColors): Theme {
             },
         },
         typography: {
-            fontFamily: fontFamily || "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+            fontFamily: fontFamily || "'var(--font-outfit)', 'Outfit', 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
             fontSize: 14,
             fontWeightLight: 300,
             fontWeightRegular: 400,

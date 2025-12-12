@@ -8,7 +8,13 @@ if (!admin.apps.length) {
         if (!serviceAccountKey) {
             console.warn('⚠️ FIREBASE_SERVICE_ACCOUNT_KEY not set. Admin SDK will not be available.');
         } else {
-            const serviceAccount = JSON.parse(serviceAccountKey);
+            let serviceAccount;
+            try {
+                serviceAccount = JSON.parse(serviceAccountKey);
+            } catch (e) {
+                // Handle base64 encoded key
+                serviceAccount = JSON.parse(Buffer.from(serviceAccountKey, 'base64').toString('ascii'));
+            }
 
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),

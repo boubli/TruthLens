@@ -42,6 +42,18 @@ export interface EnhancedProductData {
     // but the user requested strict structure. I will implement getters or just strictly use the object.)
     // For compatibility with components expecting 'ingredients', we might need to add it:
     ingredients: string[];
+    source?: 'OFF' | 'FDA' | 'FooDB' | 'AI';
+
+    // Tech & Non-Food Fields
+    specs?: Record<string, string>; // e.g. { "Processor": "M1", "RAM": "16GB" }
+    analysis?: {
+        pros?: string[];
+        cons?: string[];
+        verdict?: string; // "Buy" | "Pass" | "Wait"
+        verdict_text?: string;
+        price_analysis?: string;
+        score?: number; // 0-100 for Tech Items
+    };
 }
 
 /**

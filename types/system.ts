@@ -24,6 +24,9 @@ export type SystemTierConfig = Record<UserTier, TierDefinition>;
 
 // Extended System Settings
 export interface ExtendedSystemSettings {
+    aiConfig?: {
+        ollamaUrl?: string;
+    };
     maintenanceMode: boolean;
     betaAccess: boolean;
     apiKeys?: {
@@ -39,6 +42,11 @@ export interface ExtendedSystemSettings {
         ollamaFallbackUrl?: string; // Secondary/Backup Ollama Instance URL
         ollamaModels?: Record<string, boolean>; // Enabled status for specific models
         defaultOllamaModel?: string; // The explicitly selected default model
+        // DeepSeek
+        deepseekBaseUrl?: string;
+        // OpenRouter
+        openrouterApiKey?: string;
+        openrouterModel?: string;
         // GitHub Models API (for PC Builder / Grok-3)
         githubModelsToken?: string;       // GitHub PAT with models scope
         githubModelsModel?: string;       // Model to use (e.g., "openai/gpt-4.1")
@@ -48,8 +56,10 @@ export interface ExtendedSystemSettings {
             groq?: string;
             openai?: string;
             deepseek?: string;
+            openrouter?: string;
         };
     };
+    pcConsultationPrice: number; // Price in cents (default 2000)
     tierConfig: SystemTierConfig;
     branding?: {
         faviconUrl?: string;

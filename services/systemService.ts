@@ -46,7 +46,8 @@ export const DEFAULT_SETTINGS: ExtendedSystemSettings = {
     maintenanceMode: false,
     betaAccess: false,
     apiKeys: {},
-    tierConfig: DEFAULT_TIER_CONFIG
+    tierConfig: DEFAULT_TIER_CONFIG,
+    pcConsultationPrice: 2000 // Default 20.00 USD
 };
 
 /**

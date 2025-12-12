@@ -7,7 +7,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import PublicIcon from '@mui/icons-material/Public';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import LockIcon from '@mui/icons-material/Lock';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { searchProductsAction, EnhancedProductData } from '@/app/actions';
 import { useAuth } from '@/context/AuthContext';
@@ -27,8 +27,32 @@ export default function GlobalSearchPage() {
     const [loading, setLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { features, tier, loading: authLoading } = useAuth(); // Use tier-based feature flag
     const { t } = useTranslation();
+
+    // Auto-search from URL
+    React.useEffect(() => {
+        const urlQuery = searchParams.get('search') || searchParams.get('q');
+        if (urlQuery && !hasSearched) {
+            setQuery(urlQuery);
+            performSearch(urlQuery);
+        }
+    }, [searchParams]);
+
+    const performSearch = async (searchQuery: string) => {
+        if (!searchQuery.trim()) return;
+        setLoading(true);
+        setHasSearched(true);
+        try {
+            const data = await searchProductsAction(searchQuery);
+            setResults(data);
+        } catch (error) {
+            console.error("Search failed", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     // Show loading state while auth is initializing
     if (authLoading) {
@@ -41,24 +65,15 @@ export default function GlobalSearchPage() {
 
     const handleSearch = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
-        if (!query.trim()) return;
-
-        setLoading(true);
-        setHasSearched(true);
-        try {
-            const data = await searchProductsAction(query);
-            setResults(data);
-        } catch (error) {
-            console.error("Search failed", error);
-        } finally {
-            setLoading(false);
-        }
+        performSearch(query);
     };
 
     const handleClear = () => {
         setQuery('');
         setResults([]);
         setHasSearched(false);
+        // Optional: clear URL param?
+        router.replace('/global-search');
     };
 
     // Debug logging
@@ -224,7 +239,7 @@ export default function GlobalSearchPage() {
                             {results.map((product) => (
                                 <Paper
                                     key={product.id}
-                                    onClick={() => router.push(`/product/${product.id}?source=global-search`)}
+                                    onClick={() => router.push(`/product/${product.id}?source=global-search&q=${encodeURIComponent(query)}`)}
                                     sx={{
                                         mb: 2,
                                         p: 2,

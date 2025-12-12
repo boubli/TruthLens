@@ -96,8 +96,25 @@ export default function AdminSettingsPage() {
     const [availableModels, setAvailableModels] = useState<string[]>([]);
     const [loadingModels, setLoadingModels] = useState(false);
 
+    // --- DEEPSEEK SETTINGS ---
+    const [deepseekConfig, setDeepSeekConfig] = useState({
+        deepseekBaseUrl: 'https://api.deepseek.com'
+    });
+    const [savingDeepSeek, setSavingDeepSeek] = useState(false);
+
+    // --- OPENROUTER SETTINGS ---
+    const [openrouterConfig, setOpenRouterConfig] = useState({
+        openrouterApiKey: '',
+        openrouterModel: 'meta-llama/llama-3.1-8b-instruct:free'
+    });
+    const [savingOpenRouter, setSavingOpenRouter] = useState(false);
+
     // --- BACKUP SETTINGS ---
     const [runningBackup, setRunningBackup] = useState(false);
+
+    // --- PC CONSULTATION PRICE ---
+    const [pcConsultationPrice, setPcConsultationPrice] = useState(2000);
+    const [savingPcPrice, setSavingPcPrice] = useState(false);
 
     // --- EVENT MANAGER SETTINGS ---
     // Moved to /admin/events
@@ -164,6 +181,15 @@ export default function AdminSettingsPage() {
                 ollamaModels: settings.apiKeys?.ollamaModels || {}
             });
 
+            setDeepSeekConfig({
+                deepseekBaseUrl: settings.apiKeys?.deepseekBaseUrl || 'https://api.deepseek.com'
+            });
+
+            setOpenRouterConfig({
+                openrouterApiKey: settings.apiKeys?.openrouterApiKey || '',
+                openrouterModel: settings.apiKeys?.openrouterModel || 'meta-llama/llama-3.1-8b-instruct:free'
+            });
+
             // Load Models list if Ollama URL exists
             const currentOllamaUrl = settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434';
             if (currentOllamaUrl) {
@@ -185,7 +211,9 @@ export default function AdminSettingsPage() {
             if (typeof settings.betaAccess !== 'undefined') {
                 setBetaMode(settings.betaAccess);
             }
-
+            if (typeof settings.pcConsultationPrice !== 'undefined') {
+                setPcConsultationPrice(settings.pcConsultationPrice);
+            }
 
         } catch (error) {
             console.error(error);
@@ -298,6 +326,42 @@ export default function AdminSettingsPage() {
         }
     };
 
+    const handleSaveDeepSeek = async () => {
+        setSavingDeepSeek(true);
+        try {
+            const currentSettings = await getSystemSettings();
+            const updatedApiKeys = {
+                ...currentSettings.apiKeys,
+                ...deepseekConfig
+            };
+            await updateSystemSettings({ apiKeys: updatedApiKeys });
+            setMsg({ type: 'success', text: 'DeepSeek Settings updated!' });
+        } catch (error) {
+            console.error('Save DeepSeek Error:', error);
+            setMsg({ type: 'error', text: 'Failed to save DeepSeek settings' });
+        } finally {
+            setSavingDeepSeek(false);
+        }
+    };
+
+    const handleSaveOpenRouter = async () => {
+        setSavingOpenRouter(true);
+        try {
+            const currentSettings = await getSystemSettings();
+            const updatedApiKeys = {
+                ...currentSettings.apiKeys,
+                ...openrouterConfig
+            };
+            await updateSystemSettings({ apiKeys: updatedApiKeys });
+            setMsg({ type: 'success', text: 'OpenRouter Settings updated!' });
+        } catch (error) {
+            console.error('Save OpenRouter Error:', error);
+            setMsg({ type: 'error', text: 'Failed to save OpenRouter settings' });
+        } finally {
+            setSavingOpenRouter(false);
+        }
+    };
+
     const handleSaveBranding = async () => {
         setSavingBranding(true);
         try {
@@ -308,6 +372,19 @@ export default function AdminSettingsPage() {
             setMsg({ type: 'error', text: 'Failed to save branding' });
         } finally {
             setSavingBranding(false);
+        }
+    };
+
+    const handleSavePcPrice = async () => {
+        setSavingPcPrice(true);
+        try {
+            await updateSystemSettings({ pcConsultationPrice });
+            setMsg({ type: 'success', text: 'PC Consultation Price updated!' });
+        } catch (error) {
+            console.error('Save Price Error:', error);
+            setMsg({ type: 'error', text: 'Failed to update price' });
+        } finally {
+            setSavingPcPrice(false);
         }
     };
 
@@ -394,7 +471,8 @@ export default function AdminSettingsPage() {
                 await axios.post('/api/admin/ai-test', {
                     provider,
                     apiKey,
-                    modelId
+                    modelId,
+                    baseUrl: provider === 'deepseek' ? deepseekConfig.deepseekBaseUrl : undefined
                 }, { headers: { Authorization: `Bearer ${token}` } });
 
                 // If we get here, test passed
@@ -523,6 +601,14 @@ export default function AdminSettingsPage() {
                         toggleModel={toggleModel}
                         models={models}
                         setModels={setModels}
+                        deepseekConfig={deepseekConfig}
+                        setDeepSeekConfig={setDeepSeekConfig}
+                        handleSaveDeepSeek={handleSaveDeepSeek}
+                        savingDeepSeek={savingDeepSeek}
+                        openrouterConfig={openrouterConfig}
+                        setOpenRouterConfig={setOpenRouterConfig}
+                        handleSaveOpenRouter={handleSaveOpenRouter}
+                        savingOpenRouter={savingOpenRouter}
                     />
                 )}
                 {tabValue === 2 && (
@@ -537,6 +623,10 @@ export default function AdminSettingsPage() {
                         setGithubModelsConfig={setGithubModelsConfig}
                         handleSaveGithubModels={handleSaveGithubModels}
                         savingGithubModels={savingGithubModels}
+                        pcConsultationPrice={pcConsultationPrice}
+                        setPcConsultationPrice={setPcConsultationPrice}
+                        handleSavePcPrice={handleSavePcPrice}
+                        savingPcPrice={savingPcPrice}
                     />
                 )}
 

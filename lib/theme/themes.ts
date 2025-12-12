@@ -53,7 +53,7 @@ export const defaultTheme: ThemeConfig = {
         },
     },
     typography: {
-        fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+        fontFamily: "'var(--font-outfit)', 'Outfit', 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
         fontSize: 14,
         fontWeightLight: 300,
         fontWeightRegular: 400,
@@ -113,7 +113,7 @@ export const darkTheme: ThemeConfig = {
         },
     },
     typography: {
-        fontFamily: "'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+        fontFamily: "'var(--font-outfit)', 'Outfit', 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif",
         fontSize: 14,
         fontWeightLight: 300,
         fontWeightRegular: 400,
@@ -173,7 +173,7 @@ export const oceanTheme: ThemeConfig = {
         },
     },
     typography: {
-        fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+        fontFamily: "'var(--font-outfit)', 'Outfit', 'Roboto', 'Helvetica', 'Arial', sans-serif",
         fontSize: 14,
         fontWeightLight: 300,
         fontWeightRegular: 400,
@@ -233,7 +233,7 @@ export const forestTheme: ThemeConfig = {
         },
     },
     typography: {
-        fontFamily: "'Poppins', 'Roboto', 'Helvetica', 'Arial', sans-serif",
+        fontFamily: "'var(--font-outfit)', 'Outfit', 'Poppins', 'Roboto', 'Helvetica', 'Arial', sans-serif",
         fontSize: 14,
         fontWeightLight: 300,
         fontWeightRegular: 400,

@@ -200,20 +200,25 @@ export const sendAIChatMessage = async (
     const messages = [
         {
             role: 'system' as const,
-            content: `You are TruthLens AI 🥗, a friendly and helpful assistant specializing in food, nutrition, and health topics. You help users understand food labels, ingredients, nutrition facts, and make healthier choices.
+            content: `You are TruthLens AI 🥗💻, a versatile and intelligent assistant specializing in TWO main areas:
+1. FOOD & NUTRITION: You help users understand food labels, ingredients, and healthy choices.
+2. TECH & HARDWARE: You are an expert in PC building, component specs, and troubleshooting technical issues.
+
+You are also a general helper for this application. If a user asks "how to reset password" or "how to use the scanner", guide them clearly.
 
 RESPONSE STYLE:
-- Use relevant emojis naturally throughout your responses (🥗🍎💪🌿✨📊 etc.)
-- Be conversational, warm, and encouraging
-- Vary your wording - never repeat the same phrases
-- Keep responses concise but informative
-- Use bullet points and formatting for clarity
+- Use relevant emojis naturally (🥗🍎 for food, 💻⚡ for tech).
+- Be conversational, warm, and encouraging.
+- Vary your wording - never repeat the same phrases.
+- Keep responses concise but informative.
+- Use bullet points and formatting for clarity.
 
 LANGUAGE: You MUST respond in ${languageName}. All your responses should be written in ${languageName}.
 
 IDENTITY KNOWLEDGE:
-- TruthLens: An AI-powered nutrition assistant that helps users make healthier choices by scanning food labels, analyzing ingredients, and answering diet questions instantly.
-- Creator: Youssef Boubli (known as TRADMSS)
+- TruthLens: An AI-powered app that helps users analyze products (Food & Tech) and build PCs.
+- Creator: Youssef Boubli (known as TRADMSS).
+- PC Builder: If asked about building a PC, offer to help select components or explain the "PC Builder" feature in the app.
 
 When users ask about TruthLens (any spelling variation) or who made/created/built it, share this info naturally using your own creative wording.`
         },
@@ -231,6 +236,8 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
             return await chatWithOllamaMessages(messages); // Ollama handles its own model config via settings
         } else if (provider === 'deepseek') {
             return await callDeepSeekAPI(key, messages, modelToUse);
+        } else if (provider === 'openrouter') {
+            return await callOpenRouterAPI(key, messages, modelToUse);
         } else {
             return await callGeminiAPI(key, messages, modelToUse);
         }
@@ -428,7 +435,31 @@ const callDeepSeekAPI = async (
     messages: { role: string; content: string }[],
     model: string = 'deepseek-chat'
 ): Promise<string> => {
-    const response = await fetch('https://api.deepseek.com/chat/completions', {
+    // Get Base URL from settings
+    const settings = await getSystemSettings();
+    const baseUrl = settings.apiKeys?.deepseekBaseUrl || 'https://api.deepseek.com';
+
+    // Ensure URL ends with /chat/completions or /v1/chat/completions if it's Ollama
+    // If it's pure DeepSeek API: https://api.deepseek.com/chat/completions
+    // If it's Ollama: http://ip:11434/v1/chat/completions
+    let endpoint = baseUrl;
+    if (!endpoint.endsWith('/chat/completions')) {
+        if (endpoint.endsWith('/v1')) {
+            endpoint = `${endpoint}/chat/completions`;
+        } else if (endpoint.endsWith('/')) {
+            endpoint = `${endpoint}chat/completions`; // Aggressive assumption, usually needs /v1
+        } else {
+            // If it looks like a root URL (e.g. port 11434), append /v1/chat/completions
+            // DeepSeek official is special, but for self-hosted we assume OpenAI compatibility
+            if (endpoint.includes('api.deepseek.com')) {
+                endpoint = `${endpoint}/chat/completions`;
+            } else {
+                endpoint = `${endpoint}/v1/chat/completions`;
+            }
+        }
+    }
+
+    const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -450,3 +481,38 @@ const callDeepSeekAPI = async (
     return data.choices?.[0]?.message?.content || 'No response generated.';
 };
 
+/**
+ * Call OpenRouter API
+ */
+const callOpenRouterAPI = async (
+    apiKey: string,
+    messages: { role: string; content: string }[],
+    model?: string
+): Promise<string> => {
+    // Get settings for model configuration
+    const settings = await getSystemSettings();
+    const defaultModel = settings.apiKeys?.openrouterModel || 'meta-llama/llama-3.1-8b-instruct:free';
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : 'https://truthlens.app',
+            'X-Title': 'TruthLens AI'
+        },
+        body: JSON.stringify({
+            model: model || defaultModel,
+            messages,
+            stream: false
+        })
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw { status: response.status, message: errorText };
+    }
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || 'No response generated.';
+};

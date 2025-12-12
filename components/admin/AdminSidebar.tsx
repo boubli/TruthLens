@@ -27,8 +27,9 @@ import { useRouter, usePathname } from 'next/navigation';
 import DashboardIcon from '@mui/icons-material/DashboardRounded';
 import PeopleIcon from '@mui/icons-material/PeopleRounded';
 import PaymentIcon from '@mui/icons-material/PaymentRounded';
-import SettingsIcon from '@mui/icons-material/SettingsRounded';
-import LogoutIcon from '@mui/icons-material/LogoutRounded';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ComputerIcon from '@mui/icons-material/Computer';
+import LogoutIcon from '@mui/icons-material/Logout';
 import EventBusyIcon from '@mui/icons-material/EventBusyRounded';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
 import CardMembershipIcon from '@mui/icons-material/CardMembershipRounded';
@@ -54,6 +55,7 @@ const menuItems = [
     { name: 'Cancellations', path: '/admin/cancellations', icon: EventBusyIcon },
     { name: 'Events', path: '/admin/events', icon: CelebrationRoundedIcon },
     { name: 'Chat', path: '/admin/chat', icon: ChatBubbleOutlineIcon },
+    { name: 'PC Requests', path: '/admin/pc-requests', icon: ComputerIcon },
     { name: 'Subscriptions', path: '/admin/tiers', icon: CardMembershipIcon },
     { name: 'Settings', path: '/admin/settings', icon: SettingsIcon },
 ];

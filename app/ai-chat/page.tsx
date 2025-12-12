@@ -307,53 +307,71 @@ export default function AIChatPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             sx={{
-                                textAlign: 'center',
-                                py: 8
+                                py: 8,
+                                display: 'flex',
+                                justifyContent: 'center'
                             }}
                         >
-                            <Avatar
+                            <Paper
+                                elevation={0}
                                 sx={{
-                                    width: 80,
-                                    height: 80,
-                                    mx: 'auto',
-                                    mb: 3,
-                                    background: 'linear-gradient(135deg, #9333EA 0%, #6366F1 100%)'
+                                    p: 4,
+                                    maxWidth: 600,
+                                    borderRadius: 4,
+                                    textAlign: 'center',
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    bgcolor: 'background.paper'
                                 }}
                             >
-                                <SmartToyIcon sx={{ fontSize: 40 }} />
-                            </Avatar>
-                            <Typography variant="h5" fontWeight="bold" gutterBottom>
-                                Hi! I'm TruthLens AI
-                            </Typography>
-                            <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 400, mx: 'auto' }}>
-                                Ask me anything about food, nutrition, ingredients, or health. I'm here to help you make smarter choices!
-                            </Typography>
+                                <Avatar
+                                    sx={{
+                                        width: 80,
+                                        height: 80,
+                                        mx: 'auto',
+                                        mb: 3,
+                                        background: 'linear-gradient(135deg, #9333EA 0%, #6366F1 100%)',
+                                        boxShadow: '0 8px 32px rgba(99, 102, 241, 0.25)'
+                                    }}
+                                >
+                                    <SmartToyIcon sx={{ fontSize: 40 }} />
+                                </Avatar>
+                                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                                    Hi! I'm TruthLens AI
+                                </Typography>
+                                <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                                    Your AI Expert for <b>Food, Nutrition, Tech & PC Building</b>.
+                                    <br />
+                                    How can I help you today?
+                                </Typography>
 
-                            {/* Quick Suggestions */}
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', mt: 4 }}>
-                                {suggestions.map((suggestion) => (
-                                    <Button
-                                        key={suggestion}
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => {
-                                            setInput(suggestion);
-                                            inputRef.current?.focus();
-                                        }}
-                                        sx={{
-                                            borderRadius: 3,
-                                            textTransform: 'none',
-                                            borderColor: 'divider',
-                                            '&:hover': {
-                                                borderColor: 'primary.main',
-                                                bgcolor: 'rgba(108, 99, 255, 0.05)'
-                                            }
-                                        }}
-                                    >
-                                        {suggestion}
-                                    </Button>
-                                ))}
-                            </Box>
+                                {/* Quick Suggestions */}
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center' }}>
+                                    {suggestions.map((suggestion) => (
+                                        <Button
+                                            key={suggestion}
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => {
+                                                setInput(suggestion);
+                                                inputRef.current?.focus();
+                                            }}
+                                            sx={{
+                                                borderRadius: 3,
+                                                textTransform: 'none',
+                                                borderColor: 'divider',
+                                                color: 'text.primary',
+                                                '&:hover': {
+                                                    borderColor: 'primary.main',
+                                                    bgcolor: 'rgba(108, 99, 255, 0.05)'
+                                                }
+                                            }}
+                                        >
+                                            {suggestion}
+                                        </Button>
+                                    ))}
+                                </Box>
+                            </Paper>
                         </Box>
                     )}
 
@@ -510,7 +528,7 @@ export default function AIChatPage() {
                             fullWidth
                             multiline
                             maxRows={4}
-                            placeholder={needsKeySetup ? 'Add your API key above to start chatting...' : 'Ask me anything about food & nutrition...'}
+                            placeholder={needsKeySetup ? 'Add your API key above to start chatting...' : 'Ask about Food, Tech, or anything...'}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyPress}

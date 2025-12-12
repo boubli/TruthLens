@@ -1,0 +1,126 @@
+app/(admin)/admin/pc-requests/[id]/page.tsx(47,9): error TS2353: Object literal may only specify known properties, and 'buildName' does not exist in type 'AdminBuildResponse | (() => AdminBuildResponse)'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(72,77): error TS2339: Property 'components' does not exist on type 'AdminBuildResponse'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(127,17): error TS2353: Object literal may only specify known properties, and 'components' does not exist in type 'AdminBuildResponse'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(160,18): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; md: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; md: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(184,111): error TS2345: Argument of type '"reviewing"' is not assignable to parameter of type 'PCBuildRequestStatus'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(240,18): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; md: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; md: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(252,54): error TS2339: Property 'buildName' does not exist on type 'AdminBuildResponse'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(253,85): error TS2353: Object literal may only specify known properties, and 'buildName' does not exist in type 'SetStateAction<AdminBuildResponse>'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(258,34): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(263,62): error TS2339: Property 'totalPrice' does not exist on type 'AdminBuildResponse'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(264,93): error TS2353: Object literal may only specify known properties, and 'totalPrice' does not exist in type 'SetStateAction<AdminBuildResponse>'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(268,34): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ item: true; xs: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ item: true; xs: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(278,54): error TS2339: Property 'adminNotes' does not exist on type 'AdminBuildResponse'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(279,85): error TS2353: Object literal may only specify known properties, and 'adminNotes' does not exist in type 'SetStateAction<AdminBuildResponse>'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(286,54): error TS2339: Property 'youtubeLink' does not exist on type 'AdminBuildResponse'.
+app/(admin)/admin/pc-requests/[id]/page.tsx(287,85): error TS2353: Object literal may only specify known properties, and 'youtubeLink' does not exist in type 'SetStateAction<AdminBuildResponse>'.
+app/(admin)/admin/pc-requests/page.tsx(70,49): error TS2367: This comparison appears to be unintentional because the types 'PCBuildRequestStatus' and '"reviewing"' have no overlap.
+app/(admin)/admin/pc-requests/page.tsx(81,18): error TS2678: Type '"reviewing"' is not comparable to type 'PCBuildRequestStatus'.
+app/(admin)/admin/pc-requests/page.tsx(131,22): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; md: number; lg: number; key: string; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; md: number; lg: number; key: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+app/(admin)/admin/pc-requests/page.tsx(160,86): error TS2339: Property 'seconds' does not exist on type 'Date'.
+app/(admin)/admin/pc-requests/page.tsx(178,22): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: ElementType<any, keyof IntrinsicElements>; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<...> & Omit<...>): Element | null', gave the following error.
+    Property 'component' is missing in type '{ children: Element; item: true; xs: number; }' but required in type '{ component: ElementType<any, keyof IntrinsicElements>; }'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+app/actions/stripe.ts(168,36): error TS18047: 'adminDb' is possibly 'null'.
+app/actions/stripe.ts(224,32): error TS18047: 'adminDb' is possibly 'null'.
+components/pc-builder/consultation/ConsultationForm.tsx(107,27): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "sx" | ... 1 more ... | keyof GridBaseProps>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; component: "div"; }' is not assignable to type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; component: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+components/pc-builder/consultation/ConsultationForm.tsx(119,27): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "sx" | ... 1 more ... | keyof GridBaseProps>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; component: "div"; }' is not assignable to type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; component: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+components/pc-builder/consultation/ConsultationForm.tsx(131,27): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "sx" | ... 1 more ... | keyof GridBaseProps>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; component: "div"; }' is not assignable to type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; component: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+components/pc-builder/consultation/ConsultationForm.tsx(143,27): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "sx" | ... 1 more ... | keyof GridBaseProps>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; component: "div"; }' is not assignable to type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; component: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+components/pc-builder/consultation/ConsultationForm.tsx(152,27): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "sx" | ... 1 more ... | keyof GridBaseProps>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; component: "div"; }' is not assignable to type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; sm: number; component: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+components/pc-builder/consultation/ConsultationForm.tsx(164,27): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "sx" | ... 1 more ... | keyof GridBaseProps>): Element | null', gave the following error.
+    Type '{ children: Element[]; item: true; xs: number; component: "div"; }' is not assignable to type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element[]; item: true; xs: number; component: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+components/pc-builder/consultation/ConsultationForm.tsx(183,27): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "sx" | ... 1 more ... | keyof GridBaseProps>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; component: "div"; }' is not assignable to type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; component: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+components/pc-builder/consultation/ConsultationForm.tsx(196,31): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "sx" | ... 1 more ... | keyof GridBaseProps>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; component: "div"; }' is not assignable to type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; component: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+components/pc-builder/consultation/ConsultationForm.tsx(201,27): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(props: { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement>, "sx" | ... 1 more ... | keyof GridBaseProps>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; component: "div"; }' is not assignable to type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & { component: "div"; } & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+  Overload 2 of 2, '(props: DefaultComponentProps<GridTypeMap<{}, "div">>): Element | null', gave the following error.
+    Type '{ children: Element; item: true; xs: number; component: string; }' is not assignable to type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+      Property 'item' does not exist on type 'IntrinsicAttributes & GridBaseProps & { sx?: SxProps<Theme> | undefined; } & SystemProps<Theme> & Omit<...>'.
+components/settings/ApiKeyManager.tsx(46,72): error TS2345: Argument of type '{ groq: string; gemini: string; ollama: string; deepseek: string; }' is not assignable to parameter of type 'Record<AIProvider, string> | (() => Record<AIProvider, string>)'.
+  Property 'openrouter' is missing in type '{ groq: string; gemini: string; ollama: string; deepseek: string; }' but required in type 'Record<AIProvider, string>'.
+components/settings/ApiKeyManager.tsx(52,82): error TS2345: Argument of type '{ groq: string; gemini: string; ollama: string; deepseek: string; }' is not assignable to parameter of type 'Record<AIProvider, string> | (() => Record<AIProvider, string>)'.
+  Property 'openrouter' is missing in type '{ groq: string; gemini: string; ollama: string; deepseek: string; }' but required in type 'Record<AIProvider, string>'.
+components/settings/ApiKeyManager.tsx(58,73): error TS2345: Argument of type '{ groq: false; gemini: false; ollama: false; deepseek: false; }' is not assignable to parameter of type 'Record<AIProvider, boolean> | (() => Record<AIProvider, boolean>)'.
+  Property 'openrouter' is missing in type '{ groq: false; gemini: false; ollama: false; deepseek: false; }' but required in type 'Record<AIProvider, boolean>'.
+components/settings/ApiKeyManager.tsx(92,24): error TS2345: Argument of type '{ groq: string; gemini: string; ollama: string; deepseek: string; }' is not assignable to parameter of type 'SetStateAction<Record<AIProvider, string>>'.
+  Property 'openrouter' is missing in type '{ groq: string; gemini: string; ollama: string; deepseek: string; }' but required in type 'Record<AIProvider, string>'.
+components/settings/ApiKeyManager.tsx(93,29): error TS2345: Argument of type '{ groq: string; gemini: string; ollama: string; deepseek: string; }' is not assignable to parameter of type 'SetStateAction<Record<AIProvider, string>>'.
+  Property 'openrouter' is missing in type '{ groq: string; gemini: string; ollama: string; deepseek: string; }' but required in type 'Record<AIProvider, string>'.

@@ -55,8 +55,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Budget is required for budget mode' }, { status: 400 });
         }
 
-        if (body.mode === 'hardware' && !body.existingHardware) {
-            return NextResponse.json({ error: 'Existing hardware is required for hardware mode' }, { status: 400 });
+        if (body.mode === 'hardware') {
+            const hw = body.existingHardware;
+            const hasHardware = hw && typeof hw === 'object' && Object.values(hw).some(v => v && v.trim() !== '');
+
+            if (!hasHardware) {
+                return NextResponse.json({ error: 'Please specify at least one hardware component you own.' }, { status: 400 });
+            }
         }
 
         // 4. Generate Build

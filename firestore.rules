@@ -67,6 +67,14 @@ service cloud.firestore {
       allow delete: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
+    // PC Build Consultation Requests
+    match /pc_build_requests/{userId} {
+      allow create: if isAuth() && request.auth.uid == userId;
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow update: if isAuth() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
     // Product Cache
     match /products/{productId}/{document=**} {
         allow read: if true; 

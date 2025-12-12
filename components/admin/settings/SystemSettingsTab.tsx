@@ -15,6 +15,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
 import SaveIcon from '@mui/icons-material/Save';
 import ComputerIcon from '@mui/icons-material/Computer';
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
 
 interface SystemSettingsTabProps {
     searxngConfig: { searxngUrl: string };
@@ -31,6 +32,11 @@ interface SystemSettingsTabProps {
     setGithubModelsConfig: React.Dispatch<React.SetStateAction<any>>;
     handleSaveGithubModels: () => Promise<void>;
     savingGithubModels: boolean;
+    // PC Consultation Price
+    pcConsultationPrice: number;
+    setPcConsultationPrice: React.Dispatch<React.SetStateAction<number>>;
+    handleSavePcPrice: () => Promise<void>;
+    savingPcPrice: boolean;
 }
 
 export default function SystemSettingsTab({
@@ -43,7 +49,11 @@ export default function SystemSettingsTab({
     githubModelsConfig,
     setGithubModelsConfig,
     handleSaveGithubModels,
-    savingGithubModels
+    savingGithubModels,
+    pcConsultationPrice,
+    setPcConsultationPrice,
+    handleSavePcPrice,
+    savingPcPrice
 }: SystemSettingsTabProps) {
     return (
         <Box>
@@ -92,6 +102,42 @@ export default function SystemSettingsTab({
                 </CardContent>
             </Card>
 
+            {/* --- PC BUILDER CONSULTATION PRICE --- */}
+            <Card sx={{ mb: 4, borderRadius: 2, border: '1px solid #ffd700' }}>
+                <CardHeader
+                    title="PC Consultation Service"
+                    subheader="Pricing configuration"
+                    avatar={<AttachMoneyIcon sx={{ color: '#ffd700' }} />}
+                    sx={{ bgcolor: '#fffde7', borderBottom: '1px solid #ffd700' }}
+                />
+                <CardContent sx={{ p: 3 }}>
+                    <TextField
+                        label="Consultation Price (USD Cents)"
+                        fullWidth
+                        type="number"
+                        value={pcConsultationPrice}
+                        onChange={(e) => setPcConsultationPrice(Number(e.target.value))}
+                        placeholder="2000"
+                        helperText="2000 = $20.00"
+                        sx={{ mb: 2 }}
+                    />
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button
+                            variant="contained"
+                            onClick={handleSavePcPrice}
+                            disabled={savingPcPrice}
+                            startIcon={savingPcPrice ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+                            sx={{
+                                background: 'linear-gradient(45deg, #FFD700 30%, #FF8C00 90%)',
+                                color: 'white'
+                            }}
+                        >
+                            Save Price
+                        </Button>
+                    </Box>
+                </CardContent>
+            </Card>
+
             {/* --- SEARXNG CARD --- */}
             <Card sx={{ mb: 4, borderRadius: 2, border: '1px solid #c8e6c9' }}>
                 <CardHeader
@@ -122,10 +168,10 @@ export default function SystemSettingsTab({
                         </Button>
                     </Box>
                 </CardContent>
-            </Card>
+            </Card >
 
             {/* Backup Card - Oracle VM MySQL */}
-            <Card sx={{ mb: 3, border: '1px solid', borderColor: 'error.main', borderRadius: 3 }}>
+            < Card sx={{ mb: 3, border: '1px solid', borderColor: 'error.main', borderRadius: 3 }}>
                 <CardHeader
                     title="🔄 Database Backup"
                     titleTypographyProps={{ fontWeight: 'bold', color: 'error.main' }}
@@ -154,7 +200,7 @@ export default function SystemSettingsTab({
                         {runningBackup ? 'Running Backup...' : 'Run Backup Now'}
                     </Button>
                 </CardContent>
-            </Card>
-        </Box>
+            </Card >
+        </Box >
     );
 }

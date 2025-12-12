@@ -23,72 +23,16 @@ import StaggerList, { StaggerItem } from '@/components/animation/StaggerList';
 import AnimatedCard from '@/components/ui/AnimatedCard';
 import ScrollReveal from '@/components/animation/ScrollReveal';
 import { motion, AnimatePresence } from 'framer-motion';
-import { searchProductsAction, EnhancedProductData } from '@/app/actions';
 import { generateDynamicGreeting } from '@/services/aiService';
-import ProductCard from '@/components/features/ProductCard';
-import { addToHistory } from '@/services/historyService';
-import { calculateSmartGrade } from '@/services/gradingService';
 
 export default function UserHome() {
     const { user, tier, isPro, features: tierFeatures, dietaryPreferences } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    // Search State
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState<EnhancedProductData[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [hasSearched, setHasSearched] = useState(false);
-
-    // Auto-search from URL (e.g. from Scanner)
-    useEffect(() => {
-        const urlQuery = searchParams.get('search');
-        if (urlQuery && urlQuery !== query) {
-            setQuery(urlQuery);
-            // Trigger search
-            performSearch(urlQuery);
-        }
-    }, [searchParams]);
-
-    const performSearch = async (searchQuery: string) => {
-        if (!searchQuery.trim()) return;
-        setLoading(true);
-        setHasSearched(true);
-        try {
-            const data = await searchProductsAction(searchQuery);
-            setResults(data);
-            // History saving logic duplicated here or extracted? 
-            // Better to extract handleSearch logic.
-            // For now, I will just call the action and set results to be safe/fast.
-            // History saving:
-            if (user && data.length > 0) {
-                addToHistory(user.uid, {
-                    type: 'search',
-                    title: `Search: "${searchQuery}"`,
-                    grade: undefined,
-                }).catch(e => console.error(e));
-            }
-        } catch (error) {
-            console.error("Search failed", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-    const handleSearch = async (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        performSearch(query);
-    };
-
-    const clearSearch = () => {
-        setQuery('');
-        setResults([]);
-        setHasSearched(false);
-    };
-
     const { t } = useTranslation();
 
+    // Features Definition (Moved up for Search Access)
     const features = [
         {
             title: t('feature_scan_title'),
@@ -152,7 +96,8 @@ export default function UserHome() {
             path: '/profile',
             color: 'rgba(16, 185, 129, 0.1)',
             desc: t('feature_profile_desc'),
-            gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)'
+            gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+            hiddenInGrid: true // Redundant with Header Icon
         },
         {
             title: t('feature_upgrade_title'),
@@ -171,6 +116,73 @@ export default function UserHome() {
             gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)'
         }
     ];
+
+    // Search State
+    const [query, setQuery] = useState('');
+    const [featureResults, setFeatureResults] = useState<any[]>([]);
+    const [suggestions, setSuggestions] = useState<any[]>([]); // Real-time suggestions
+    const [loading, setLoading] = useState(false);
+    const [hasSearched, setHasSearched] = useState(false);
+
+    // Auto-search from URL (e.g. from Scanner)
+    useEffect(() => {
+        const urlQuery = searchParams.get('search');
+        if (urlQuery && urlQuery !== query) {
+            setQuery(urlQuery);
+            // Just populate the field
+        }
+    }, [searchParams]);
+
+    const performSearch = async (searchQuery: string) => {
+        if (!searchQuery.trim()) return;
+        setLoading(true);
+        setHasSearched(true);
+
+        // 1. Search Features
+        const searchLower = searchQuery.toLowerCase().trim();
+        const matchedFeatures = features.filter(item => {
+            // Explicitly exclude Global Search page from results
+            if (item.path === '/global-search') return false;
+
+            // Tier & Feature Gate Logic
+            if (item.path === '/pc-builder') {
+                if (tier !== 'pro' && tier !== 'ultimate') return false;
+            }
+            if (item.path === '/upgrade') {
+                if (tier === 'ultimate') return false;
+            }
+
+            // Keyword Match
+            return item.title.toLowerCase().includes(searchLower) ||
+                item.desc.toLowerCase().includes(searchLower);
+        });
+        setFeatureResults(matchedFeatures);
+        setLoading(false);
+    };
+
+    const handleSearch = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+
+        // If it's a feature match, perform local search to show it.
+        const searchLower = query.toLowerCase().trim();
+        const matchedFeatures = features.filter(item =>
+            item.title.toLowerCase().includes(searchLower) || item.desc.toLowerCase().includes(searchLower)
+        );
+
+        if (matchedFeatures.length > 0) {
+            // Show local results
+            performSearch(query);
+        } else {
+            // Redirect to Global Search for products
+            router.push(`/global-search?search=${encodeURIComponent(query)}`);
+        }
+    };
+
+    const clearSearch = () => {
+        setQuery('');
+        setFeatureResults([]);
+        setHasSearched(false);
+    };
 
     const [greeting, setGreeting] = useState('Hello');
 
@@ -234,7 +246,6 @@ export default function UserHome() {
 
                         {/* Profile Icon Only - Moved Chat to Support page */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {/* Chat Icon Removed */}
                             <IconButton
                                 component={motion.button}
                                 whileHover={{ scale: 1.1 }}
@@ -255,52 +266,145 @@ export default function UserHome() {
                         </Box>
                     </Box>
 
-                    {/* Search Bar */}
-                    <Paper
-                        component="form"
-                        onSubmit={handleSearch}
-                        elevation={0}
-                        sx={{
-                            p: '10px 16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            borderRadius: 4,
-                            bgcolor: 'rgba(255, 255, 255, 0.95)',
-                            transition: 'all 0.3s',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                            '&:hover, &:focus-within': {
-                                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                                bgcolor: 'white'
-                            }
-                        }}
-                    >
-                        <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
-                        <InputBase
-                            sx={{ ml: 1, flex: 1, fontSize: { xs: '0.95rem', sm: '1rem' } }}
-                            placeholder={t('home_search_placeholder')}
-                            inputProps={{ 'aria-label': 'search products' }}
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                        />
-                        {query && (
-                            <IconButton size="small" onClick={clearSearch} sx={{ mr: 0.5 }}>
-                                <CloseIcon fontSize="small" />
-                            </IconButton>
-                        )}
-                        <IconButton
-                            type="submit"
+                    {/* Search Bar Container with Relative Positioning for Dropdown */}
+                    <Box sx={{ position: 'relative', zIndex: 10 }}>
+                        <Paper
+                            component="form"
+                            onSubmit={handleSearch}
+                            elevation={0}
                             sx={{
-                                bgcolor: '#6C63FF',
-                                borderRadius: 2,
-                                p: 0.5,
-                                color: 'white',
+                                p: '10px 16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                borderRadius: 4,
+                                bgcolor: 'rgba(255, 255, 255, 0.95)',
                                 transition: 'all 0.3s',
-                                '&:hover': { bgcolor: '#5a52d5' }
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                '&:hover, &:focus-within': {
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                                    bgcolor: 'white'
+                                }
                             }}
                         >
-                            {loading ? <CircularProgress size={20} color="inherit" /> : <KeyboardArrowRightIcon fontSize="small" />}
-                        </IconButton>
-                    </Paper>
+                            <SearchIcon sx={{ color: 'grey.500', mr: 1 }} />
+                            <InputBase
+                                sx={{
+                                    ml: 1,
+                                    flex: 1,
+                                    fontSize: { xs: '0.95rem', sm: '1rem' },
+                                    color: 'grey.900' // Force dark text on white search bar
+                                }}
+                                placeholder={t('home_search_placeholder')}
+                                inputProps={{ 'aria-label': 'search products' }}
+                                value={query}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setQuery(val);
+
+                                    // Real-time suggestions
+                                    if (!val.trim()) {
+                                        setSuggestions([]);
+                                        return;
+                                    }
+                                    const searchLower = val.toLowerCase().trim();
+                                    const matches = features.filter(item => {
+                                        // Explicitly exclude Global Search page from suggestions
+                                        if (item.path === '/global-search') return false;
+
+                                        // Tier & Feature Gate Logic
+                                        if (item.path === '/pc-builder') {
+                                            if (tier !== 'pro' && tier !== 'ultimate') return false;
+                                        }
+                                        if (item.path === '/upgrade') {
+                                            if (tier === 'ultimate') return false;
+                                        }
+                                        // We include hidden items in suggestions!
+                                        return item.title.toLowerCase().includes(searchLower) ||
+                                            item.desc.toLowerCase().includes(searchLower);
+                                    });
+                                    setSuggestions(matches);
+                                }}
+                            />
+                            {query && (
+                                <IconButton size="small" onClick={clearSearch} sx={{ mr: 0.5, color: 'grey.500' }}>
+                                    <CloseIcon fontSize="small" />
+                                </IconButton>
+                            )}
+                            <IconButton
+                                type="submit"
+                                sx={{
+                                    bgcolor: '#6C63FF',
+                                    borderRadius: 2,
+                                    p: 0.5,
+                                    color: 'white',
+                                    transition: 'all 0.3s',
+                                    '&:hover': { bgcolor: '#5a52d5' }
+                                }}
+                            >
+                                {loading ? <CircularProgress size={20} color="inherit" /> : <KeyboardArrowRightIcon fontSize="small" />}
+                            </IconButton>
+                        </Paper>
+
+                        {/* Suggestions Dropdown */}
+                        {suggestions.length > 0 && !hasSearched && (
+                            <Paper
+                                component={motion.div}
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                elevation={4}
+                                sx={{
+                                    position: 'absolute',
+                                    top: '110%',
+                                    left: 0,
+                                    right: 0,
+                                    borderRadius: 3,
+                                    overflow: 'hidden',
+                                    bgcolor: 'background.paper', // Adapt to theme (Dark in DarkMode)
+                                    backgroundImage: 'none',
+                                    zIndex: 20,
+                                    border: '1px solid',
+                                    borderColor: 'divider'
+                                }}
+                            >
+                                {suggestions.map((item, index) => (
+                                    <Box
+                                        key={index}
+                                        onClick={() => router.push(item.path)}
+                                        sx={{
+                                            p: 2,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            cursor: 'pointer',
+                                            borderBottom: index < suggestions.length - 1 ? '1px solid' : 'none',
+                                            borderColor: 'divider',
+                                            transition: 'bgcolor 0.2s',
+                                            '&:hover': { bgcolor: 'action.hover' }
+                                        }}
+                                    >
+                                        <Box sx={{
+                                            mr: 2,
+                                            bgcolor: item.color,
+                                            p: 1,
+                                            borderRadius: 1.5,
+                                            display: 'flex'
+                                        }}>
+                                            {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: 20, color: (item.icon as any).props?.sx?.color } } as any)}
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="body1" fontWeight={500} color="text.primary">
+                                                {item.title}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {item.desc}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ flexGrow: 1 }} />
+                                        <KeyboardArrowRightIcon fontSize="small" color="action" />
+                                    </Box>
+                                ))}
+                            </Paper>
+                        )}
+                    </Box>
                 </Container>
             </Box>
 
@@ -308,50 +412,66 @@ export default function UserHome() {
                 <AnimatePresence mode="wait">
                     {hasSearched ? (
                         <ScrollReveal key="results">
+
+                            {/* RESULTS HEADER */}
                             <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="h6" fontWeight="bold">
                                     {t('home_search_results')}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {results.length} {t('home_found')}
+                                    {featureResults.length} {t('home_found')}
                                 </Typography>
                             </Box>
 
-                            {results.length > 0 ? (
-                                <Grid container spacing={2}>
-                                    {results.map((product) => {
-                                        // Apply Smart Grading if Pro
-                                        let displayGrade = product.grades.nutri_score;
-                                        if (isPro && tierFeatures.smartGrading) {
-                                            // Adapter for legacy grading service
-                                            const legacyProduct: any = {
-                                                id: product.id,
-                                                name: product.identity.name,
-                                                brand: product.identity.brand,
-                                                image: product.media.front_image,
-                                                ingredients: product.ingredients,
-                                                nutrition_grades: product.grades.nutri_score,
-                                                nutriments: product.nutrition.nutriments_raw || {},
-                                                description: product.identity.description
-                                            };
-                                            const smartResult = calculateSmartGrade(legacyProduct, dietaryPreferences);
-                                            displayGrade = smartResult.grade;
-                                        }
-
-                                        return (
-                                            // Mobile: 2 per row (6), Tablet: 3 per row (4), Desktop: 4 per row (3)
-                                            <Grid size={{ xs: 6, sm: 4, md: 3 }} key={product.id}>
-                                                <ProductCard
-                                                    id={product.id}
-                                                    name={product.identity.name}
-                                                    image={product.media.thumbnail || product.media.front_image}
-                                                    description={product.identity.description}
-                                                    grade={displayGrade || '?'}
-                                                />
+                            {/* FEATURE RESULTS ONLY */}
+                            {featureResults.length > 0 ? (
+                                <Box sx={{ mb: 4 }}>
+                                    <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                                        {featureResults.map((item, index) => (
+                                            <Grid size={{ xs: 12, sm: 6 }} key={index}>
+                                                <AnimatedCard
+                                                    onClick={() => router.push(item.path)}
+                                                    sx={{
+                                                        p: 2,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        borderRadius: 3,
+                                                        cursor: 'pointer',
+                                                        border: '1px solid',
+                                                        borderColor: 'primary.light',
+                                                        bgcolor: 'primary.50',
+                                                        transition: 'all 0.3s',
+                                                        '&:hover': {
+                                                            borderColor: 'primary.main',
+                                                            bgcolor: 'white',
+                                                            boxShadow: '0 4px 12px rgba(108, 99, 255, 0.15)'
+                                                        }
+                                                    }}
+                                                >
+                                                    <Box sx={{
+                                                        mr: 2,
+                                                        bgcolor: item.color,
+                                                        p: 1.5,
+                                                        borderRadius: 2,
+                                                        display: 'flex'
+                                                    }}>
+                                                        {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: 28, color: (item.icon as any).props?.sx?.color } } as any)}
+                                                    </Box>
+                                                    <Box>
+                                                        <Typography variant="subtitle1" fontWeight="bold">
+                                                            {item.title}
+                                                        </Typography>
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            {item.desc}
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ flexGrow: 1 }} />
+                                                    <KeyboardArrowRightIcon color="action" />
+                                                </AnimatedCard>
                                             </Grid>
-                                        );
-                                    })}
-                                </Grid>
+                                        ))}
+                                    </Grid>
+                                </Box>
                             ) : (
                                 !loading && (
                                     <Box sx={{ textAlign: 'center', py: 8, opacity: 0.7 }}>
@@ -385,6 +505,9 @@ export default function UserHome() {
                             <StaggerList>
                                 <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                                     {features.filter(item => {
+                                        // Hidden Flags (Global Search, Profile)
+                                        if (item.hiddenInGrid) return false;
+
                                         // Global Search: Only for Pro and Ultimate
                                         if (item.path === '/global-search') {
                                             return tier === 'pro' || tier === 'ultimate';

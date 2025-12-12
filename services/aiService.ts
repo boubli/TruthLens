@@ -263,6 +263,8 @@ const getSwarmResponse = async (prompt: string, trustedProviders: Array<{ name: 
 // --- Specialized Feature Functions ---
 
 export const analyzeIngredientsForHarmfulCompounds = async (ingredients: string[]): Promise<AITruthDetectorResult | null> => {
+    if (!ingredients || ingredients.length === 0) return null;
+
     const prompt = `
       You are a food safety expert. Analyze these ingredients for harmful additives: ${ingredients.join(', ')}.
       Identify potential health risks (carcinogens, allergens, inflammatory agents).

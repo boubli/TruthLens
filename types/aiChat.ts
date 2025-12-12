@@ -1,6 +1,6 @@
 // AI Chat types for the BYOK (Bring Your Own Key) chat feature
 
-export type AIProvider = 'groq' | 'gemini' | 'ollama' | 'deepseek';
+export type AIProvider = 'groq' | 'gemini' | 'ollama' | 'deepseek' | 'openrouter';
 
 export type AILanguage = 'en' | 'ar' | 'fr' | 'es' | 'de' | 'zh' | 'ja' | 'ko' | 'pt' | 'ru' | 'hi' | 'it' | 'tr' | 'nl';
 
@@ -24,6 +24,7 @@ export interface UserApiKeys {
     gemini?: string;
     ollama?: string;
     deepseek?: string;
+    openrouter?: string;
     preferredProvider?: AIProvider;
     preferredLanguage?: AILanguage;
 }
@@ -49,6 +50,11 @@ export const AI_PROVIDERS: Record<AIProvider, { name: string; color: string; ico
         name: 'DeepSeek',
         color: '#4F46E5', // Indigo-600
         icon: '🐋'
+    },
+    openrouter: {
+        name: 'OpenRouter',
+        color: '#ff6b6b',
+        icon: '🌐'
     }
 };
 

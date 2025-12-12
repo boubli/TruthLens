@@ -19,65 +19,54 @@ import {
 } from 'firebase/firestore';
 import { searchWithSearXNG } from './searxngService';
 import { generateBuildWithGitHubModels, calculateBottleneckWithGitHubModels } from './githubModelsService';
+import { generateBuildWithGroq, calculateBottleneckWithGroq } from './groqService';
 import { getSystemSettings } from './systemService';
-import { SavedBuild, PCComponent, GenerateBuildRequest, PCBuildComponents } from '@/types/pcBuilder';
+import { SavedBuild, PCComponent, GenerateBuildRequest, PCBuildComponents, PCBuildMetrics, GrokBuildResponse } from '@/types/pcBuilder';
 
 const BUILDS_COLLECTION = 'pc_builds';
 
 /**
- * Search for component price using SearXNG
+ * Fetch current price for a component using SearXNG
  */
 async function fetchComponentPrice(
     component: PCComponent,
     location: string
 ): Promise<{ price: number; source: string; url: string } | null> {
     try {
-        const searchQuery = `${component.brand} ${component.name} price ${location} buy online`;
-        console.log(`[PCBuilder] Searching price for: ${searchQuery}`);
+        const currencySymbol = location === 'USA' ? '$' : (location === 'Europe' ? '€' : '$');
+        const query = `buy ${component.name} price ${location}`;
 
-        const results = await searchWithSearXNG(searchQuery, 'general');
+        // Search "general" or "shopping" if available
+        const results = await searchWithSearXNG(query);
 
-        if (results.length === 0) {
-            console.log(`[PCBuilder] No results for ${component.name}`);
-            return null;
-        }
+        if (!results || results.length === 0) return null;
 
-        // Try to extract price from results
-        for (const result of results.slice(0, 5)) {
-            // Match various price formats: $999, $1,299.99, USD 999, 999$, etc.
-            const pricePatterns = [
-                /\$[\d,]+\.?\d*/,           // $1,299.99
-                /USD\s*[\d,]+\.?\d*/i,      // USD 1299
-                /[\d,]+\.?\d*\s*\$/,        // 1299$
-                /€[\d,]+\.?\d*/,            // €999
-                /[\d,]+\.?\d*\s*€/,         // 999€
-                /£[\d,]+\.?\d*/,            // £999
-            ];
+        for (const result of results) {
+            // Check title and content for price
+            const text = `${result.title} ${result.content}`;
 
-            const textToSearch = `${result.title} ${result.content}`;
+            // Regex for price: $100, $100.00 (simple heuristic)
+            const priceRegex = new RegExp(`[${currencySymbol}]\\s?(\\d{1,3}(?:,\\d{3})*(?:\\.\\d{2})?)`, 'i');
+            const match = text.match(priceRegex);
 
-            for (const pattern of pricePatterns) {
-                const match = textToSearch.match(pattern);
-                if (match) {
-                    const priceStr = match[0].replace(/[$€£,\s]|USD/gi, '');
-                    const price = parseFloat(priceStr);
-                    if (!isNaN(price) && price > 10 && price < 50000) { // Reasonable price range
-                        return {
-                            price,
-                            source: result.engine || 'SearXNG',
-                            url: result.url
-                        };
-                    }
+            if (match && match[1]) {
+                const priceStr = match[1].replace(/,/g, '');
+                const price = parseFloat(priceStr);
+
+                if (!isNaN(price) && price > 0) {
+                    return {
+                        price,
+                        source: result.engine || 'Web Search',
+                        url: result.url
+                    };
                 }
             }
         }
 
-        console.log(`[PCBuilder] Could not extract price for ${component.name}`);
-        return null;
     } catch (error) {
-        console.error(`[PCBuilder] Price fetch failed for ${component.name}:`, error);
-        return null;
+        console.warn(`[PCBuilder] Failed to fetch price for ${component.name}:`, error);
     }
+    return null;
 }
 
 /**
@@ -100,12 +89,28 @@ export async function generatePCBuild(
         console.warn('[PCBuilder] Could not fetch user location, using default USD');
     }
 
-    // ===== Step A: Generate build with GitHub Models =====
+    // ===== Step A: Generate build with GitHub Models (Fallback to Groq) =====
     console.log('[PCBuilder] Step A: Consulting AI for build recommendations...');
-    const aiResponse = await generateBuildWithGitHubModels(request.mode, {
+    let aiResponse: GrokBuildResponse;
+    const inputPayload = {
         budget: request.budget,
         existingHardware: request.existingHardware
-    });
+    };
+
+    try {
+        console.log('[PCBuilder] Trying GitHub Models...');
+        aiResponse = await generateBuildWithGitHubModels(request.mode, inputPayload);
+    } catch (githubError: any) {
+        console.warn(`[PCBuilder] GitHub Models failed (${githubError.message}). Falling back to Groq...`);
+        try {
+            aiResponse = await generateBuildWithGroq(request.mode, inputPayload);
+            console.log('[PCBuilder] Successfully generated build using Groq.');
+        } catch (groqError: any) {
+            console.error('[PCBuilder] All AI providers failed:', groqError.message);
+            // Throw the specific error message to help the user debug (e.g., "Groq API Key not configured")
+            throw new Error(`AI Service Error: ${groqError.message}`);
+        }
+    }
 
     // Build components object with proper types
     const components: PCBuildComponents = {};
@@ -155,7 +160,7 @@ export async function generatePCBuild(
 
     // ===== Step C: Calculate/verify bottleneck =====
     console.log('[PCBuilder] Step C: Optimizing build metrics...');
-    let metrics = {
+    let metrics: PCBuildMetrics = {
         bottleneckScore: aiResponse.bottleneckScore ?? 10,
         estimatedWattage: aiResponse.estimatedWattage ?? 500,
         compatibilityIssues: [] as string[]
@@ -163,11 +168,18 @@ export async function generatePCBuild(
 
     // If AI didn't provide metrics, calculate them
     if (!aiResponse.bottleneckScore || !aiResponse.estimatedWattage) {
-        const calculated = await calculateBottleneckWithGitHubModels(components);
-        metrics = {
-            ...calculated,
-            compatibilityIssues: calculated.compatibilityIssues || []
-        };
+        try {
+            const calculated = await calculateBottleneckWithGitHubModels(components);
+            metrics = { ...calculated, compatibilityIssues: calculated.compatibilityIssues || [] };
+        } catch (ghErr) {
+            console.warn('[PCBuilder] GitHub Models bottleneck calc failed, trying Groq...');
+            try {
+                const calculated = await calculateBottleneckWithGroq(components);
+                metrics = { ...calculated, compatibilityIssues: calculated.compatibilityIssues || [] };
+            } catch (gErr) {
+                console.warn('[PCBuilder] Bottleneck calculation failed entirely.');
+            }
+        }
     }
 
     // Create the build object

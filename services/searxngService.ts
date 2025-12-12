@@ -45,6 +45,12 @@ const getSearXNGUrl = async (): Promise<string> => {
  * @param categories - Optional: 'general', 'images', 'news', 'science', etc.
  * @param engines - Optional: specific engines like 'google', 'bing', 'duckduckgo'
  */
+/**
+ * Search using SearXNG
+ * @param query - Search query
+ * @param categories - Optional: 'general', 'images', 'news', 'science', etc.
+ * @param engines - Optional: specific engines like 'google', 'bing', 'duckduckgo'
+ */
 export const searchWithSearXNG = async (
     query: string,
     categories: string = 'general',
@@ -65,7 +71,7 @@ export const searchWithSearXNG = async (
         }
 
         const searchUrl = `${baseUrl}/search?${params.toString()}`;
-        console.log(`[SearXNG] Searching: ${query}`);
+        console.log(`[SearXNG] Searching (${categories}): ${query}`);
 
         const response = await axios.get<SearXNGResponse>(searchUrl, {
             timeout: 10000, // 10 second timeout
@@ -82,8 +88,8 @@ export const searchWithSearXNG = async (
                 url: r.url,
                 content: r.content,
                 engine: r.engine,
-                img_src: r.img_src || r.thumbnail_src || null,
-                thumbnail: r.thumbnail || r.thumbnail_src || null,
+                img_src: r.img_src || r.thumbnail_src || (categories === 'images' ? r.url : null), // Handle direct image URLs in image search
+                thumbnail: r.thumbnail || r.thumbnail_src || r.img_src || null,
                 score: r.score
             }));
         }
@@ -102,6 +108,75 @@ export const searchWithSearXNG = async (
         return [];
     }
 };
+
+/**
+ * Find product images using SearXNG
+ */
+export const findProductImages = async (productName: string, limit: number = 1): Promise<string[]> => {
+    try {
+        console.log(`[SearXNG] Starting Optimized Parallel Image Search for: ${productName}`);
+
+        // Define Queries (Relaxed "front view" quotes to improve recall)
+        const strictQuery = `${productName} product official image front view -graph -chart -statistics -plot -diagram -logo -icon -vector -clipart -sketch -blueprint -layout`;
+        const moderateQuery = `${productName} product photo -logo -icon`;
+
+        // EXECUTE PARALLEL SEARCHES (Race for best quality, but don't wait sequentially)
+        const [strictResults, moderateResults] = await Promise.all([
+            searchWithSearXNG(strictQuery, 'images').catch(err => { console.warn('Strict search failed', err); return []; }),
+            searchWithSearXNG(moderateQuery, 'images').catch(err => { console.warn('Moderate search failed', err); return []; })
+        ]);
+
+        // 1. Prefer Strict Results (High Quality)
+        const strictImages = processAndFilterImages(strictResults, limit);
+        if (strictImages.length > 0) {
+            console.log(`[SearXNG] ✅ Using STRICT results (${strictImages.length})`);
+            return strictImages;
+        }
+
+        // 2. Fallback to Moderate Results (Good Quality)
+        const moderateImages = processAndFilterImages(moderateResults, limit);
+        if (moderateImages.length > 0) {
+            console.log(`[SearXNG] ⚠️ Fallback to MODERATE results (${moderateImages.length})`);
+            return moderateImages;
+        }
+
+        // 3. Last Resort: Loose Search (Sequential, only if everything else failed)
+        console.log('[SearXNG] ❌ All parallel searches failed. Trying LOOSE fallback.');
+        const looseResults = await searchWithSearXNG(`${productName}`, 'images');
+        return processAndFilterImages(looseResults, limit);
+
+    } catch (error) {
+        console.error('[SearXNG] Image search failed:', error);
+        return [];
+    }
+};
+
+/**
+ * Helper to process and filter image results
+ * Adds strict filtering against logos, icons, and noisy filenames
+ */
+function processAndFilterImages(results: SearXNGResult[], limit: number): string[] {
+    return results
+        .map(r => r.img_src || r.thumbnail) // Prefer high-res val, fallback to thumb
+        .filter((url): url is string => {
+            if (!url || !url.startsWith('http')) return false;
+
+            const lowerUrl = url.toLowerCase();
+            // Ban generic placeholders, logos, icons
+            if (lowerUrl.includes('placeholder')) return false;
+            if (lowerUrl.includes('logo')) return false;
+            if (lowerUrl.includes('icon')) return false;
+            if (lowerUrl.includes('avatar')) return false;
+            if (lowerUrl.includes('svg')) return false; // Vectors are rarely photos
+
+            // Ban generic naming patterns often associated with site assets
+            if (lowerUrl.includes('/assets/')) return false;
+            if (lowerUrl.includes('/static/')) return false;
+
+            return true;
+        })
+        .slice(0, limit);
+}
 
 /**
  * Search for product information on trusted nutrition databases

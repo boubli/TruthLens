@@ -3,6 +3,7 @@
  * Developed by Youssef Boubli
  */
 import type { Metadata } from 'next';
+import { Outfit } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AuthProvider } from '@/context/AuthContext';
@@ -11,6 +12,12 @@ import { CompareProvider } from '@/context/CompareContext';
 import CompareFloatingBar from '@/components/compare/CompareFloatingBar';
 
 import { getSystemSettings } from '@/services/systemService';
+
+const outfit = Outfit({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-outfit'
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSystemSettings();
@@ -50,7 +57,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={outfit.variable}>
       <body className="antialiased" suppressHydrationWarning>
         <AuthProvider>
           <I18nProvider>

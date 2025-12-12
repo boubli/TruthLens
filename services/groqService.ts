@@ -1,60 +1,88 @@
 /**
- * GitHub Models Service
- * Communicates with GitHub Models API for PC build intelligence (replaces Azure ML)
- * Uses OpenAI-compatible API format
+ * Groq Service
+ * Fallback AI provider for PC build intelligence
  */
 
 import { getSystemSettings } from './systemService';
 import { PCComponent, PCBuildMetrics, GrokBuildResponse, PCBuildComponents, HardwareInput } from '@/types/pcBuilder';
+import axios from 'axios';
 
-const GITHUB_MODELS_ENDPOINT = 'https://models.github.ai/inference/chat/completions';
-const DEFAULT_MODEL = 'openai/gpt-4.1';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const DEFAULT_MODEL = 'llama3-8b-8192';
+
+import { adminDb } from '@/lib/firebaseAdmin';
 
 /**
- * Make a request to GitHub Models API
+ * Make a request to Groq API
  */
-async function callGitHubModels(
+async function callGroq(
     messages: { role: string; content: string }[],
     maxTokens: number = 2000
 ): Promise<string> {
+
+    // ...
+
     const settings = await getSystemSettings();
-    const token = settings.apiKeys?.githubModelsToken;
-    const model = settings.apiKeys?.githubModelsModel || DEFAULT_MODEL;
+    let token = process.env.GROQ_API_KEY || process.env.NEXT_PUBLIC_GROQ_API_KEY;
+    let model = DEFAULT_MODEL;
+
+    // 1. Check Secure Admin Secrets First (Server-Side Only)
+    if (adminDb) {
+        try {
+            const secretDoc = await adminDb.collection('_system_secrets').doc('api_keys').get();
+            if (secretDoc.exists) {
+                const secrets = secretDoc.data();
+                if (secrets?.groq) {
+                    token = secrets.groq;
+                    console.log('[Groq] Using Secure Admin Key');
+                }
+            }
+        } catch (e) {
+            console.warn('[Groq] Failed to fetch admin secrets:', e);
+        }
+    }
+
+    // 2. Fallback to Public/Legacy Settings (Admin overrides)
+    if (!token && settings.apiKeys?.groq) {
+        token = settings.apiKeys.groq;
+    }
+    if (settings.apiKeys?.models?.groq) {
+        model = settings.apiKeys.models.groq;
+    }
 
     if (!token) {
-        throw new Error('GitHub Models API not configured. Please set the token in Admin Settings.');
+        throw new Error('Groq API Key not configured.');
     }
 
-    const response = await fetch(GITHUB_MODELS_ENDPOINT, {
-        method: 'POST',
-        headers: {
-            'Accept': 'application/vnd.github+json',
-            'Authorization': `Bearer ${token}`,
-            'X-GitHub-Api-Version': '2022-11-28',
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            model,
-            messages,
-            max_tokens: maxTokens,
-            temperature: 0.7
-        })
-    });
+    try {
+        const response = await axios.post(
+            GROQ_API_URL,
+            {
+                model,
+                messages,
+                max_tokens: maxTokens,
+                temperature: 0.7,
+                response_format: { type: "json_object" } // Force JSON mode if supported, or rely on prompt
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[GitHub Models] API Error:', response.status, errorText);
-        throw new Error(`GitHub Models API error: ${response.status}`);
+        return response.data.choices?.[0]?.message?.content || '';
+    } catch (error: any) {
+        console.error('[Groq] API Error:', error.response?.status, error.response?.data || error.message);
+        throw new Error(`Groq API error: ${error.response?.status || 'Unknown'}`);
     }
-
-    const data = await response.json();
-    return data.choices?.[0]?.message?.content || '';
 }
 
 /**
- * Generate a PC build recommendation using GitHub Models (GPT-4.1 / Grok-style)
+ * Generate a PC build recommendation using Groq
  */
-export async function generateBuildWithGitHubModels(
+export async function generateBuildWithGroq(
     mode: 'budget' | 'hardware',
     input: { budget?: number; existingHardware?: HardwareInput }
 ): Promise<GrokBuildResponse> {
@@ -116,7 +144,7 @@ Respond ONLY with this JSON structure (omit components the user already has):
   "reasoning": "Brief explanation"
 }`;
 
-    const content = await callGitHubModels([
+    const content = await callGroq([
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
     ]);
@@ -130,23 +158,20 @@ Respond ONLY with this JSON structure (omit components the user already has):
     try {
         return JSON.parse(cleanedJson) as GrokBuildResponse;
     } catch (parseError) {
-        console.error('[GitHub Models] Failed to parse response:', cleanedJson);
-        throw new Error('Failed to parse AI response. Please try again.');
+        console.error('[Groq] Failed to parse response:', cleanedJson);
+        throw new Error('Failed to parse AI response from Groq.');
     }
 }
 
 /**
- * Calculate bottleneck score for a given set of components
+ * Calculate bottleneck score for a given set of components using Groq
  */
-export async function calculateBottleneckWithGitHubModels(
+export async function calculateBottleneckWithGroq(
     components: PCBuildComponents
 ): Promise<PCBuildMetrics> {
     const systemPrompt = `You are a PC hardware bottleneck analyzer. Analyze component pairings and estimate performance metrics. Respond only in JSON.`;
-
     const userPrompt = `Analyze this PC build for CPU-GPU bottleneck and power consumption:
-
 ${JSON.stringify(components, null, 2)}
-
 Respond with this JSON only:
 {
   "bottleneckScore": 0-100 (lower is better, 0=perfect balance),
@@ -156,7 +181,7 @@ Respond with this JSON only:
 }`;
 
     try {
-        const content = await callGitHubModels([
+        const content = await callGroq([
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ], 500);
@@ -171,32 +196,11 @@ Respond with this JSON only:
             compatibilityIssues: parsed.compatibilityIssues || []
         };
     } catch (error) {
-        console.error('[GitHub Models] Bottleneck calculation failed:', error);
-        // Fallback estimation
+        console.error('[Groq] Bottleneck calculation failed:', error);
         return {
             bottleneckScore: 15,
             estimatedWattage: 550,
             compatibilityIssues: []
         };
-    }
-}
-
-/**
- * Check if GitHub Models is configured and working
- */
-export async function checkGitHubModelsHealth(): Promise<boolean> {
-    try {
-        const settings = await getSystemSettings();
-        if (!settings.apiKeys?.githubModelsToken) {
-            return false;
-        }
-
-        await callGitHubModels([
-            { role: 'user', content: 'Say "OK" only' }
-        ], 10);
-
-        return true;
-    } catch {
-        return false;
     }
 }
