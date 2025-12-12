@@ -274,3 +274,15 @@ export const clearAllChats = async () => {
         await deleteChat(chatDoc.id);
     }
 };
+export const listenForChatMetadata = (chatId: string, callback: (data: any) => void) => {
+    const chatRef = doc(db, CHATS_COLLECTION, chatId);
+    return onSnapshot(chatRef, (doc) => {
+        if (doc.exists()) {
+            callback(doc.data());
+        }
+    });
+};
+export const toggleAdminVisibility = async (chatId: string, isVisible: boolean) => {
+    const chatRef = doc(db, CHATS_COLLECTION, chatId);
+    await updateDoc(chatRef, { adminVisible: isVisible });
+};

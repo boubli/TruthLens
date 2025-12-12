@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
         });
         return () => unsubscribe();
-    }, [user]);
+    }, []); // Empty dependency array to run only once on mount
 
     // Maintenance Mode & Admin Strict Isolation Guard
     useEffect(() => {
@@ -227,6 +227,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             // ----------------------------------
 
             setUserProfile(profile);
+            console.log('[AUTH] User profile loaded:', {
+                uid: profile.uid,
+                email: profile.email,
+                tier: profile.subscription?.tier,
+                role: profile.role
+            });
         } catch (error) {
             console.error('Failed to load user profile:', error);
             // Set default profile on error
@@ -270,7 +276,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     // Computed values
-    const tier = userProfile?.subscription.tier || 'free';
+    // Ensure tier is lowercase to match TIER_CONFIG keys
+    const tier = (userProfile?.subscription.tier || 'free').toLowerCase() as UserTier;
 
     // Exact tier checks
     const isAdmin = userProfile?.role === 'admin';
@@ -283,8 +290,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 
     // Dynamic Feature Resolution
-    // Prefer Dynamic Config if loaded, else fallback to hardcoded
-    const features = tierConfig && tierConfig[tier] ? tierConfig[tier].features : getFeatureAccess(tier);
+    // CRITICAL: Ultimate and Admin users ALWAYS get ALL features
+    let features: TierFeatures;
+
+    if (isUltimate) {
+        // Force Ultimate features for Ultimate tier and Admins
+        features = tierConfig?.['ultimate']?.features || getFeatureAccess('ultimate');
+        console.log('[AUTH] Ultimate/Admin user detected. Forcing all features. Tier:', tier);
+    } else if (tierConfig && tierConfig[tier]) {
+        // Use dynamic config if available
+        features = tierConfig[tier].features;
+        console.log(`[AUTH] Using dynamic tier config for ${tier}`);
+    } else {
+        // Fallback to hardcoded config
+        features = getFeatureAccess(tier);
+        console.log(`[AUTH] Using hardcoded tier config for ${tier}`);
+    }
 
     const dietaryPreferences = userProfile?.dietaryPreferences || DEFAULT_DIETARY_PREFERENCES;
 

@@ -27,8 +27,17 @@ export default function GlobalSearchPage() {
     const [loading, setLoading] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const router = useRouter();
-    const { features } = useAuth(); // Use tier-based feature flag
+    const { features, tier, loading: authLoading } = useAuth(); // Use tier-based feature flag
     const { t } = useTranslation();
+
+    // Show loading state while auth is initializing
+    if (authLoading) {
+        return (
+            <Box sx={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <LoadingSpinner />
+            </Box>
+        );
+    }
 
     const handleSearch = async (e?: React.FormEvent) => {
         if (e) e.preventDefault();
@@ -52,8 +61,15 @@ export default function GlobalSearchPage() {
         setHasSearched(false);
     };
 
+    // Debug logging
+    console.log('[Global Search] Access check:', {
+        tier,
+        'features.globalSearch': features?.globalSearch,
+        'full features': features
+    });
+
     // 🚫 Restricted Access View - Use tier feature flag
-    if (!features.globalSearch) {
+    if (!features?.globalSearch) {
         return (
             <PageTransition>
                 <Box sx={{

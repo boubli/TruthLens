@@ -232,38 +232,26 @@ export default function UserHome() {
                             </Box>
                         </Box>
 
-                        {/* Profile & Chat Icons */}
+                        {/* Profile Icon Only - Moved Chat to Support page */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {/* Chat Icon */}
+                            {/* Chat Icon Removed */}
                             <IconButton
                                 component={motion.button}
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => router.push('/support')}
+                                onClick={() => router.push('/profile')}
                                 sx={{
                                     bgcolor: 'rgba(255,255,255,0.15)',
                                     color: 'white',
                                     '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }
                                 }}
                             >
-                                <ChatBubbleOutlineIcon />
+                                {user?.photoURL ? (
+                                    <Avatar src={user.photoURL} sx={{ width: 24, height: 24 }} />
+                                ) : (
+                                    <PersonIcon />
+                                )}
                             </IconButton>
-
-                            {/* Profile Avatar */}
-                            <Avatar
-                                component={motion.div}
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.95 }}
-                                src={user?.photoURL || '/icons/icon-192x192.png'}
-                                sx={{
-                                    width: { xs: 44, sm: 48 },
-                                    height: { xs: 44, sm: 48 },
-                                    border: '2px solid rgba(255,255,255,0.5)',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.3s'
-                                }}
-                                onClick={() => router.push('/profile')}
-                            />
                         </Box>
                     </Box>
 

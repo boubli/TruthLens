@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { listenForMessages, sendMessage, markChatAsRead } from '@/services/supportService';
+import { listenForMessages, sendMessage, markChatAsRead, listenForChatMetadata } from '@/services/supportService';
 import { ChatMessage } from '@/types/chat';
 import { Send, ArrowLeft, MoreVertical } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -19,19 +19,31 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, currentUserId, role }) 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const [sending, setSending] = useState(false);
 
+    const [adminVisible, setAdminVisible] = useState(false);
+
     useEffect(() => {
         if (!chatId) return;
 
         // Mark as read immediately when opening
         markChatAsRead(chatId, role);
 
-        const unsubscribe = listenForMessages(chatId, (msgs) => {
+        // Listen for messages
+        const unsubscribeMessages = listenForMessages(chatId, (msgs) => {
             setMessages(msgs);
-            // Mark as read when new messages arrive if window is open
             markChatAsRead(chatId, role);
         });
 
-        return () => unsubscribe();
+        // Listen for chat metadata (for admin visibility)
+        const unsubscribeMetadata = listenForChatMetadata(chatId, (data) => {
+            if (role === 'user') {
+                setAdminVisible(data.adminVisible || false);
+            }
+        });
+
+        return () => {
+            unsubscribeMessages();
+            unsubscribeMetadata();
+        };
     }, [chatId, role]);
 
     useEffect(() => {
@@ -68,7 +80,16 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ chatId, currentUserId, role }) 
                         <h3 className="font-semibold text-white text-lg leading-tight">
                             {role === 'admin' ? 'Support Chat' : 'Customer Support'}
                         </h3>
-                        <span className="text-xs text-green-400 font-medium">Online</span>
+                        {/* Only show "Online" if admin has enabled visibility for this user */}
+                        {role === 'user' && adminVisible && (
+                            <span className="text-xs text-green-400 font-medium animate-pulse">Online</span>
+                        )}
+                        {role === 'user' && !adminVisible && (
+                            <span className="text-xs text-gray-500 font-medium">Offline</span>
+                        )}
+                        {role === 'admin' && (
+                            <span className="text-xs text-gray-400 font-medium">Admin View</span>
+                        )}
                     </div>
                 </div>
                 {/* Optional Menu Icon for future actions */}

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { listenForMessages, sendMessage, markChatAsRead } from '@/services/supportService';
+import { listenForMessages, sendMessage, markChatAsRead, toggleAdminVisibility } from '@/services/supportService';
 import { ChatMessage } from '@/types/chat';
 import { Send, MoreVertical, ChevronDown, Paperclip, Smile } from 'lucide-react';
-import { Box } from '@mui/material'; // Keeping imports clean, although using Tailwind mainly
+import { Box, Switch, Typography } from '@mui/material'; // Keeping imports clean, although using Tailwind mainly
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useTheme } from '@mui/material';
@@ -24,6 +24,7 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
     const [newMessage, setNewMessage] = useState('');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [userUnreadCount, setUserUnreadCount] = useState<number | null>(null);
+    const [adminVisible, setAdminVisible] = useState(false); // New State
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const [partnerStatus, setPartnerStatus] = useState<'online' | 'offline'>('offline');
@@ -49,6 +50,7 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setUserUnreadCount(data.unreadCountUser);
+                setAdminVisible(data.adminVisible || false); // Update state
                 if (data.userId) setTargetUserId(data.userId);
             }
         });
@@ -58,6 +60,11 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
             unsubscribeChat();
         };
     }, [chatId]);
+
+    const handleToggleVisibility = async (checked: boolean) => {
+        setAdminVisible(checked); // Optimistic update
+        await toggleAdminVisibility(chatId, checked);
+    };
 
     // Listen for Realtime User Presence
     useEffect(() => {
@@ -154,6 +161,19 @@ const AdminChatWindow: React.FC<AdminChatWindowProps> = ({ chatId, currentUserId
                         </p>
                     </div>
                 </div>
+
+                {/* Visibility Toggle */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="caption" sx={{ color: adminVisible ? 'success.main' : 'text.disabled', fontWeight: 500 }}>
+                        {adminVisible ? 'Visible' : 'Hidden'}
+                    </Typography>
+                    <Switch
+                        checked={adminVisible}
+                        onChange={(e) => handleToggleVisibility(e.target.checked)}
+                        size="small"
+                        color="success"
+                    />
+                </Box>
             </Box>
 
 
