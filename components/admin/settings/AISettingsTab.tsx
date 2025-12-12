@@ -27,9 +27,10 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 
 interface AISettingsTabProps {
-    secureKeys: { groq: string; gemini: string };
-    setSecureKeys: React.Dispatch<React.SetStateAction<{ groq: string; gemini: string }>>;
-    handleSaveSecureKeys: () => Promise<void>;
+    secureKeys: Record<string, string>;
+    setSecureKeys: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+    handleTestAndSave?: (provider: string, apiKey: string, modelId: string) => Promise<void>;
+    handleSaveSecureKeys?: () => Promise<void>;
     savingSecure: boolean;
     freeApiKeys: Record<string, string>;
     setFreeApiKeys: React.Dispatch<React.SetStateAction<any>>;
@@ -49,12 +50,20 @@ interface AISettingsTabProps {
     availableModels: string[];
     fetchOllamaModels: (url: string) => Promise<void>;
     toggleModel: (modelName: string) => void;
+    models: {
+        gemini?: string;
+        groq?: string;
+        openai?: string;
+        deepseek?: string;
+    };
+    setModels: React.Dispatch<React.SetStateAction<any>>;
 }
 
 export default function AISettingsTab({
     secureKeys,
     setSecureKeys,
     handleSaveSecureKeys,
+    handleTestAndSave,
     savingSecure,
     freeApiKeys,
     setFreeApiKeys,
@@ -68,7 +77,9 @@ export default function AISettingsTab({
     savingOllama,
     availableModels,
     fetchOllamaModels,
-    toggleModel
+    toggleModel,
+    models,
+    setModels
 }: AISettingsTabProps) {
     return (
         <Box>
@@ -76,20 +87,57 @@ export default function AISettingsTab({
             <Paper sx={{ mb: 4, borderRadius: 2, overflow: 'hidden', border: '1px solid #e0e0e0' }}>
                 <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Typography variant="h6" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <BuildIcon /> Secure AI Keys
+                        <BuildIcon /> Secure AI Keys & Models
                     </Typography>
                     <Typography variant="caption" sx={{ ml: 'auto', bgcolor: '#e8f5e9', color: 'success.dark', px: 1, py: 0.5, borderRadius: 1 }}>Server-Side Vault</Typography>
                 </Box>
                 <Box sx={{ p: 3 }}>
                     <Alert severity="info" sx={{ mb: 3 }}>Keys here are never exposed to the client. Used for production-critical LLMs.</Alert>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <TextField label="Groq API Key (Secure)" type="password" value={secureKeys.groq} onChange={(e) => setSecureKeys(prev => ({ ...prev, groq: e.target.value }))} fullWidth size="small" />
-                        <TextField label="Gemini API Key (Secure)" type="password" value={secureKeys.gemini} onChange={(e) => setSecureKeys(prev => ({ ...prev, gemini: e.target.value }))} fullWidth size="small" />
-                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-                            <Button variant="contained" color="success" onClick={handleSaveSecureKeys} disabled={savingSecure || (!secureKeys.groq && !secureKeys.gemini)} startIcon={savingSecure ? <CircularProgress size={16} /> : <SaveIcon />}>
-                                {savingSecure ? 'Securing...' : 'Update Vault'}
-                            </Button>
-                        </Box>
+
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>Groq Configuration</Typography>
+                    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                        <TextField
+                            label="Groq API Key (Secure)"
+                            type="password"
+                            value={secureKeys.groq}
+                            onChange={(e) => setSecureKeys(prev => ({ ...prev, groq: e.target.value }))}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            label="Model ID (e.g., llama-3.3-70b-versatile)"
+                            value={models.groq || ''}
+                            onChange={(e) => setModels((prev: any) => ({ ...prev, groq: e.target.value }))}
+                            sx={{ width: '40%' }}
+                            size="small"
+                            placeholder="Default: llama-3.3-70b-versatile"
+                        />
+                    </Box>
+
+                    <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>Gemini Configuration</Typography>
+                    <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+                        <TextField
+                            label="Gemini API Key (Secure)"
+                            type="password"
+                            value={secureKeys.gemini}
+                            onChange={(e) => setSecureKeys(prev => ({ ...prev, gemini: e.target.value }))}
+                            fullWidth
+                            size="small"
+                        />
+                        <TextField
+                            label="Model ID (e.g., gemini-1.5-flash)"
+                            value={models.gemini || ''}
+                            onChange={(e) => setModels((prev: any) => ({ ...prev, gemini: e.target.value }))}
+                            sx={{ width: '40%' }}
+                            size="small"
+                            placeholder="Default: gemini-1.5-flash"
+                        />
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                        <Button variant="contained" color="success" onClick={handleSaveSecureKeys} disabled={savingSecure} startIcon={savingSecure ? <CircularProgress size={16} /> : <SaveIcon />}>
+                            {savingSecure ? 'Securing...' : 'Update Vault & Models'}
+                        </Button>
                     </Box>
                 </Box>
             </Paper>

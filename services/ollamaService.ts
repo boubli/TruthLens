@@ -41,15 +41,67 @@ const getOllamaUrls = async (): Promise<{ primary: string; fallback?: string }> 
 };
 
 /**
+ * Execute a Proxy Request (Client-Side Only)
+ */
+const executeProxyRequest = async <T>(endpoint: string, payload: any): Promise<T> => {
+    try {
+        const { getAuth } = await import('firebase/auth');
+        const auth = getAuth();
+        const token = await auth.currentUser?.getIdToken();
+
+        if (!token) throw new Error('User must be logged in');
+
+        const response = await axios.post('/api/ollama', {
+            endpoint,
+            payload
+        }, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        return response.data as T;
+    } catch (error: any) {
+        console.error('[Ollama Service] Proxy Error:', error);
+        throw error;
+    }
+}
+
+/**
  * Helper to execute an Ollama request with fallback to secondary URL
+ * Handles "Proxy Routing" for Client-Side execution to avoid Mixed Content errors (HTTPS -> HTTP)
  */
 const executeWithFallback = async <T>(
     operationName: string,
     operation: (baseUrl: string) => Promise<T>
 ): Promise<T> => {
+
+    // ---------------------------------------------------------------------------
+    // OPTIMIZATION: Environment-Aware Routing
+    // ---------------------------------------------------------------------------
+    if (typeof window !== 'undefined') {
+        // [CLIENT-SIDE] -> Go through Secure Proxy (/api/ollama)
+        // This prevents "Mixed Content" blocks on Vercel (HTTPS)
+        // console.log(`[Ollama] Client-Side Detected. Routing '${operationName}' via /api/ollama Proxy.`);
+
+        try {
+            const { getAuth } = await import('firebase/auth');
+            const auth = getAuth();
+            const token = await auth.currentUser?.getIdToken();
+
+            if (!token) throw new Error('Authentication required for AI features');
+
+            // We must throw here to ensure the caller (chatWithOllama, etc.) 
+            // knows to use the proxy path. But since we can't easily "redirect" the closure 'operation',
+            // the callers (chatWithOllama etc) must handle the env check themselves using executeProxyRequest.
+            // This fallback is only if a caller FORGOT to check env.
+            throw new Error('Direct client-side execution not supported. Use executeProxyRequest.');
+        } catch (e: any) {
+            // Fall through? No, assume caller handles proxy.
+        }
+    }
+
+    // [SERVER-SIDE] -> Direct Connection (Fastest)
     const urls = await getOllamaUrls();
 
-    // 1. Try Primary
     try {
         console.log(`[Ollama] ${operationName} -> Primary: ${urls.primary}`);
         return await operation(urls.primary);
@@ -170,13 +222,23 @@ export const chatWithOllama = async (
     model?: string,
     systemPrompt?: string
 ): Promise<string> => {
+    const preferredModel = await getPreferredModel(model);
+    const messages: OllamaMessage[] = [];
+    if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+    messages.push({ role: 'user', content: prompt });
+
+    // Client-Side Optimization: Use Proxy
+    if (typeof window !== 'undefined') {
+        const data = await executeProxyRequest<OllamaResponse>('/api/chat', {
+            model: preferredModel,
+            messages,
+            stream: false
+        });
+        if (data.message?.content) return data.message.content;
+        throw new Error('Empty response from Ollama Proxy');
+    }
+
     return executeWithFallback('Chat', async (baseUrl) => {
-        const preferredModel = await getPreferredModel(model);
-        const messages: OllamaMessage[] = [];
-
-        if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
-        messages.push({ role: 'user', content: prompt });
-
         const response = await axios.post<OllamaResponse>(
             `${baseUrl}/api/chat`,
             { model: preferredModel, messages, stream: false },
@@ -195,6 +257,17 @@ export const chatWithOllamaMessages = async (
     messages: { role: string; content: string }[],
     model: string = 'llama3.2:1b'
 ): Promise<string> => {
+    // Client-Side Optimization: Use Proxy
+    if (typeof window !== 'undefined') {
+        const data = await executeProxyRequest<OllamaResponse>('/api/chat', {
+            model,
+            messages,
+            stream: false
+        });
+        if (data.message?.content) return data.message.content;
+        throw new Error('Empty response from Ollama Proxy');
+    }
+
     return executeWithFallback('Chat History', async (baseUrl) => {
         const response = await axios.post<OllamaResponse>(
             `${baseUrl}/api/chat`,
@@ -214,6 +287,16 @@ export const generateWithOllama = async (
     prompt: string,
     model: string = 'llama3.2:1b'
 ): Promise<string> => {
+    // Client-Side Optimization: Use Proxy
+    if (typeof window !== 'undefined') {
+        const data = await executeProxyRequest<{ response: string }>('/api/generate', {
+            model,
+            prompt,
+            stream: false
+        });
+        return data.response || '';
+    }
+
     return executeWithFallback('Generate', async (baseUrl) => {
         const response = await axios.post(
             `${baseUrl}/api/generate`,

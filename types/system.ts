@@ -39,6 +39,16 @@ export interface ExtendedSystemSettings {
         ollamaFallbackUrl?: string; // Secondary/Backup Ollama Instance URL
         ollamaModels?: Record<string, boolean>; // Enabled status for specific models
         defaultOllamaModel?: string; // The explicitly selected default model
+        // GitHub Models API (for PC Builder / Grok-3)
+        githubModelsToken?: string;       // GitHub PAT with models scope
+        githubModelsModel?: string;       // Model to use (e.g., "openai/gpt-4.1")
+        defaultPcBuilderLocation?: string; // Default location for price searches
+        models?: {
+            gemini?: string;
+            groq?: string;
+            openai?: string;
+            deepseek?: string;
+        };
     };
     tierConfig: SystemTierConfig;
     branding?: {
@@ -47,6 +57,19 @@ export interface ExtendedSystemSettings {
         androidIcon192Url?: string;
         androidIcon512Url?: string;
     };
+
+    // Global Atmosphere (Manual Toggles - Multi-Selectable)
+    globalEffects?: {
+        snow: boolean;
+        rain: boolean;
+        leaves: boolean;
+        confetti: boolean;
+        christmas: boolean;
+    };
+    // Deprecated single-select
+    // globalTheme?: string; 
+    // globalThemeEnabled?: boolean;
+
     eventManager?: EventManagerConfig; // @deprecated: Use eventSchedule
     eventSchedule?: EventManagerConfig[]; // [NEW] List of future events
 }
@@ -56,8 +79,7 @@ export interface EventManagerConfig {
     is_active_global: boolean;     // Master Switch
 
     // Theme Scheduling (UTC ISO Strings)
-    general_theme_start: string;
-    general_theme_end: string;
+    // [REMOVED] general_theme_start/end - Now manual ONLY via globalTheme
 
     // Celebration Scheduling (UTC ISO Strings)
     celebration_music_start: string;
@@ -81,8 +103,9 @@ export interface EventManagerConfig {
     music_file_url: string;        // Background Music URL to hosted audio
 
     // Explicit Effects per Phase
-    theme_effect: 'snow_cold' | 'none' | string;       // Phase A Effect
+    // [REMOVED] theme_effect - Moved to global manual control
     climax_effect: 'fireworks' | 'confetti' | 'none' | string; // Phase B Effect
+
 
     // Deprecated but kept for type safety if needed temporarily
     // effect_type: ... (Removed)

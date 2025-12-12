@@ -33,14 +33,15 @@ export async function GET() {
             candidates.push(settings.eventManager);
         }
 
-        // 2. Filter for currently active time windows (Theme Start -> Theme End)
+        // 2. Filter for currently active time windows (Event Start -> Event End)
         const activeCandidates = candidates.filter(event => {
             if (!event.is_active_global) return false;
-            // Use Theme Window as the "Master" window for device activation
-            if (!event.general_theme_start || !event.general_theme_end) return false;
 
-            const start = new Date(event.general_theme_start).getTime();
-            const end = new Date(event.general_theme_end).getTime();
+            // Use Celebration Window as the "Master" window for device activation
+            if (!event.celebration_music_start || !event.celebration_music_end) return false;
+
+            const start = new Date(event.celebration_music_start).getTime();
+            const end = new Date(event.celebration_music_end).getTime();
 
             return (now >= start && now <= end);
         });
@@ -48,8 +49,8 @@ export async function GET() {
         // 3. Priority: Pick the one with the LATEST Start Time (Most specific/recent)
         if (activeCandidates.length > 0) {
             activeCandidates.sort((a, b) => {
-                const startA = new Date(a.general_theme_start).getTime();
-                const startB = new Date(b.general_theme_start).getTime();
+                const startA = new Date(a.celebration_music_start).getTime();
+                const startB = new Date(b.celebration_music_start).getTime();
                 return startB - startA;
             });
             activeConfig = activeCandidates[0];
@@ -63,6 +64,7 @@ export async function GET() {
             status: 'success',
             data: {
                 config: activeConfig,
+                globalEffects: settings.globalEffects || { snow: false, rain: false, leaves: false, confetti: false },
                 server_time: new Date().toISOString()
             }
         }, {

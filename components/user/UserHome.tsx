@@ -18,6 +18,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
+import ComputerIcon from '@mui/icons-material/Computer';
 import StaggerList, { StaggerItem } from '@/components/animation/StaggerList';
 import AnimatedCard from '@/components/ui/AnimatedCard';
 import ScrollReveal from '@/components/animation/ScrollReveal';
@@ -128,6 +129,14 @@ export default function UserHome() {
             color: 'rgba(252, 211, 77, 0.1)',
             desc: t('feature_foryou_desc'),
             gradient: 'linear-gradient(135deg, rgba(252, 211, 77, 0.1) 0%, rgba(252, 211, 77, 0.05) 100%)'
+        },
+        {
+            title: 'PC Builder',
+            icon: <ComputerIcon sx={{ fontSize: 40, color: '#FF6B35' }} />,
+            path: '/pc-builder',
+            color: 'rgba(255, 107, 53, 0.1)',
+            desc: 'Build Your PC',
+            gradient: 'linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 107, 53, 0.05) 100%)'
         },
         {
             title: t('feature_favorites_title'),
@@ -390,6 +399,10 @@ export default function UserHome() {
                                     {features.filter(item => {
                                         // Global Search: Only for Pro and Ultimate
                                         if (item.path === '/global-search') {
+                                            return tier === 'pro' || tier === 'ultimate';
+                                        }
+                                        // PC Builder: Only for Pro and Ultimate
+                                        if (item.path === '/pc-builder') {
                                             return tier === 'pro' || tier === 'ultimate';
                                         }
                                         // Upgrade: Hide for Ultimate (highest tier)

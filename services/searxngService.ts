@@ -14,6 +14,9 @@ export interface SearXNGResult {
     url: string;
     content: string; // snippet/description
     engine: string;
+    img_src?: string;
+    thumbnail?: string;
+    score?: number;
 }
 
 export interface SearXNGResponse {
@@ -73,7 +76,16 @@ export const searchWithSearXNG = async (
 
         if (response.data.results && response.data.results.length > 0) {
             console.log(`[SearXNG] Found ${response.data.results.length} results`);
-            return response.data.results;
+            // Map raw results to ensure all fields are present
+            return response.data.results.map((r: any) => ({
+                title: r.title,
+                url: r.url,
+                content: r.content,
+                engine: r.engine,
+                img_src: r.img_src || r.thumbnail_src || null,
+                thumbnail: r.thumbnail || r.thumbnail_src || null,
+                score: r.score
+            }));
         }
 
         return [];

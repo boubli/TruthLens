@@ -51,10 +51,13 @@ export default function AdminSettingsPage() {
     const [savingBranding, setSavingBranding] = useState(false);
 
     // Secure API Keys (stored in _system_secrets - backend only access)
-    const [secureKeys, setSecureKeys] = useState({
+    const [secureKeys, setSecureKeys] = useState<Record<string, string>>({
         groq: '',
-        gemini: ''
+        gemini: '',
+        deepseek: '',
+        openai: ''
     });
+    const [models, setModels] = useState<any>({});
     const [savingSecure, setSavingSecure] = useState(false);
 
     // --- FREE API KEYS ---
@@ -138,6 +141,8 @@ export default function AdminSettingsPage() {
             setSearxngConfig({
                 searxngUrl: settings.apiKeys?.searxngUrl || 'http://20.199.129.203:8080',
             });
+
+            setModels(settings.apiKeys?.models || {});
 
             setOllamaConfig({
                 ollamaUrl: settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434',
@@ -304,9 +309,18 @@ export default function AdminSettingsPage() {
                 setAvailableModels([]);
                 if (showMsg) setMsg({ type: 'warning', text: 'Connected to server, but no models found installed.' });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('[ADMIN] Failed to fetch models:', error);
-            if (showMsg) setMsg({ type: 'error', text: 'Failed to connect. Ensure your Ollama server is running and accessible from the backend.' });
+            const errorMsg = error.response?.data?.error || error.message || 'Unknown error';
+            const debugInfo = error.response?.data?.debug ? JSON.stringify(error.response.data.debug) : '';
+
+            if (showMsg) {
+                setMsg({
+                    type: 'error',
+                    text: `Connection Failed: ${errorMsg}. ${debugInfo ? '(Check console for debug details)' : ''}`
+                });
+            }
+            if (debugInfo) console.error('[ADMIN] Debug Info:', debugInfo);
         } finally {
             setLoadingModels(false);
         }
@@ -322,30 +336,70 @@ export default function AdminSettingsPage() {
         }));
     };
 
-    const handleSaveSecureKeys = async () => {
+
+
+    const handleTestAndSave = async (provider: string, apiKey: string, modelId: string) => {
         if (!user) return;
+        // If key is masked (********) or empty, we might be only updating the model. 
+        // But for safety, we usually require re-entry to test. 
+        // Actually, if key is empty/masked, we can't test because client doesn't have the real key.
+        // So for "Secure Config", we only test if the user Provides a NEW key.
+        // If Key is empty (unchanged), we only save the model settings but we can't test the connection.
+
+        let shouldTest = true;
+        if (!apiKey || apiKey.includes('****')) {
+            shouldTest = false;
+            // We can't test without the key. Just save the model? 
+            // Ideally we check if model changed.
+        }
+
         setSavingSecure(true);
         try {
             const token = await user.getIdToken();
-            if (secureKeys.groq) {
+
+            if (shouldTest) {
+                // 1. Verify Connection
+                setMsg({ type: 'info', text: `Testing connection to ${provider}...` });
+                await axios.post('/api/admin/ai-test', {
+                    provider,
+                    apiKey,
+                    modelId
+                }, { headers: { Authorization: `Bearer ${token}` } });
+
+                // If we get here, test passed
+                setMsg({ type: 'success', text: '✅ Connection Verified! Saving...' });
+
+                // 2. Save Key
                 await axios.post('/api/admin/keys', {
                     action: 'save',
-                    provider: 'groq',
-                    key: secureKeys.groq
+                    provider,
+                    key: apiKey
                 }, { headers: { Authorization: `Bearer ${token}` } });
             }
-            if (secureKeys.gemini) {
-                await axios.post('/api/admin/keys', {
-                    action: 'save',
-                    provider: 'gemini',
-                    key: secureKeys.gemini
-                }, { headers: { Authorization: `Bearer ${token}` } });
-            }
-            setMsg({ type: 'success', text: '🔐 Secure AI keys updated! Server actions will now use these keys.' });
-            setSecureKeys({ groq: '', gemini: '' });
+
+            // 3. Save Model Config (Always save if we got here)
+            const currentSettings = await getSystemSettings();
+            const updatedApiKeys = {
+                ...currentSettings.apiKeys,
+                models: {
+                    ...models,
+                    [provider]: modelId
+                }
+            };
+            await updateSystemSettings({ apiKeys: updatedApiKeys });
+
+            // Update local state models
+            setModels((prev: any) => ({ ...prev, [provider]: modelId }));
+
+            setMsg({ type: 'success', text: `🎉 ${provider.charAt(0).toUpperCase() + provider.slice(1)} Config Saved & Verified!` });
+
+            // Clear the key field for security (it's masked on reload)
+            setSecureKeys(prev => ({ ...prev, [provider]: '' }));
+
         } catch (error: any) {
-            console.error('Failed to save secure keys:', error);
-            setMsg({ type: 'error', text: 'Failed to save secure keys. Ensure you have Admin privileges.' });
+            console.error('Save Failed:', error);
+            const errMsg = error.response?.data?.error || error.message;
+            setMsg({ type: 'error', text: `❌ Save Failed: ${errMsg}` });
         } finally {
             setSavingSecure(false);
         }
@@ -421,7 +475,7 @@ export default function AdminSettingsPage() {
                     <AISettingsTab
                         secureKeys={secureKeys}
                         setSecureKeys={setSecureKeys}
-                        handleSaveSecureKeys={handleSaveSecureKeys}
+                        handleTestAndSave={handleTestAndSave}
                         savingSecure={savingSecure}
                         freeApiKeys={freeApiKeys}
                         setFreeApiKeys={setFreeApiKeys}
@@ -436,6 +490,8 @@ export default function AdminSettingsPage() {
                         availableModels={availableModels}
                         fetchOllamaModels={fetchOllamaModels}
                         toggleModel={toggleModel}
+                        models={models}
+                        setModels={setModels}
                     />
                 )}
                 {tabValue === 2 && (

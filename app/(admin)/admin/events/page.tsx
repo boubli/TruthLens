@@ -71,15 +71,16 @@ export default function AdminEventsPage() {
     }
 
     return (
-        <Box sx={{ p: 4, bgcolor: '#121212', minHeight: '100vh', color: 'white' }}>
+
+        <Box sx={{ p: { xs: 2.5, md: 4 } }}>
             <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
-                <EventIcon sx={{ fontSize: 40, color: '#FF4081' }} />
+                <EventIcon sx={{ fontSize: 40, color: 'primary.main' }} />
                 <Typography variant="h4" fontWeight="bold">
                     Event Management
                 </Typography>
             </Box>
 
-            <Paper sx={{ p: 3, bgcolor: '#1e1e1e', color: 'white', borderRadius: 2 }}>
+            <Paper sx={{ p: 3, borderRadius: 2 }}>
                 <EventSettingsTab
                     settings={{ ...settings, eventSchedule }}
                     onUpdateSettings={handleUpdateSettings}

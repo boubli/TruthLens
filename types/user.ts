@@ -93,6 +93,7 @@ export interface TierFeatures {
     productCompare: number;      // Max products to compare (0 = disabled)
     ecoScore: boolean;           // Sustainability analysis
     gamification: boolean;       // Quests and achievements
+    pcBuilder: boolean;          // PC Geek Builder access
 }
 
 export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
@@ -119,7 +120,8 @@ export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
         aiChatLimit: 0,
         productCompare: 0,
         ecoScore: false,
-        gamification: true
+        gamification: true,
+        pcBuilder: false
     },
     plus: {
         dailyScanLimit: 20,
@@ -144,7 +146,8 @@ export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
         aiChatLimit: 10,
         productCompare: 2,
         ecoScore: false,
-        gamification: true
+        gamification: true,
+        pcBuilder: false
     },
     pro: {
         dailyScanLimit: -1, // Unlimited
@@ -169,7 +172,8 @@ export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
         aiChatLimit: -1,
         productCompare: 5,
         ecoScore: true,
-        gamification: true
+        gamification: true,
+        pcBuilder: true
     },
     ultimate: {
         dailyScanLimit: -1,
@@ -194,7 +198,8 @@ export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
         aiChatLimit: -1,
         productCompare: -1,
         ecoScore: true,
-        gamification: true
+        gamification: true,
+        pcBuilder: true
     }
 };
 

@@ -179,7 +179,18 @@ export const sendAIChatMessage = async (
     language: AILanguage = 'en'
 ): Promise<string> => {
     // Resolve the API key
-    const { key } = await resolveApiKey(userId, tier, provider);
+    const { key, source } = await resolveApiKey(userId, tier, provider);
+
+    // Get System Settings for configured models
+    const settings = await getSystemSettings();
+    const models = settings.apiKeys?.models;
+    const configuredModel = models?.[provider as keyof typeof models];
+
+    // Determine target model
+    // 1. If Platform Key: Use Configured Model -> Default
+    // 2. If User Key: Use High Tier -> Fallback Low Tier (Smart Logic)
+    let targetModel = configuredModel;
+
 
     // Get language name for prompt
     const languageInfo = AI_LANGUAGES[language];
@@ -213,15 +224,47 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
         { role: 'user' as const, content: message }
     ];
 
-    try {
+    const attemptCall = async (modelToUse?: string) => {
         if (provider === 'groq') {
-            return await callGroqAPI(key, messages);
+            return await callGroqAPI(key, messages, modelToUse);
         } else if (provider === 'ollama') {
-            return await chatWithOllamaMessages(messages);
+            return await chatWithOllamaMessages(messages); // Ollama handles its own model config via settings
         } else if (provider === 'deepseek') {
-            return await callDeepSeekAPI(key, messages);
+            return await callDeepSeekAPI(key, messages, modelToUse);
         } else {
-            return await callGeminiAPI(key, messages);
+            return await callGeminiAPI(key, messages, modelToUse);
+        }
+    };
+
+    try {
+        // If it's a user key, we might want to try "Best" then "Fallback"
+        if (source === 'user' && !targetModel) {
+            // Define defaults/fallbacks for user keys
+            let primaryModel = '';
+            let fallbackModel = '';
+
+            if (provider === 'gemini') {
+                primaryModel = 'gemini-1.5-pro';
+                fallbackModel = 'gemini-1.5-flash';
+            } else if (provider === 'groq') {
+                primaryModel = 'llama-3.3-70b-versatile';
+                fallbackModel = 'llama-3.1-8b-instant';
+            }
+
+            try {
+                return await attemptCall(primaryModel || undefined);
+            } catch (primaryError: any) {
+                console.warn(`[AI_SMART_FALLBACK] Primary model ${primaryModel} failed for user ${userId}. Retrying with ${fallbackModel}. Error:`, primaryError.message);
+                // Only retry on specific errors (404 Not Found, 429 Rate Limit?) - Actually user wants "if api failed switch"
+                // We retry if it's NOT an auth error.
+                if (primaryError?.code === 'INVALID_KEY' || primaryError?.status === 401) {
+                    throw primaryError; // Don't retry auth errors
+                }
+                return await attemptCall(fallbackModel);
+            }
+        } else {
+            // Platform key or configured model - just one attempt
+            return await attemptCall(targetModel);
         }
     } catch (error: any) {
         // Handle specific API errors
@@ -281,7 +324,8 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
  */
 const callGroqAPI = async (
     apiKey: string,
-    messages: { role: string; content: string }[]
+    messages: { role: string; content: string }[],
+    model: string = 'llama-3.3-70b-versatile'
 ): Promise<string> => {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
@@ -290,7 +334,7 @@ const callGroqAPI = async (
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: model,
             messages,
             temperature: 0.7,
             max_tokens: 1024
@@ -311,7 +355,8 @@ const callGroqAPI = async (
  */
 const callGeminiAPI = async (
     apiKey: string,
-    messages: { role: string; content: string }[]
+    messages: { role: string; content: string }[],
+    model: string = 'gemini-1.5-flash'
 ): Promise<string> => {
     // Convert messages to Gemini format
     const contents = messages
@@ -328,7 +373,7 @@ const callGeminiAPI = async (
     }
 
     const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
         {
             method: 'POST',
             headers: {
@@ -380,7 +425,8 @@ const callGeminiAPI = async (
  */
 const callDeepSeekAPI = async (
     apiKey: string,
-    messages: { role: string; content: string }[]
+    messages: { role: string; content: string }[],
+    model: string = 'deepseek-chat'
 ): Promise<string> => {
     const response = await fetch('https://api.deepseek.com/chat/completions', {
         method: 'POST',
@@ -389,7 +435,7 @@ const callDeepSeekAPI = async (
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            model: 'deepseek-chat',
+            model: model,
             messages,
             stream: false
         })
