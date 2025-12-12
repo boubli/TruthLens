@@ -65,7 +65,9 @@ const componentConfig: Record<string, { label: string; color: string }> = {
     cooler: { label: 'Cooler', color: '#3B82F6' },
 };
 
-export default function PCBuilderPage() {
+import { Suspense } from 'react';
+
+function PCBuilderContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, features, loading: authLoading, tier } = useAuth();
@@ -707,5 +709,17 @@ export default function PCBuilderPage() {
                 message="Build saved to your profile!"
             />
         </Box>
+    );
+}
+
+export default function PCBuilderPage() {
+    return (
+        <Suspense fallback={
+            <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CircularProgress />
+            </Box>
+        }>
+            <PCBuilderContent />
+        </Suspense>
     );
 }
