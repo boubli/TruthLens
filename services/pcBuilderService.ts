@@ -4,6 +4,7 @@
  */
 
 import { db } from '@/lib/firebase';
+import { adminDb } from '@/lib/firebaseAdmin';
 import {
     collection,
     addDoc,
