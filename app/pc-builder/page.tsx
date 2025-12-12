@@ -57,7 +57,7 @@ const componentConfig: Record<string, { label: string; color: string }> = {
 
 export default function PCBuilderPage() {
     const router = useRouter();
-    const { user, features, loading: authLoading } = useAuth();
+    const { user, features, loading: authLoading, tier } = useAuth();
 
     // Mode & Input State
     const [mode, setMode] = useState<'budget' | 'hardware'>('budget');
@@ -74,8 +74,11 @@ export default function PCBuilderPage() {
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
-    // Access check
-    const hasAccess = features.pcBuilder;
+    // Access check - use tier fallback
+    const hasAccess = features?.pcBuilder || tier === 'pro' || tier === 'ultimate';
+
+    // Debug logging
+    console.log('[PC Builder] Access check:', { tier, 'features.pcBuilder': features?.pcBuilder, hasAccess });
 
     if (authLoading) {
         return (
