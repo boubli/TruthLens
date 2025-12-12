@@ -4,7 +4,7 @@ import { onAuthStateChanged, User, signOut as firebaseSignOut } from 'firebase/a
 import { auth, db } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
-import i18n from '@/lib/i18n';
+// import i18n from '@/lib/i18n';
 import { UserProfile, UserTier, DietaryPreferences, TierFeatures, DEFAULT_SUBSCRIPTION, DEFAULT_DIETARY_PREFERENCES, TIER_CONFIG } from '@/types/user';
 import { getUserProfile, getFeatureAccess } from '@/services/subscriptionService';
 import { subscribeToSystemSettings } from '@/services/systemService';
@@ -191,41 +191,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 user.photoURL
             );
 
-            // --- LANGUAGE PERSISTENCE LOGIC ---
-            // Check if preferredLanguage exists, else Default to 'en' (CRITICAL REQUIREMENT)
-            if (profile.preferences?.language) {
-                // If exists, sync i18n
-                if (i18n.language !== profile.preferences.language) {
-                    i18n.changeLanguage(profile.preferences.language);
-                }
-            } else {
-                // If missing, enforce fallback to 'en'
-                console.log('[AUTH] No language preference found. Defaulting to "en".');
-
-                // 1. Update Local i18n
-                if (i18n.language !== 'en') {
-                    i18n.changeLanguage('en');
-                }
-
-                // 2. Persist to Firestore immediately
-                try {
-                    const userRef = doc(db, 'users', user.uid);
-                    await setDoc(userRef, {
-                        preferences: {
-                            language: 'en'
-                        }
-                    }, { merge: true });
-
-                    // Update local profile object to reflect change
-                    if (!profile.preferences) profile.preferences = {};
-                    profile.preferences.language = 'en';
-
-                } catch (err) {
-                    console.error('[AUTH] Failed to persist default language:', err);
-                }
-            }
-            // ----------------------------------
-
             setUserProfile(profile);
             console.log('[AUTH] User profile loaded:', {
                 uid: profile.uid,
@@ -245,9 +210,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 dietaryPreferences: DEFAULT_DIETARY_PREFERENCES,
                 createdAt: new Date(),
                 // Default fallback for error state
-                preferences: { language: 'en' }
+                preferences: {}
             });
-            i18n.changeLanguage('en');
         }
     };
 

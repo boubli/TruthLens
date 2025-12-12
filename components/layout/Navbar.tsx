@@ -38,20 +38,39 @@ const adminPages = [
     { name: 'Profile', path: '/profile', icon: PersonIcon },
 ];
 
+import UserNotificationsMenu from './UserNotificationsMenu';
+
 const Navbar = () => {
     const pathname = usePathname();
     const router = useRouter();
     const { isPro, isFree, user, tier } = useAuth();
     const [customizerOpen, setCustomizerOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
 
     useEffect(() => {
         if (!user) return;
-        const unsubscribe = listenForUnreadForUser(user.uid, (count) => {
-            setUnreadCount(count);
+
+        // Listen for support messages
+        const unsubscribeSupport = listenForUnreadForUser(user.uid, (supportCount) => {
+            // Also fetch notifications count (simplest way is to fetch once, or set interval, or REAL TIME listener if added)
+            // For now, let's just use supportCount + 0, but ideally we want `getUserNotifications` count.
+            // Let's do a quick fetch of notifications to add to the badge count.
+            // Or better, make `UserNotificationsMenu` fetch on mount, but Navbar needs the count always.
+            // We'll update this simply to load basic notifications count.
+
+            // TODO: Add realtime listener for notifications collection too if heavy traffic.
+            // For now, we will just use the support count or if user opens menu it updates.
+            // BETTER: Let's fetch the unread count from notifications collection here too.
+            import('@/services/accessRequestService').then(({ getUserNotifications }) => {
+                getUserNotifications(user.uid).then(notifs => {
+                    const notifCount = notifs.filter(n => !n.read).length;
+                    setUnreadCount(supportCount + notifCount);
+                });
+            });
         });
-        return () => unsubscribe();
-    }, [user]);
+        return () => unsubscribeSupport();
+    }, [user, notificationAnchor]); // Re-fetch when menu closes/opens in case read status changed
 
     // Determine if user is admin based on role
     // Note: 'user' object from context should have 'role' property if fetching full profile
@@ -143,17 +162,22 @@ const Navbar = () => {
 
 
 
-                            {/* Notification Icon for Support */}
+                            {/* Notification Icon */}
                             <IconButton
                                 color="inherit"
-                                component={Link}
-                                href="/support"
+                                onClick={(e) => setNotificationAnchor(e.currentTarget)}
                                 sx={{ ml: 1 }}
                             >
                                 <Badge badgeContent={unreadCount} color="error">
                                     <NotificationsIcon />
                                 </Badge>
                             </IconButton>
+
+                            <UserNotificationsMenu
+                                anchorEl={notificationAnchor}
+                                open={Boolean(notificationAnchor)}
+                                onClose={() => setNotificationAnchor(null)}
+                            />
                         </>
                     )}
                 </Box>

@@ -91,8 +91,8 @@ export default function ChatErrorCard({ error, onOpenSettings, onRetry, onDismis
             default:
                 return {
                     icon: <ErrorOutlineIcon sx={{ fontSize: 28, color: '#6366F1' }} />,
-                    title: 'Something Went Wrong',
-                    description: 'There was an issue connecting to the AI. Please try again.',
+                    title: error.code === 'API_ERROR' ? 'AI Service Error' : 'Something Went Wrong',
+                    description: error.message || 'There was an issue connecting to the AI. Please try again.',
                     bgColor: 'rgba(99, 102, 241, 0.08)',
                     borderColor: 'rgba(99, 102, 241, 0.3)',
                     iconBgColor: 'rgba(99, 102, 241, 0.15)',

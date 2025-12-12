@@ -10,19 +10,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const { i18n } = useTranslation();
 
     useEffect(() => {
-        // Sync with Firebase profile if available
-        if (user && userProfile?.preferences?.language) {
-            if (i18n.language !== userProfile.preferences.language) {
-                i18n.changeLanguage(userProfile.preferences.language);
-            }
-        } else {
-            // Fallback to localStorage if not logged in or no profile pref
-            const savedLang = localStorage.getItem('i18nextLng');
-            if (savedLang && i18n.language !== savedLang) {
-                i18n.changeLanguage(savedLang);
-            }
-        }
-    }, [user, userProfile, i18n]);
+        // Fallback or initialization logic if needed, but removing specific user profile sync
+        // Assuming default i18n initialization is enough
+    }, []);
 
     return <>{children}</>;
 }

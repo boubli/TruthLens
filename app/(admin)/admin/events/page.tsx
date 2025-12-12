@@ -6,7 +6,7 @@ import EventIcon from '@mui/icons-material/Event';
 import { getSystemSettings, updateSystemSettings } from '@/services/systemService';
 import { useAuth } from '@/context/AuthContext';
 import EventSettingsTab from '@/components/admin/settings/EventSettingsTab';
-import { EventManagerConfig } from '@/types/system';
+import { EventManagerConfig, ExtendedSystemSettings } from '@/types/system';
 
 export default function AdminEventsPage() {
     const { userProfile, loading: authLoading } = useAuth();
@@ -14,7 +14,7 @@ export default function AdminEventsPage() {
     const [msg, setMsg] = useState({ type: 'success', text: '' });
     const [eventSchedule, setEventSchedule] = useState<EventManagerConfig[]>([]);
     const [saving, setSaving] = useState(false);
-    const [settings, setSettings] = useState<any>({});
+    const [settings, setSettings] = useState<ExtendedSystemSettings>({} as ExtendedSystemSettings);
 
     useEffect(() => {
         if (!authLoading) {
@@ -43,11 +43,11 @@ export default function AdminEventsPage() {
         }
     };
 
-    const handleUpdateSettings = async (newSettings: any) => {
+    const handleUpdateSettings = async (newSettings: ExtendedSystemSettings) => {
         setSaving(true);
         try {
             await updateSystemSettings(newSettings);
-            setEventSchedule(newSettings.eventSchedule);
+            setEventSchedule(newSettings.eventSchedule || []);
             setSettings(newSettings); // Update local full state
             setMsg({ type: 'success', text: 'Events updated successfully!' });
         } catch (error) {
@@ -94,7 +94,7 @@ export default function AdminEventsPage() {
                 onClose={() => setMsg({ type: 'success', text: '' })}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
             >
-                <Alert severity={msg.type as any} onClose={() => setMsg({ type: 'success', text: '' })}>
+                <Alert severity={msg.type as 'success' | 'error'} onClose={() => setMsg({ type: 'success', text: '' })}>
                     {msg.text}
                 </Alert>
             </Snackbar>

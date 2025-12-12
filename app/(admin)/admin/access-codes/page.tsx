@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box, Typography, Paper, TextField, Button, Table, TableBody,
     TableCell, TableContainer, TableHead, TableRow, Chip, IconButton,
@@ -42,7 +42,7 @@ export default function AdminAccessCodesPage() {
     }, [authLoading, userProfile, router]);
 
     // Load codes
-    const loadCodes = async () => {
+    const loadCodes = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getAllAccessCodes();
@@ -51,13 +51,13 @@ export default function AdminAccessCodesPage() {
             console.error('Error loading codes:', err);
         }
         setLoading(false);
-    };
+    }, []);
 
     useEffect(() => {
         if (userProfile?.role === 'admin') {
             loadCodes();
         }
-    }, [userProfile]);
+    }, [userProfile, loadCodes]);
 
     const generateRandomCode = () => {
         const prefix = newType === 'student' ? 'TL-STU' : 'TL-ACC';
@@ -87,8 +87,9 @@ export default function AdminAccessCodesPage() {
             setOpenDialog(false);
             setNewCode('');
             loadCodes();
-        } catch (err: any) {
-            setError(err.message || 'Failed to create code');
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : 'Failed to create code';
+            setError(message);
         }
 
         setCreating(false);
@@ -171,7 +172,7 @@ export default function AdminAccessCodesPage() {
                                     </Box>
                                 </TableCell>
                                 <TableCell>
-                                    <Chip label={code.tier.toUpperCase()} color={getTierColor(code.tier) as any} size="small" />
+                                    <Chip label={code.tier.toUpperCase()} color={getTierColor(code.tier)} size="small" />
                                 </TableCell>
                                 <TableCell>
                                     <Chip

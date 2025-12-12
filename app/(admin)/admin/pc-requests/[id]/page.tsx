@@ -21,9 +21,6 @@ import {
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import LaunchIcon from '@mui/icons-material/Launch';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import PendingIcon from '@mui/icons-material/Pending';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -118,7 +115,8 @@ export default function AdminPCRequestDetail() {
             let parsedComponents: PCComponent[] = [];
             try {
                 parsedComponents = JSON.parse(componentsJson);
-            } catch (e) {
+            } catch (error) {
+                console.error('Invalid JSON for components:', error);
                 throw new Error('Invalid JSON for components');
             }
 

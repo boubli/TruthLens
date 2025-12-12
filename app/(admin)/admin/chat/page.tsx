@@ -6,12 +6,13 @@ import AdminChatWindow from '@/components/admin/AdminChatWindow';
 import UserAvatarWithStatus from '@/components/admin/UserAvatarWithStatus';
 import { useAuth } from '@/context/AuthContext';
 import { Chat } from '@/types/chat';
-import { Trash2, Search, Filter, MessageSquare, X } from 'lucide-react';
+import { Trash2, Search, MessageSquare } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Box, useTheme, alpha } from '@mui/material';
 
 export default function AdminChatPage() {
     const { user } = useAuth();
+    const theme = useTheme(); // MUST be called before any conditional returns
     const [chats, setChats] = useState<Chat[]>([]);
     const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
     const [isClearing, setIsClearing] = useState(false);
@@ -55,8 +56,6 @@ export default function AdminChatPage() {
     const selectedChat = chats.find(c => c.id === selectedChatId);
 
     if (!user) return null;
-
-    const theme = useTheme();
 
     // View A: The Chat List
     const ChatListView = (

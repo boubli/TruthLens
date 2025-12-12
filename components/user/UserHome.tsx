@@ -24,11 +24,17 @@ import AnimatedCard from '@/components/ui/AnimatedCard';
 import ScrollReveal from '@/components/animation/ScrollReveal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { generateDynamicGreeting } from '@/services/aiService';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import Badge from '@mui/material/Badge';
+import UserNotificationsMenu from '@/components/layout/UserNotificationsMenu';
+import { listenForUnreadForUser } from '@/services/supportService';
 
 export default function UserHome() {
     const { user, tier, isPro, features: tierFeatures, dietaryPreferences } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
+    const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     const { t } = useTranslation();
 
@@ -207,6 +213,19 @@ export default function UserHome() {
         }
     }, [user]);
 
+    useEffect(() => {
+        if (!user) return;
+        const unsubscribeSupport = listenForUnreadForUser(user.uid, (supportCount) => {
+            import('@/services/accessRequestService').then(({ getUserNotifications }) => {
+                getUserNotifications(user.uid).then(notifs => {
+                    const notifCount = notifs.filter(n => !n.read).length;
+                    setUnreadCount(supportCount + notifCount);
+                });
+            });
+        });
+        return () => unsubscribeSupport();
+    }, [user, notificationAnchor]);
+
     return (
         <Box sx={{ pb: 12, minHeight: '100vh', bgcolor: 'background.default' }}>
             {/* Header Section */}
@@ -244,8 +263,21 @@ export default function UserHome() {
                             </Box>
                         </Box>
 
-                        {/* Profile Icon Only - Moved Chat to Support page */}
+                        {/* Profile & Notifications */}
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <IconButton
+                                onClick={(e) => setNotificationAnchor(e.currentTarget)}
+                                sx={{
+                                    bgcolor: 'rgba(255,255,255,0.15)',
+                                    color: 'white',
+                                    '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' }
+                                }}
+                            >
+                                <Badge badgeContent={unreadCount} color="error">
+                                    <NotificationsIcon />
+                                </Badge>
+                            </IconButton>
+
                             <IconButton
                                 component={motion.button}
                                 whileHover={{ scale: 1.1 }}
@@ -263,6 +295,12 @@ export default function UserHome() {
                                     <PersonIcon />
                                 )}
                             </IconButton>
+
+                            <UserNotificationsMenu
+                                anchorEl={notificationAnchor}
+                                open={Boolean(notificationAnchor)}
+                                onClose={() => setNotificationAnchor(null)}
+                            />
                         </Box>
                     </Box>
 

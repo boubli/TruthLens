@@ -34,6 +34,9 @@ import SpaIcon from '@mui/icons-material/Spa'; // Gluten Free
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import SaveIcon from '@mui/icons-material/Save';
 import Brightness3Icon from '@mui/icons-material/Brightness3'; // Halal
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
 import { motion } from 'framer-motion';
 import { DietaryPreferences } from '@/types/user';
 
@@ -64,6 +67,7 @@ export default function DietaryPreferencesSection({
     isSaving
 }: DietaryPreferencesSectionProps) {
     const { t } = useTranslation();
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
         <Paper elevation={0} sx={{
@@ -73,20 +77,40 @@ export default function DietaryPreferencesSection({
             border: '1px solid',
             borderColor: 'divider',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            transition: 'all 0.3s ease'
         }}>
-            {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            {/* Header - Clickable for toggle */}
+            <Box
+                onClick={() => setIsOpen(!isOpen)}
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: isOpen ? 3 : 0,
+                    cursor: 'pointer'
+                }}
+            >
                 <Box>
-                    <Typography variant="h5" fontWeight="800" gutterBottom>
-                        {t('dietary_preferences_title')}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <RestaurantMenuIcon color="primary" sx={{ fontSize: 28 }} />
+                        <Typography variant="h5" fontWeight="800" gutterBottom={false}>
+                            {t('dietary_preferences_title')}
+                        </Typography>
+                        <IconButton size="small">
+                            {isOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+                        </IconButton>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ ml: 5 }}>
                         {t('dietary_preferences_subtitle')}
                     </Typography>
                 </Box>
                 <Button
                     variant="contained"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onAiSetup();
+                    }}
                     sx={{
                         borderRadius: 3,
                         background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
@@ -95,220 +119,221 @@ export default function DietaryPreferencesSection({
                         px: 3
                     }}
                     startIcon={<AutoAwesomeIcon />}
-                    onClick={onAiSetup}
                 >
                     {t('ai_setup_button')}
                 </Button>
             </Box>
 
-            <Alert
-                icon={<AutoAwesomeIcon fontSize="inherit" />}
-                severity="info"
-                sx={{
-                    mb: 4,
-                    borderRadius: 3,
-                    bgcolor: alpha('#6366F1', 0.05),
-                    color: 'text.primary',
-                    border: '1px solid',
-                    borderColor: alpha('#6366F1', 0.1),
-                    '& .MuiAlert-icon': { color: '#6366F1' }
-                }}
-            >
-                {t('ai_analysis_info')}
-            </Alert>
-
-            {/* Diet Types Grid */}
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                {t('core_diets_title')}
-            </Typography>
-
-            <Grid container spacing={2} sx={{ mb: 4 }}>
-                {DIET_TYPES.map((diet) => {
-                    const isActive = preferences[diet.key];
-                    const Icon = diet.icon;
-
-                    return (
-                        <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={diet.key}>
-                            <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
-                                <Paper
-                                    elevation={0}
-                                    onClick={() => onChange(diet.key)}
-                                    sx={{
-                                        p: 2,
-                                        borderRadius: 3,
-                                        cursor: 'pointer',
-                                        border: '1px solid',
-                                        borderColor: isActive ? diet.color : 'divider',
-                                        bgcolor: isActive ? alpha(diet.color, 0.05) : 'background.paper',
-                                        transition: 'all 0.2s ease',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 2,
-                                        position: 'relative',
-                                        overflow: 'hidden'
-                                    }}
-                                >
-                                    <Box sx={{
-                                        p: 1.5,
-                                        borderRadius: '50%',
-                                        bgcolor: isActive ? diet.color : alpha(diet.color, 0.1),
-                                        color: isActive ? '#fff' : diet.color,
-                                        display: 'flex'
-                                    }}>
-                                        <Icon />
-                                    </Box>
-                                    <Box sx={{ flex: 1 }}>
-                                        <Typography variant="body1" fontWeight="bold">
-                                            {t(diet.labelKey)}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {t(diet.descKey)}
-                                        </Typography>
-                                    </Box>
-                                    <Switch
-                                        checked={isActive as boolean}
-                                        onChange={() => onChange(diet.key)}
-                                        onClick={(e) => e.stopPropagation()}
-                                        color="primary"
-                                        sx={{
-                                            '& .MuiSwitch-switchBase.Mui-checked': {
-                                                color: diet.color,
-                                                '&:hover': { backgroundColor: alpha(diet.color, 0.08) },
-                                            },
-                                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                                                backgroundColor: diet.color,
-                                            },
-                                        }}
-                                    />
-                                </Paper>
-                            </motion.div>
-                        </Grid>
-                    );
-                })}
-            </Grid>
-
-            {/* Granular Preferences */}
-            <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                {t('specific_needs_title')}
-            </Typography>
-
-            <Grid container spacing={3}>
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, height: '100%', borderColor: alpha('#EF4444', 0.2), bgcolor: alpha('#EF4444', 0.02) }}>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
-                            <WarningAmberIcon color="error" />
-                            <Typography variant="subtitle1" fontWeight="bold">{t('allergens_title')}</Typography>
-                        </Box>
-                        <Autocomplete
-                            multiple
-                            freeSolo
-                            options={[]}
-                            value={preferences.allergens || []}
-                            onChange={(e, newValue) => onUpdateGranular('allergens', newValue as string[])}
-                            renderTags={(value, getTagProps) =>
-                                value.map((option, index) => (
-                                    <Chip variant="filled" label={option} color="error" size="small" {...getTagProps({ index })} key={index} />
-                                ))
-                            }
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    variant="outlined"
-                                    placeholder={t('placeholder_add_allergens')}
-                                    sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
-                                />
-                            )}
-                        />
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            {t('allergens_help')}
-                        </Typography>
-                    </Paper>
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, height: '100%', borderColor: alpha('#F59E0B', 0.2), bgcolor: alpha('#F59E0B', 0.02) }}>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
-                            <WarningAmberIcon color="warning" />
-                            <Typography variant="subtitle1" fontWeight="bold">{t('avoid_ingredients_title')}</Typography>
-                        </Box>
-                        <Autocomplete
-                            multiple
-                            freeSolo
-                            options={[]}
-                            value={preferences.avoidIngredients || []}
-                            onChange={(e, newValue) => onUpdateGranular('avoidIngredients', newValue as string[])}
-                            renderTags={(value, getTagProps) =>
-                                value.map((option, index) => (
-                                    <Chip variant="filled" label={option} color="warning" size="small" {...getTagProps({ index })} key={index} />
-                                ))
-                            }
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    variant="outlined"
-                                    placeholder={t('placeholder_add_ingredients')}
-                                    sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
-                                />
-                            )}
-                        />
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            {t('avoid_ingredients_help')}
-                        </Typography>
-                    </Paper>
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                    <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, borderColor: alpha('#10B981', 0.2), bgcolor: alpha('#10B981', 0.02) }}>
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
-                            <AutoAwesomeIcon color="success" />
-                            <Typography variant="subtitle1" fontWeight="bold">{t('health_goals_title')}</Typography>
-                        </Box>
-                        <Autocomplete
-                            multiple
-                            freeSolo
-                            options={['High Protein', 'Low Carb', 'Muscle Gain', 'Weight Loss', 'Heart Health']}
-                            value={preferences.healthGoals || []}
-                            onChange={(e, newValue) => onUpdateGranular('healthGoals', newValue as string[])}
-                            renderTags={(value, getTagProps) =>
-                                value.map((option, index) => (
-                                    <Chip variant="filled" label={option} color="success" size="small" {...getTagProps({ index })} key={index} />
-                                ))
-                            }
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    variant="outlined"
-                                    placeholder={t('placeholder_select_type')}
-                                    sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
-                                />
-                            )}
-                        />
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            {t('health_goals_help')}
-                        </Typography>
-                    </Paper>
-                </Grid>
-            </Grid>
-
-            <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                    variant="contained"
-                    size="large"
-                    onClick={onSave}
-                    disabled={isSaving}
-                    startIcon={isSaving ? undefined : <SaveIcon />}
+            <Collapse in={isOpen}>
+                <Alert
+                    icon={<AutoAwesomeIcon fontSize="inherit" />}
+                    severity="info"
                     sx={{
+                        mb: 4,
                         borderRadius: 3,
-                        px: 4,
-                        py: 1.5,
-                        boxShadow: 4,
-                        bgcolor: 'primary.main',
-                        '&:hover': { bgcolor: 'primary.dark' }
+                        bgcolor: alpha('#6366F1', 0.05),
+                        color: 'text.primary',
+                        border: '1px solid',
+                        borderColor: alpha('#6366F1', 0.1),
+                        '& .MuiAlert-icon': { color: '#6366F1' }
                     }}
                 >
-                    {isSaving ? t('saving_changes') : t('save_preferences')}
-                </Button>
-            </Box>
+                    {t('ai_analysis_info')}
+                </Alert>
+
+                {/* Diet Types Grid */}
+                <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                    {t('core_diets_title')}
+                </Typography>
+
+                <Grid container spacing={2} sx={{ mb: 4 }}>
+                    {DIET_TYPES.map((diet) => {
+                        const isActive = preferences[diet.key];
+                        const Icon = diet.icon;
+
+                        return (
+                            <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={diet.key}>
+                                <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+                                    <Paper
+                                        elevation={0}
+                                        onClick={() => onChange(diet.key)}
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 3,
+                                            cursor: 'pointer',
+                                            border: '1px solid',
+                                            borderColor: isActive ? diet.color : 'divider',
+                                            bgcolor: isActive ? alpha(diet.color, 0.05) : 'background.paper',
+                                            transition: 'all 0.2s ease',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 2,
+                                            position: 'relative',
+                                            overflow: 'hidden'
+                                        }}
+                                    >
+                                        <Box sx={{
+                                            p: 1.5,
+                                            borderRadius: '50%',
+                                            bgcolor: isActive ? diet.color : alpha(diet.color, 0.1),
+                                            color: isActive ? '#fff' : diet.color,
+                                            display: 'flex'
+                                        }}>
+                                            <Icon />
+                                        </Box>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography variant="body1" fontWeight="bold">
+                                                {t(diet.labelKey)}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {t(diet.descKey)}
+                                            </Typography>
+                                        </Box>
+                                        <Switch
+                                            checked={isActive as boolean}
+                                            onChange={() => onChange(diet.key)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            color="primary"
+                                            sx={{
+                                                '& .MuiSwitch-switchBase.Mui-checked': {
+                                                    color: diet.color,
+                                                    '&:hover': { backgroundColor: alpha(diet.color, 0.08) },
+                                                },
+                                                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                                                    backgroundColor: diet.color,
+                                                },
+                                            }}
+                                        />
+                                    </Paper>
+                                </motion.div>
+                            </Grid>
+                        );
+                    })}
+                </Grid>
+
+                {/* Granular Preferences */}
+                <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                    {t('specific_needs_title')}
+                </Typography>
+
+                <Grid container spacing={3}>
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, height: '100%', borderColor: alpha('#EF4444', 0.2), bgcolor: alpha('#EF4444', 0.02) }}>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
+                                <WarningAmberIcon color="error" />
+                                <Typography variant="subtitle1" fontWeight="bold">{t('allergens_title')}</Typography>
+                            </Box>
+                            <Autocomplete
+                                multiple
+                                freeSolo
+                                options={[]}
+                                value={preferences.allergens || []}
+                                onChange={(e, newValue) => onUpdateGranular('allergens', newValue as string[])}
+                                renderTags={(value, getTagProps) =>
+                                    value.map((option, index) => (
+                                        <Chip variant="filled" label={option} color="error" size="small" {...getTagProps({ index })} key={index} />
+                                    ))
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        variant="outlined"
+                                        placeholder={t('placeholder_add_allergens')}
+                                        sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
+                                    />
+                                )}
+                            />
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                {t('allergens_help')}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, height: '100%', borderColor: alpha('#F59E0B', 0.2), bgcolor: alpha('#F59E0B', 0.02) }}>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
+                                <WarningAmberIcon color="warning" />
+                                <Typography variant="subtitle1" fontWeight="bold">{t('avoid_ingredients_title')}</Typography>
+                            </Box>
+                            <Autocomplete
+                                multiple
+                                freeSolo
+                                options={[]}
+                                value={preferences.avoidIngredients || []}
+                                onChange={(e, newValue) => onUpdateGranular('avoidIngredients', newValue as string[])}
+                                renderTags={(value, getTagProps) =>
+                                    value.map((option, index) => (
+                                        <Chip variant="filled" label={option} color="warning" size="small" {...getTagProps({ index })} key={index} />
+                                    ))
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        variant="outlined"
+                                        placeholder={t('placeholder_add_ingredients')}
+                                        sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
+                                    />
+                                )}
+                            />
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                {t('avoid_ingredients_help')}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+
+                    <Grid size={{ xs: 12 }}>
+                        <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, borderColor: alpha('#10B981', 0.2), bgcolor: alpha('#10B981', 0.02) }}>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
+                                <AutoAwesomeIcon color="success" />
+                                <Typography variant="subtitle1" fontWeight="bold">{t('health_goals_title')}</Typography>
+                            </Box>
+                            <Autocomplete
+                                multiple
+                                freeSolo
+                                options={['High Protein', 'Low Carb', 'Muscle Gain', 'Weight Loss', 'Heart Health']}
+                                value={preferences.healthGoals || []}
+                                onChange={(e, newValue) => onUpdateGranular('healthGoals', newValue as string[])}
+                                renderTags={(value, getTagProps) =>
+                                    value.map((option, index) => (
+                                        <Chip variant="filled" label={option} color="success" size="small" {...getTagProps({ index })} key={index} />
+                                    ))
+                                }
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        variant="outlined"
+                                        placeholder={t('placeholder_select_type')}
+                                        sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
+                                    />
+                                )}
+                            />
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                                {t('health_goals_help')}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                </Grid>
+
+                <Box sx={{ mt: 4, display: 'flex', justifyContent: 'flex-end' }}>
+                    <Button
+                        variant="contained"
+                        size="large"
+                        onClick={onSave}
+                        disabled={isSaving}
+                        startIcon={isSaving ? undefined : <SaveIcon />}
+                        sx={{
+                            borderRadius: 3,
+                            px: 4,
+                            py: 1.5,
+                            boxShadow: 4,
+                            bgcolor: 'primary.main',
+                            '&:hover': { bgcolor: 'primary.dark' }
+                        }}
+                    >
+                        {isSaving ? t('saving_changes') : t('save_preferences')}
+                    </Button>
+                </Box>
+            </Collapse>
         </Paper>
     );
 }

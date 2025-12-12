@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Box, Typography, Paper, Tabs, Tab, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, Chip, IconButton, Button,
@@ -43,22 +43,22 @@ export default function AdminAccessRequestsPage() {
     }, [authLoading, userProfile, router]);
 
     // Load requests
-    const loadRequests = async () => {
+    const loadRequests = useCallback(async () => {
         setLoading(true);
         try {
             const data = await getAllRequests();
             setRequests(data);
-        } catch (err) {
-            console.error('Error loading requests:', err);
+        } catch (error) {
+            console.error('Error loading requests:', error);
         }
         setLoading(false);
-    };
+    }, []);
 
     useEffect(() => {
         if (userProfile?.role === 'admin') {
             loadRequests();
         }
-    }, [userProfile]);
+    }, [userProfile, loadRequests]);
 
     const filteredRequests = requests.filter(r => {
         if (tab === 0) return r.status === 'pending';
@@ -74,7 +74,8 @@ export default function AdminAccessRequestsPage() {
                 setSuccess(`Approved request for ${request.fullName}`);
                 loadRequests();
             }
-        } catch (err) {
+        } catch (error) {
+            console.error('Error approving request:', error);
             setError('Failed to approve request');
         }
         setProcessing(false);
@@ -97,7 +98,8 @@ export default function AdminAccessRequestsPage() {
                 setDenyDialogOpen(false);
                 loadRequests();
             }
-        } catch (err) {
+        } catch (error) {
+            console.error('Error denying request:', error);
             setError('Failed to deny request');
         }
         setProcessing(false);
@@ -185,7 +187,7 @@ export default function AdminAccessRequestsPage() {
                                 <TableCell>{req.email}</TableCell>
                                 <TableCell>{req.phone}</TableCell>
                                 <TableCell>
-                                    <Chip label={req.codeTier.toUpperCase()} color={getTierColor(req.codeTier) as any} size="small" />
+                                    <Chip label={req.codeTier.toUpperCase()} color={getTierColor(req.codeTier)} size="small" />
                                 </TableCell>
                                 <TableCell>
                                     {req.isStudent ? (
@@ -196,7 +198,7 @@ export default function AdminAccessRequestsPage() {
                                     {new Date(req.createdAt).toLocaleDateString()}
                                 </TableCell>
                                 <TableCell>
-                                    <Chip label={req.status} color={getStatusColor(req.status) as any} size="small" />
+                                    <Chip label={req.status} color={getStatusColor(req.status)} size="small" />
                                 </TableCell>
                                 <TableCell>
                                     <IconButton size="small" onClick={() => handleViewDetails(req)}>

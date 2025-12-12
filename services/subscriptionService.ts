@@ -90,7 +90,7 @@ export const getUserProfile = async (userId: string, email: string, displayName:
             photoURL,
             subscription: DEFAULT_SUBSCRIPTION,
             dietaryPreferences: DEFAULT_DIETARY_PREFERENCES,
-            preferences: { language: 'en' }, // Default language
+            preferences: {}, // Default empty preferences
             createdAt: new Date(),
         };
 
@@ -100,7 +100,7 @@ export const getUserProfile = async (userId: string, email: string, displayName:
             photoURL,
             subscription: DEFAULT_SUBSCRIPTION,
             dietaryPreferences: DEFAULT_DIETARY_PREFERENCES,
-            preferences: { language: 'en' }, // Persist default
+            preferences: {}, // Persist empty defaults
             createdAt: serverTimestamp(),
         });
 

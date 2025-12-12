@@ -61,7 +61,8 @@ export default function AdminPaymentsPage() {
         try {
             const allRequests = await getAllPaymentRequests();
             setRequests(allRequests);
-        } catch (err) {
+        } catch (error) {
+            console.error('Error loading  payments:', error);
             setError('Failed to load payment requests');
         } finally {
             setLoading(false);
@@ -87,8 +88,9 @@ export default function AdminPaymentsPage() {
         try {
             await approvePaymentRequest(request.id, user.uid);
             await loadRequests(); // Reload list
-        } catch (err: any) {
-            setError(err.message || 'Failed to approve request');
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to approve request';
+            setError(message);
         } finally {
             setProcessing(false);
         }
@@ -110,8 +112,9 @@ export default function AdminPaymentsPage() {
             setRejectReason('');
             setSelectedRequest(null);
             await loadRequests();
-        } catch (err: any) {
-            setError(err.message || 'Failed to reject request');
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to reject request';
+            setError(message);
         } finally {
             setProcessing(false);
         }

@@ -40,6 +40,7 @@ const LOCATIONS = [
 export default function LocationSelector() {
     const { user, userProfile } = useAuth();
     const [location, setLocation] = useState(userProfile?.preferences?.location || 'USA');
+    const [currency, setCurrency] = useState<'USD' | 'EUR'>(userProfile?.preferences?.currency as 'USD' | 'EUR' || 'USD');
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -47,12 +48,16 @@ export default function LocationSelector() {
         if (userProfile?.preferences?.location) {
             setLocation(userProfile.preferences.location);
         }
+        if (userProfile?.preferences?.currency) {
+            setCurrency(userProfile.preferences.currency as 'USD' | 'EUR');
+        }
     }, [userProfile]);
 
-    const handleLocationChange = async (newLocation: string) => {
+    const handleSavePreferences = async (newLocation: string, newCurrency: 'USD' | 'EUR') => {
         if (!user) return;
 
         setLocation(newLocation);
+        setCurrency(newCurrency);
         setSaving(true);
         setMessage(null);
 
@@ -60,53 +65,78 @@ export default function LocationSelector() {
             const userRef = doc(db, 'users', user.uid);
             await setDoc(userRef, {
                 preferences: {
-                    location: newLocation
+                    location: newLocation,
+                    currency: newCurrency
                 }
             }, { merge: true });
 
-            setMessage({ type: 'success', text: `Location updated to ${LOCATIONS.find(l => l.code === newLocation)?.label || newLocation}` });
+            setMessage({ type: 'success', text: 'Preferences updated successfully' });
             setTimeout(() => setMessage(null), 3000);
         } catch (error) {
-            console.error('[LocationSelector] Failed to save location:', error);
-            setMessage({ type: 'error', text: 'Failed to save location. Please try again.' });
+            console.error('[LocationSelector] Failed to save preferences:', error);
+            setMessage({ type: 'error', text: 'Failed to save preferences. Please try again.' });
         } finally {
             setSaving(false);
         }
     };
 
     return (
-        <Paper sx={{ p: 3, mt: 2, borderRadius: 3 }}>
+        <Paper
+            elevation={0}
+            sx={{
+                p: 3,
+                mb: 3,
+                borderRadius: 3,
+                border: '1px solid',
+                borderColor: 'divider'
+            }}
+        >
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, gap: 1 }}>
                 <PublicIcon color="primary" />
                 <Typography variant="h6" fontWeight="bold">
-                    Location for PC Builder
+                    Location & Currency
                 </Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Select your location to get accurate PC component pricing when using the PC Builder feature.
+                Select your location and preferred currency for accurate pricing.
             </Typography>
 
-            <TextField
-                select
-                fullWidth
-                label="Your Location"
-                value={location}
-                onChange={(e) => handleLocationChange(e.target.value)}
-                disabled={saving}
-                sx={{ mb: 2 }}
-                InputProps={{
-                    endAdornment: saving ? <CircularProgress size={20} /> : null
-                }}
-            >
-                {LOCATIONS.map((loc) => (
-                    <MenuItem key={loc.code} value={loc.code}>
-                        {loc.label}
-                    </MenuItem>
-                ))}
-            </TextField>
+            <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
+                <TextField
+                    select
+                    fullWidth
+                    label="Your Location"
+                    value={location}
+                    onChange={(e) => handleSavePreferences(e.target.value, currency)}
+                    disabled={saving}
+                    sx={{ flex: { xs: 1, sm: 2 } }}
+                    InputProps={{
+                        endAdornment: saving ? <CircularProgress size={20} /> : null
+                    }}
+                >
+                    {LOCATIONS.map((loc) => (
+                        <MenuItem key={loc.code} value={loc.code}>
+                            {loc.label}
+                        </MenuItem>
+                    ))}
+                </TextField>
+
+                <TextField
+                    select
+                    fullWidth
+                    label="Currency"
+                    value={currency}
+                    onChange={(e) => handleSavePreferences(location, e.target.value as 'USD' | 'EUR')}
+                    disabled={saving}
+                    sx={{ flex: { xs: 1, sm: 1 } }}
+                >
+                    <MenuItem value="USD">🇺🇸 USD ($)</MenuItem>
+                    <MenuItem value="EUR">🇪🇺 EUR (€)</MenuItem>
+                </TextField>
+            </Box>
 
             {message && (
-                <Alert severity={message.type} sx={{ mt: 1 }}>
+                <Alert severity={message.type} sx={{ mt: 2 }}>
                     {message.text}
                 </Alert>
             )}

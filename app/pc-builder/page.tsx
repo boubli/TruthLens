@@ -66,11 +66,12 @@ const componentConfig: Record<string, { label: string; color: string }> = {
 };
 
 import { Suspense } from 'react';
+import LocationSelector from '@/components/profile/LocationSelector';
 
 function PCBuilderContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { user, features, loading: authLoading, tier } = useAuth();
+    const { user, userProfile, features, loading: authLoading, tier } = useAuth();
     const [activeTab, setActiveTab] = useState(0);
 
     // Consultation State
@@ -255,9 +256,13 @@ function PCBuilderContent() {
         }
     };
 
+
+
     const formatPrice = (price?: number) => {
         if (!price) return 'N/A';
-        return `$${price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        const currencyCode = userProfile?.preferences?.currency || 'USD';
+        const symbol = currencyCode === 'EUR' ? '€' : '$';
+        return `${symbol}${price.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
     };
 
     const renderConsultationTab = () => {
@@ -557,6 +562,9 @@ function PCBuilderContent() {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0 }}
                                 >
+                                    {/* Location Selector */}
+                                    <LocationSelector />
+
                                     {/* Mode Toggle */}
                                     <Paper
                                         elevation={0}
@@ -592,7 +600,7 @@ function PCBuilderContent() {
                                         {mode === 'budget' && (
                                             <Box>
                                                 <Typography variant="h4" fontWeight="bold" textAlign="center" sx={{ mb: 2 }}>
-                                                    ${budget.toLocaleString()}
+                                                    {formatPrice(budget)}
                                                 </Typography>
                                                 <Slider
                                                     value={budget}
@@ -601,10 +609,10 @@ function PCBuilderContent() {
                                                     max={10000}
                                                     step={100}
                                                     marks={[
-                                                        { value: 500, label: '$500' },
-                                                        { value: 2500, label: '$2.5K' },
-                                                        { value: 5000, label: '$5K' },
-                                                        { value: 10000, label: '$10K' }
+                                                        { value: 500, label: formatPrice(500) },
+                                                        { value: 2500, label: formatPrice(2500) },
+                                                        { value: 5000, label: formatPrice(5000) },
+                                                        { value: 10000, label: formatPrice(10000) }
                                                     ]}
                                                     sx={{
                                                         '& .MuiSlider-track': {

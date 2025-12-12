@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import {
     Box, Typography, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Chip, IconButton, Tooltip, CircularProgress, Button, Dialog, DialogTitle, DialogContent, DialogActions, DialogContentText
+    Chip, IconButton, Tooltip, CircularProgress, Button
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -18,7 +18,7 @@ interface CancellationRequest {
     email: string;
     reason: string;
     status: 'pending' | 'approved' | 'rejected' | 'completed';
-    createdAt: any;
+    createdAt: Date | { toDate: () => Date };
 }
 
 export default function CancellationRequestsPage() {
@@ -139,12 +139,16 @@ export default function CancellationRequestsPage() {
                                             </Tooltip>
                                         </TableCell>
                                         <TableCell>
-                                            {request.createdAt?.toDate ? request.createdAt.toDate().toLocaleDateString() : 'N/A'}
+                                            {request.createdAt instanceof Date
+                                                ? request.createdAt.toLocaleDateString()
+                                                : 'toDate' in request.createdAt
+                                                    ? request.createdAt.toDate().toLocaleDateString()
+                                                    : 'N/A'}
                                         </TableCell>
                                         <TableCell>
                                             <Chip
                                                 label={request.status.toUpperCase()}
-                                                color={getStatusColor(request.status) as any}
+                                                color={getStatusColor(request.status)}
                                                 size="small"
                                                 sx={{ fontWeight: 'bold' }}
                                             />

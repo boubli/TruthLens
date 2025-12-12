@@ -128,21 +128,30 @@ export const resolveApiKey = async (
     tier: UserTier,
     provider: AIProvider
 ): Promise<{ key: string; source: 'user' | 'platform' }> => {
-    // Azure AI (Ollama) is self-hosted and free, so it doesn't need a user key
+    // Azure AI (Ollama) is self-hosted and free
     if (provider === 'ollama') {
         return { key: 'azure-internal', source: 'platform' };
     }
 
-    // Pro and Ultimate users use platform key
+    // 1. Check if user has a custom key saved (Prioritize this for ALL tiers)
+    // This allows Pro users to override the platform key with their own if desired
+    const userKeys = await getUserApiKeys(userId);
+    const userKey = userKeys[provider];
+
+    if (userKey) {
+        return { key: userKey, source: 'user' };
+    }
+
+    // 2. Pro and Ultimate users fallback to platform key
     if (!requiresOwnKey(tier)) {
         const settings = await getSystemSettings();
-        // @ts-ignore - TS might complain about indexing with generic AIProvider string
+        // @ts-ignore
         const platformKey = settings.apiKeys?.[provider as keyof typeof settings.apiKeys];
 
         if (!platformKey) {
             const error: AIChatError = {
                 code: 'API_ERROR',
-                message: 'Platform API key not configured. Please contact support.',
+                message: `Platform API key for ${provider} is not configured in Admin Settings.`,
                 provider
             };
             throw error;
@@ -151,20 +160,14 @@ export const resolveApiKey = async (
         return { key: platformKey as string, source: 'platform' };
     }
 
-    // Free and Plus users must use their own key
-    const userKeys = await getUserApiKeys(userId);
-    const userKey = userKeys[provider];
-
-    if (!userKey) {
-        const error: AIChatError = {
-            code: 'MISSING_KEY',
-            message: `Please add your ${provider === 'groq' ? 'Groq' : 'Gemini'} API key in Settings to use AI Chat.`,
-            provider
-        };
-        throw error;
-    }
-
-    return { key: userKey, source: 'user' };
+    // 3. Free/Plus users must have a key (and we already checked above)
+    // If we reached here, they don't have a key
+    const error: AIChatError = {
+        code: 'MISSING_KEY',
+        message: `Please add your ${provider === 'groq' ? 'Groq' : 'Gemini'} API key in Settings to use AI Chat.`,
+        provider
+    };
+    throw error;
 };
 
 /**
@@ -311,6 +314,16 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
             const chatError: AIChatError = {
                 code: 'RATE_LIMIT',
                 message: 'Rate limit exceeded. Please wait a moment and try again.',
+                provider
+            };
+            throw chatError;
+        }
+
+        // Check for Ollama Model Not Found (404)
+        if (provider === 'ollama' && (error?.status === 404 || error?.message?.includes('404'))) {
+            const chatError: AIChatError = {
+                code: 'API_ERROR',
+                message: `The selected AI model is not installed on the Azure server. Please go to Admin Settings > AI & Models to select an available model.`,
                 provider
             };
             throw chatError;
@@ -515,4 +528,32 @@ const callOpenRouterAPI = async (
 
     const data = await response.json();
     return data.choices?.[0]?.message?.content || 'No response generated.';
+};
+/**
+ * Test an API key to verify it works
+ */
+export const testApiKey = async (provider: AIProvider, apiKey: string): Promise<boolean> => {
+    try {
+        const testMessage = [{ role: 'user', content: 'Hi' }];
+
+        if (provider === 'groq') {
+            await callGroqAPI(apiKey, testMessage, 'llama-3.1-8b-instant');
+        } else if (provider === 'gemini') {
+            await callGeminiAPI(apiKey, testMessage, 'gemini-1.5-flash');
+        } else if (provider === 'deepseek') {
+            // Use default model for test
+            await callDeepSeekAPI(apiKey, testMessage);
+        } else if (provider === 'openrouter') {
+            await callOpenRouterAPI(apiKey, testMessage);
+        } else if (provider === 'ollama') {
+            // Ollama is always "valid" if the server is reachable, but here we just return true
+            // because key validation isn't really applicable unless we're testing the URL connection which is separate
+            return true;
+        }
+
+        return true;
+    } catch (error) {
+        console.error(`[AI_TEST] ${provider} key validation failed:`, error);
+        return false;
+    }
 };

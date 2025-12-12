@@ -21,9 +21,15 @@ export async function POST(request: Request) {
         // Verify token (Performance: This adds latency, but is required for security)
         // Optimization: In a high-perf scenario, we might use Edge Middleware for auth
         // but for now, we stick to robust Admin SDK verification.
+        // Verify token
+        if (!adminAuth) {
+            console.error('Firebase Admin SDK not initialized. missing FIREBASE_SERVICE_ACCOUNT_KEY?');
+            return NextResponse.json({ error: 'Server Configuration Error (Auth)' }, { status: 500 });
+        }
+
         const idToken = authHeader.split('Bearer ')[1];
         try {
-            await adminAuth!.verifyIdToken(idToken);
+            await adminAuth.verifyIdToken(idToken);
         } catch (e) {
             return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
         }

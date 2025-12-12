@@ -57,9 +57,10 @@ export async function generateAIResponse(prompt: string, provider: 'groq' | 'gem
             const result = await model.generateContent(prompt);
             return result.response.text();
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('AI Generation Error:', error);
-        return `Error: ${error.message}`;
+        const message = error instanceof Error ? error.message : 'Unknown error';
+        return `Error: ${message}`;
     }
     return '';
 }

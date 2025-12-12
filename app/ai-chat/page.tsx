@@ -165,7 +165,7 @@ export default function AIChatPage() {
         }
     };
 
-    const handleApiKeysSaved = async () => {
+    const handleKeysUpdated = async () => {
         if (user) {
             const keys = await getUserApiKeys(user.uid);
             // Re-check key status for current provider
@@ -174,7 +174,8 @@ export default function AIChatPage() {
             } else {
                 setHasApiKey(!!keys[provider]);
             }
-            setShowSettings(false);
+            // Do NOT automatically close settings - user might want to add multiple keys
+            // setShowSettings(false); 
             setError(null);
         }
     };
@@ -281,8 +282,22 @@ export default function AIChatPage() {
             <Collapse in={showSettings || needsKeySetup}>
                 <Box sx={{ bgcolor: 'background.paper', borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Container maxWidth="md" sx={{ py: 3 }}>
-                        <ApiKeyManager onKeysSaved={handleApiKeysSaved} />
-                        <Box sx={{ mt: 3 }}>
+                        {/* Free/Plus: Needs Key Management AND Model Selection */}
+                        {requiresOwnKey(tier) ? (
+                            <ApiKeyManager
+                                onKeysSaved={handleKeysUpdated}
+                                onKeysDeleted={handleKeysUpdated}
+                                onSettingsChanged={() => {
+                                    if (user) {
+                                        getUserApiKeys(user.uid).then(keys => {
+                                            if (keys.preferredProvider) setProvider(keys.preferredProvider);
+                                            if (keys.preferredLanguage) setLanguage(keys.preferredLanguage);
+                                        });
+                                    }
+                                }}
+                            />
+                        ) : (
+                            /* Pro/Ultimate: Just Model/Language Selection */
                             <AIChatSettings onSettingsChanged={() => {
                                 // Reload preferences when settings change
                                 if (user) {
@@ -292,7 +307,7 @@ export default function AIChatPage() {
                                     });
                                 }
                             }} />
-                        </Box>
+                        )}
                     </Container>
                 </Box>
             </Collapse>

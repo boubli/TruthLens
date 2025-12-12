@@ -19,7 +19,11 @@ import {
     DialogContent,
     DialogContentText,
     DialogActions,
-    Chip
+    Chip,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
@@ -28,21 +32,31 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import KeyIcon from '@mui/icons-material/Key';
 import WarningIcon from '@mui/icons-material/Warning';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import TranslateIcon from '@mui/icons-material/Translate';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AIProvider, AI_PROVIDERS } from '@/types/aiChat';
-import { getUserApiKeys, saveUserApiKey, savePreferredProvider, deleteUserApiKey } from '@/services/aiChatService';
+import { AIProvider, AI_PROVIDERS, AILanguage, AI_LANGUAGES } from '@/types/aiChat';
+import { getUserApiKeys, saveUserApiKey, savePreferredProvider, deleteUserApiKey, savePreferredLanguage } from '@/services/aiChatService';
 import { useAuth } from '@/context/AuthContext';
 
 interface ApiKeyManagerProps {
     onKeysSaved?: () => void;
     onKeysDeleted?: () => void;
+    onSettingsChanged?: () => void;
     compact?: boolean;
+    allowCustomConfig?: boolean;
 }
 
-export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = false }: ApiKeyManagerProps) {
-    const { user, tier, isFree, isPlus } = useAuth();
-
+export default function ApiKeyManager({
+    onKeysSaved,
+    onKeysDeleted,
+    onSettingsChanged,
+    compact = false,
+    allowCustomConfig = false
+}: ApiKeyManagerProps) {
+    const { user, tier, isFree, isPlus, isPro } = useAuth();
     const [selectedProvider, setSelectedProvider] = useState<AIProvider>('groq');
+    const [selectedLanguage, setSelectedLanguage] = useState<AILanguage>('en');
     const [apiKeys, setApiKeys] = useState<Record<AIProvider, string>>({
         groq: '',
         gemini: '',
@@ -98,20 +112,36 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
             if (keys.preferredProvider) {
                 setSelectedProvider(keys.preferredProvider);
             }
+            if (keys.preferredLanguage) {
+                setSelectedLanguage(keys.preferredLanguage);
+            }
         } catch (error) {
             console.error('Failed to load API keys:', error);
         } finally {
             setLoading(false);
         }
     };
-
     const handleProviderChange = async (_: React.MouseEvent<HTMLElement>, newProvider: AIProvider | null) => {
         if (newProvider && user) {
             setSelectedProvider(newProvider);
             try {
                 await savePreferredProvider(user.uid, newProvider);
+                onSettingsChanged?.(); // Notify parent
             } catch (error) {
                 console.error('Failed to save preferred provider:', error);
+            }
+        }
+    };
+
+    const handleLanguageChange = async (event: any) => {
+        const lang = event.target.value as AILanguage;
+        setSelectedLanguage(lang);
+        if (user) {
+            try {
+                await savePreferredLanguage(user.uid, lang);
+                onSettingsChanged?.(); // Notify parent
+            } catch (error) {
+                console.error('Failed to save preferred language:', error);
             }
         }
     };
@@ -123,9 +153,25 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
         setMessage(null);
 
         try {
+            // New: Test the key first if it's a user-provided key
+            // (Pro users don't need this check here as they don't input keys, 
+            // but if for some reason they do, we verify it anyway)
+            if (needsOwnKey || apiKeys[provider]) {
+                // If we have a key input, validate it
+                // Note: 'ollama' doesn't use a key, but we handle it gracefully
+                if (provider !== 'ollama' && apiKeys[provider]) {
+                    const isValid = await import('@/services/aiChatService').then(m => m.testApiKey(provider, apiKeys[provider]));
+                    if (!isValid) {
+                        setMessage({ type: 'error', text: `Invalid API Key for ${AI_PROVIDERS[provider].name}. Please check and try again.` });
+                        setSaving(false);
+                        return;
+                    }
+                }
+            }
+
             await saveUserApiKey(user.uid, provider, apiKeys[provider]);
             setOriginalKeys(prev => ({ ...prev, [provider]: apiKeys[provider] }));
-            setMessage({ type: 'success', text: `${AI_PROVIDERS[provider].name} API key saved successfully!` });
+            setMessage({ type: 'success', text: `${AI_PROVIDERS[provider].name} API key verified and saved!` });
             onKeysSaved?.();
         } catch (error) {
             console.error('Failed to save API key:', error);
@@ -175,13 +221,13 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
         return !!originalKeys[provider];
     };
 
-    // Determine if user needs to provide their own key for selected provider
+    // Determine if user needs to provide their own key based on tier or override
     const needsOwnKey = (
-        (isFree || isPlus) &&
-        selectedProvider !== 'ollama' // Ollama is free for everyone
+        allowCustomConfig ||
+        (!isPro && selectedProvider !== 'ollama')
     );
 
-    // If Pro/Ultimate and using platform key, keep text inputs hidden or disabled
+    // If Pro/Ultimate and NOT overriding, use platform key
     const isUsingPlatformKey = !needsOwnKey && selectedProvider !== 'ollama';
 
     if (loading) {
@@ -208,7 +254,7 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Select your preferred AI provider.
-                {isFree || isPlus ? (
+                {!isPro ? (
                     <>
                         {' '}You can use Azure AI for free, or add your own key for other providers.
                         <Typography component="span" color="warning.main" fontWeight="medium" sx={{ display: 'block', mt: 0.5 }}>
@@ -219,6 +265,28 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
                     " You have full access to all providers included in your plan."
                 )}
             </Typography>
+
+            {/* Language Selection */}
+            <Box sx={{ mb: 3 }}>
+                <FormControl fullWidth size="small">
+                    <InputLabel>Response Language</InputLabel>
+                    <Select
+                        value={selectedLanguage}
+                        label="Response Language"
+                        onChange={handleLanguageChange}
+                        disabled={saving}
+                    >
+                        {(Object.keys(AI_LANGUAGES) as AILanguage[]).map((lang) => (
+                            <MenuItem key={lang} value={lang}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                    <span style={{ fontSize: 18 }}>{AI_LANGUAGES[lang].flag}</span>
+                                    <span>{AI_LANGUAGES[lang].name}</span>
+                                </Box>
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+            </Box>
 
             {/* Provider Selection with Status */}
             <Box sx={{ mb: 3 }}>
@@ -344,7 +412,7 @@ export default function ApiKeyManager({ onKeysSaved, onKeysDeleted, compact = fa
                                     disabled={saving || !apiKeys[selectedProvider] || !hasKeyChanged(selectedProvider)}
                                     sx={{ minWidth: 120 }}
                                 >
-                                    {saving ? 'Saving...' : hasExistingKey(selectedProvider) ? 'Update Key' : 'Save Key'}
+                                    {saving ? 'Testing & Saving...' : hasExistingKey(selectedProvider) ? 'Update Key' : 'Save Key'}
                                 </Button>
 
                                 {hasExistingKey(selectedProvider) && (

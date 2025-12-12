@@ -26,10 +26,11 @@ import AiPreferenceOnboarding from '@/components/features/AiPreferenceOnboarding
 import ThemeSelector from '@/components/theme/ThemeSelector';
 import DietaryPreferencesSection from '@/components/user/DietaryPreferencesSection';
 import TierBadge from '@/components/subscription/TierBadge';
-import ApiKeyManager from '@/components/settings/ApiKeyManager';
-import LanguageSelector from '@/components/profile/LanguageSelector';
-import LocationSelector from '@/components/profile/LocationSelector';
-import NotificationsSection from '@/components/profile/NotificationsSection';
+// import ApiKeyManager from '@/components/settings/ApiKeyManager';
+// import AIChatSettings from '@/components/settings/AIChatSettings';
+// import LanguageSelector from '@/components/profile/LanguageSelector';
+// import LocationSelector from '@/components/profile/LocationSelector';
+// import NotificationsSection from '@/components/profile/NotificationsSection';
 import { useTranslation } from 'react-i18next';
 
 export default function ProfilePage() {
@@ -219,30 +220,19 @@ export default function ProfilePage() {
                     </Paper>
                 </ScrollReveal>
 
-                {/* Notifications Section */}
-                <ScrollReveal>
-                    <Box sx={{ mt: 4 }}>
-                        <NotificationsSection />
-                    </Box>
-                </ScrollReveal>
+                {/* Notifications Section - REMOVED (Now in Header) */}
+                {/* <NotificationsSection /> */}
 
                 {/* Appearance Section - Theme Settings + Language */}
                 <ScrollReveal>
                     <Box sx={{ mt: 4 }}>
                         <ThemeSelector />
-                        <LanguageSelector />
-                        <LocationSelector />
+                        {/* Language Selector Removed */}
+                        {/* Location Selector Removed */}
                     </Box>
                 </ScrollReveal>
 
-                {/* AI Settings Section - For Free/Plus users */}
-                {(isFree || tier === 'plus') && (
-                    <ScrollReveal>
-                        <Paper sx={{ p: 4, mt: 4, borderRadius: 4 }}>
-                            <ApiKeyManager />
-                        </Paper>
-                    </ScrollReveal>
-                )}
+                {/* AI Settings removed as per user request (managed in TruthLens AI Chat) */}
 
                 {isPro && (
                     <ScrollReveal>

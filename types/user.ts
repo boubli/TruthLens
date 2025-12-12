@@ -23,8 +23,9 @@ export interface DietaryPreferences {
 }
 
 export interface UserPreferences {
-    language?: string;
+    // language?: string; // Removed
     location?: string; // For PC Builder pricing (e.g., "USA", "UK", "Canada")
+    currency?: 'USD' | 'EUR';
 }
 
 export interface UserProfile {
