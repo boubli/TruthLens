@@ -16,6 +16,7 @@
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
     "@mui/material-nextjs": "^7.3.6",
+    "@mui/system": "^7.3.6",
     "@stripe/stripe-js": "^8.5.3",
     "@types/react-google-recaptcha": "^2.1.9",
     "@types/web-push": "^3.6.4",
