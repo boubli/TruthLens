@@ -17,10 +17,10 @@ export async function POST(req: NextRequest) {
         console.log(`[AdminAPI] Action: ${action} for user: ${userId}`);
 
         // TODO: verifyIdToken of the requester to ensure they are admin
-        // const token = req.headers.get('Authorization')?.split('Bearer ')[1];
-        // if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        // const decoded = await adminAuth.verifyIdToken(token);
-        // if (decoded.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        const token = req.headers.get('Authorization')?.split('Bearer ')[1];
+        if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        const decoded = await adminAuth.verifyIdToken(token);
+        if (decoded.role !== 'admin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
         switch (action) {
             case 'resetPasswordEmail':
