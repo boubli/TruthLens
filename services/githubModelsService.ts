@@ -200,3 +200,49 @@ export async function checkGitHubModelsHealth(): Promise<boolean> {
         return false;
     }
 }
+
+/**
+ * Fast AI Search for Tech Products using GitHub Models
+ */
+export async function searchTechProductsWithGitHub(query: string): Promise<any | null> {
+    const systemPrompt = `You are "Lensix AI", a high-end Tech Product Intelligence Engine.
+Your goal is to provide deeply researched, polished, and creative product data.
+Analyze the user query.
+1. Language: ALWAYS RESPOND IN ENGLISH, regardless of the user's input language.
+2. Identity: You are Lensix AI.
+3. Scoring: Provide a "lensix_score" (0-100) based on specs, value, and critical reception.
+4. Filter: If it's a tech product (laptop, phone, gpu, cpu, component, electronic, software, ai tool), return JSON.
+   If it is FOOD, DRINK, GROCERY, CLOTHING, or GENERIC, return null.
+
+JSON Structure:
+{
+  "is_tech": true,
+  "name": "Full Product Name",
+  "brand": "Brand",
+  "category": "Category",
+  "description": "Engaging, high-quality description.",
+  "release_date": "YYYY-MM-DD or 'Unknown'",
+  "lensix_score": 85, // Integer 0-100
+  "specs": {
+    "key_spec_1": "value",
+    "key_spec_2": "value"
+  },
+  "price_estimate": "$XXX",
+  "verdict": "Expert verdict (e.g. 'Top Tier', 'Good Value')"
+}`;
+
+    try {
+        const content = await callGitHubModels([
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: query }
+        ], 800);
+
+        const cleaned = content.replace(/```json/gi, '').replace(/```/g, '').trim();
+        if (cleaned === 'null' || cleaned.includes('"is_tech": false')) return null;
+
+        return JSON.parse(cleaned);
+    } catch (e) {
+        console.error('[GitHub Tech Search] Failed:', e);
+        return null;
+    }
+}

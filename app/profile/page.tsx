@@ -31,10 +31,10 @@ import TierBadge from '@/components/subscription/TierBadge';
 // import LanguageSelector from '@/components/profile/LanguageSelector';
 // import LocationSelector from '@/components/profile/LocationSelector';
 // import NotificationsSection from '@/components/profile/NotificationsSection';
-import { useTranslation } from 'react-i18next';
+
 
 export default function ProfilePage() {
-    const { t } = useTranslation();
+    // const { t } = useTranslation();
     const { user, userProfile, loading, logout, isPro, isFree, tier, refreshProfile, dietaryPreferences } = useAuth();
     const router = useRouter();
     const [savingPreferences, setSavingPreferences] = useState(false);
@@ -182,7 +182,7 @@ export default function ProfilePage() {
 
                         <Grid container spacing={4}>
                             <Grid size={{ xs: 12, md: 12 }}>
-                                <Typography variant="h6" gutterBottom fontWeight="bold">{t('profile_settings_title')}</Typography>
+                                <Typography variant="h6" gutterBottom fontWeight="bold">Profile Settings</Typography>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     <AnimatedButton
                                         variant="outlined"

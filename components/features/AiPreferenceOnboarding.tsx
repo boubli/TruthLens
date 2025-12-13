@@ -14,7 +14,6 @@ import { DietaryPreferences } from '@/types/user';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
 
 interface Message {
     id: number;
@@ -29,7 +28,6 @@ interface AiPreferenceOnboardingProps {
 
 export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOnboardingProps) {
     const { user, refreshProfile } = useAuth();
-    const { t } = useTranslation();
     const [messages, setMessages] = useState<Message[]>([]);
     const [currentStep, setCurrentStep] = useState(0);
     const [input, setInput] = useState('');
@@ -42,15 +40,15 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
 
     const STEPS = [
         { id: 1, type: 'open', question: "" }, // Placeholder, set dynamically
-        { id: 2, type: 'yesno', key: 'isKeto', question: t('ai_q_keto') },
-        { id: 3, type: 'yesno', key: 'isVegan', question: t('ai_q_vegan') },
-        { id: 4, type: 'yesno', key: 'isDiabetic', question: t('ai_q_diabetic') },
-        { id: 5, type: 'yesno', key: 'lowSodium', question: t('ai_q_low_sodium') },
-        { id: 6, type: 'yesno', key: 'glutenFree', question: t('ai_q_gluten_free') },
-        { id: 7, type: 'options', key: 'goals', question: t('ai_q_goals'), options: [t('ai_opt_weight_loss'), t('ai_opt_muscle'), t('ai_opt_maintenance'), t('ai_opt_energy')] },
-        { id: 8, type: 'yesno', key: 'organic', question: t('ai_q_organic') },
-        { id: 9, type: 'yesno', key: 'palmOil', question: t('ai_q_palm_oil') },
-        { id: 10, type: 'text', question: t('ai_q_anything_else') }
+        { id: 2, type: 'yesno', key: 'isKeto', question: 'Are you following a Keto diet?' },
+        { id: 3, type: 'yesno', key: 'isVegan', question: 'Are you vegan?' },
+        { id: 4, type: 'yesno', key: 'isDiabetic', question: 'Do you have diabetes or need to monitor sugar intake?' },
+        { id: 5, type: 'yesno', key: 'lowSodium', question: 'Are you watching your sodium intake?' },
+        { id: 6, type: 'yesno', key: 'glutenFree', question: 'Do you need to avoid gluten?' },
+        { id: 7, type: 'options', key: 'goals', question: 'What is your primary health goal?', options: ['Weight Loss', 'Muscle Gain', 'Maintenance', 'More Energy'] },
+        { id: 8, type: 'yesno', key: 'organic', question: 'Do you prefer organic products regardless of price?' },
+        { id: 9, type: 'yesno', key: 'palmOil', question: 'Do you want to avoid Palm Oil?' },
+        { id: 10, type: 'text', question: 'Anything else you want to tell me about your diet?' }
     ];
 
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
@@ -59,10 +57,10 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
     useEffect(() => {
         if (open && messages.length === 0) {
             const userName = user?.displayName?.split(' ')[0] || 'there';
-            const initialQuestion = t('ai_intro_greeting', { name: userName });
+            const initialQuestion = `Hi ${userName}! I'm NutriGrade AI. Let's set up your dietary profile together.`;
             addMessage(initialQuestion, 'ai');
         }
-    }, [open, user, t]);
+    }, [open, user]);
 
     // Auto-scroll
     useEffect(() => {
@@ -106,9 +104,9 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
         } else if (step.type === 'yesno') {
             if (step.key && ['isKeto', 'isVegan', 'isDiabetic', 'lowSodium', 'glutenFree'].includes(step.key)) {
                 // @ts-ignore
-                setTempPreferences(prev => ({ ...prev, [step.key]: [t('yes'), 'Yes'].includes(answer) }));
+                setTempPreferences(prev => ({ ...prev, [step.key]: ['Yes'].includes(answer) }));
             }
-            if ([t('yes'), 'Yes'].includes(answer) && step.key === 'palmOil') {
+            if (['Yes'].includes(answer) && step.key === 'palmOil') {
                 setTempPreferences(prev => ({ ...prev, avoidIngredients: [...(prev.avoidIngredients || []), "Palm Oil"] }));
             }
         } else if (step.id === 7) {
@@ -128,7 +126,7 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
     };
 
     const finishOnboarding = async () => {
-        addMessage(t('ai_finish_msg'), 'ai');
+        addMessage('Great! I have updated your profile. You can change these anytime in settings.', 'ai');
 
         if (user) {
             try {
@@ -293,7 +291,7 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
                         <Box sx={{ display: 'flex', gap: 2, mb: 2, justifyContent: 'center' }}>
                             <Button
                                 variant="outlined"
-                                onClick={() => handleOptionClick(t('yes'))}
+                                onClick={() => handleOptionClick('Yes')}
                                 sx={{
                                     borderColor: '#00C853',
                                     color: '#00C853',
@@ -302,11 +300,11 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
                                     '&:hover': { bgcolor: '#E8F5E9', borderColor: '#00C853' }
                                 }}
                             >
-                                {t('yes')}
+                                {'Yes'}
                             </Button>
                             <Button
                                 variant="outlined"
-                                onClick={() => handleOptionClick(t('no'))}
+                                onClick={() => handleOptionClick('No')}
                                 sx={{
                                     borderColor: '#EF4444',
                                     color: '#EF4444',
@@ -315,7 +313,7 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
                                     '&:hover': { bgcolor: '#FEF2F2', borderColor: '#EF4444' }
                                 }}
                             >
-                                {t('no')}
+                                {'No'}
                             </Button>
                         </Box>
                     </motion.div>
@@ -346,7 +344,7 @@ export default function AiPreferenceOnboarding({ open, onClose }: AiPreferenceOn
                 <Box sx={{ display: 'flex', gap: 1.5 }}>
                     <TextField
                         fullWidth
-                        placeholder={t('type_your_answer')}
+                        placeholder={'Type your answer...'}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}

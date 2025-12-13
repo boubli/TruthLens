@@ -1,14 +1,19 @@
+'use server';
 
 import axios from 'axios';
-import { EnhancedProductData } from '@/services/productMapper';
-import { getSystemSettings } from './systemService';
+import { EnhancedProductData } from './productMapper';
 
-// Waterfall Priority:
-// 1. Azure VM (Ollama) - Local, Fast, Privacy (if available)
-// 2. GitHub Models - Reliable Cloud Fallback
-// 3. Groq - Performant Cloud Fallback
-
-const OLLAMA_TIMEOUT = 3000; // 3s timeout for local VM to ensure speed
+// Dynamic key fetching
+async function getDynamicKey(keyName: string): Promise<string> {
+    try {
+        const { getSystemSettings } = await import('./systemService');
+        const settings = await getSystemSettings();
+        // @ts-ignore
+        return settings.apiKeys?.[keyName] || process.env[`NEXT_PUBLIC_${keyName.toUpperCase()}_API_KEY`] || '';
+    } catch (e) {
+        return process.env[`NEXT_PUBLIC_${keyName.toUpperCase()}_API_KEY`] || '';
+    }
+}
 
 interface WebContext {
     title?: string;
@@ -17,230 +22,209 @@ interface WebContext {
     sourceUrl?: string;
 }
 
-export async function generateProductInfoAI(query: string, webContext?: WebContext): Promise<EnhancedProductData | null> {
+/**
+ * AI-Powered Product Info Generator
+ * Intelligently detects product category and extracts relevant specs
+ * Supports: Food, GPUs, Phones, Laptops, and any other product
+ */
+export async function generateProductInfoAI(
+    query: string,
+    webContext?: WebContext
+): Promise<EnhancedProductData | null> {
     try {
-        console.log(`[SearchAI] Attempting to generate info for: ${query}${webContext ? ' (with Web Context)' : ''}`);
+        console.log(`[AI Search] Generating product info for: ${query}`);
 
-        // 1. Try Azure VM (Ollama)
-        const ollamaResult = await tryOllama(query, webContext);
-        if (ollamaResult) return ollamaResult;
+        // Build enriched prompt with web context
+        const contextInfo = webContext
+            ? `\nWeb Search Results:\n- Title: ${webContext.title}\n- Summary: ${webContext.snippet}\n- Source: ${webContext.sourceUrl}`
+            : '';
 
-        // 2. Try GitHub Models
-        const githubResult = await tryGitHubModels(query, webContext);
-        if (githubResult) return githubResult;
+        const prompt = `You are a universal product analyzer. Given a product query, detect its category and extract ONLY the most important information.
 
-        // 3. Try Groq
-        const groqResult = await tryGroq(query, webContext);
-        if (groqResult) return groqResult;
+Query: "${query}"${contextInfo}
 
-        return null; // All failed
-    } catch (error) {
-        console.error('[SearchAI] All providers failed:', error);
+IMPORTANT RULES:
+1. **Detect Category**: food, gpu, cpu, phone, laptop, tv, headphones, or other
+2. **Extract KEY specs based on category**:
+   - Food: brand, calories, main ingredients, health score (A-E)
+   - GPU: brand (NVIDIA/AMD), model, VRAM, avg FPS at 1080p/1440p, TDP
+   - CPU: brand (Intel/AMD), cores, threads, base/boost clock, TDP
+   - Phone: brand, screen size, battery mAh, camera MP, processor
+   - Laptop: brand, CPU, GPU, RAM, storage, screen size
+   - Other: adapt dynamically
+3. **Be CONCISE**: Only include specs that matter to buyers
+4. **Estimate if needed**: Use reasonable estimates based on context
+
+Return ONLY valid JSON (no markdown):
+{
+  "category": "gpu|food|phone|cpu|laptop|other",
+  "name": "Product full name",
+  "brand": "Brand name",
+  "description": "1-sentence product description",
+  "key_specs": {
+    // Dynamic based on category
+    // Examples:
+    // For GPU: { "vram": "8GB", "fps_1080p": "~85 FPS", "tdp": "215W", "architecture": "Ada Lovelace" }
+    // For Food: { "calories_per_100g": "250", "main_ingredients": "sugar, wheat flour", "health_grade": "D" }
+    // For Phone: { "screen": "6.7\"", "battery": "5000mAh", "camera": "108MP", "processor": "Snapdragon 8 Gen 2" }
+  },
+  "score": "A|B|C|D|E|?",  // Overall quality rating
+  "price_estimate": "$XXX - $YYY" // Or "Unknown"
+}`;
+
+        // Try Gemini Pro first (best for reasoning)
+        const geminiKey = await getDynamicKey('gemini');
+        if (geminiKey) {
+            try {
+                const { GoogleGenerativeAI } = await import('@google/generative-ai');
+                const genAI = new GoogleGenerativeAI(geminiKey);
+                const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' });
+
+                const result = await model.generateContent(prompt);
+                const responseText = result.response.text();
+
+                // Extract JSON from response
+                const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const aiData = JSON.parse(jsonMatch[0]);
+                    return mapAIResponseToProduct(query, aiData, webContext);
+                }
+            } catch (err) {
+                console.warn('[AI Search] Gemini failed, trying Groq...', err);
+            }
+        }
+
+        // Fallback to Groq (fast, reliable)
+        const groqKey = await getDynamicKey('groq');
+        if (groqKey) {
+            try {
+                const response = await axios.post(
+                    'https://api.groq.com/openai/v1/chat/completions',
+                    {
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.3,
+                        max_tokens: 800
+                    },
+                    { headers: { 'Authorization': `Bearer ${groqKey}` } }
+                );
+
+                const content = response.data.choices[0]?.message?.content;
+                if (content) {
+                    const jsonMatch = content.match(/\{[\s\S]*\}/);
+                    if (jsonMatch) {
+                        const aiData = JSON.parse(jsonMatch[0]);
+                        return mapAIResponseToProduct(query, aiData, webContext);
+                    }
+                }
+            } catch (err) {
+                console.warn('[AI Search] Groq failed, trying Ollama...', err);
+            }
+        }
+
+        // Last resort: Azure Ollama (Qwen2.5:7b - optimized for 4GB RAM)
+        let ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11435';
+        try {
+            // Try explicit setting first
+            const settings = await import('./systemService').then(m => m.getSystemSettings());
+            // @ts-ignore
+            if (settings.apiKeys?.ollamaUrl) ollamaUrl = settings.apiKeys.ollamaUrl;
+        } catch (e) {
+            // Ignore fetch error, use default
+        }
+
+        try {
+            console.log(`[AI Search] Falling back to Azure Ollama (Qwen2.5:7b) at ${ollamaUrl}...`);
+            const response = await axios.post(
+                `${ollamaUrl}/api/generate`,
+                {
+                    model: 'qwen2.5:7b',  // 7B model - fast and efficient
+                    prompt: prompt,
+                    stream: false
+                },
+                { timeout: 30000 }  // Faster timeout for 7B model
+            );
+
+            if (response.data?.response) {
+                const jsonMatch = response.data.response.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const aiData = JSON.parse(jsonMatch[0]);
+                    return mapAIResponseToProduct(query, aiData, webContext);
+                }
+            }
+        } catch (err) {
+            console.error('[AI Search] All AI providers failed:', err);
+        }
+
+        return null;
+
+    } catch (error: any) {
+        console.error('[AI Search] Error:', error.message);
         return null;
     }
 }
 
-// --- Providers ---
+/**
+ * Maps AI-generated data to EnhancedProductData format
+ */
+function mapAIResponseToProduct(
+    query: string,
+    aiData: any,
+    webContext?: WebContext
+): EnhancedProductData {
+    const category = aiData.category || 'other';
+    const isFood = category === 'food';
 
-async function tryOllama(query: string, context?: WebContext): Promise<EnhancedProductData | null> {
-    const settings = await getSystemSettings();
-    const ollamaUrl = process.env.NEXT_PUBLIC_OLLAMA_URL || settings.aiConfig?.ollamaUrl;
-
-    if (!ollamaUrl) return null;
-
-    try {
-        console.log('[SearchAI] Trying Ollama...');
-        const prompt = buildPrompt(query, context);
-
-        const response = await axios.post(`${ollamaUrl}/api/generate`, {
-            model: "mistral", // or configured model
-            prompt: prompt,
-            stream: false,
-            format: "json"
-        }, { timeout: OLLAMA_TIMEOUT });
-
-        if (response.data.response) {
-            return parseAIResponse(response.data.response, query, 'Azure AI (Ollama)', context?.image);
-        }
-    } catch (err) {
-        console.warn('[SearchAI] Ollama failed (skipping):', err);
-    }
-    return null;
-}
-
-async function tryGitHubModels(query: string, context?: WebContext): Promise<EnhancedProductData | null> {
-    const settings = await getSystemSettings();
-    const token = settings.apiKeys?.githubModelsToken;
-    const model = settings.apiKeys?.githubModelsModel || 'openai/gpt-4o'; // Use fast model
-
-    if (!token) return null;
-
-    try {
-        console.log('[SearchAI] Trying GitHub Models...');
-        const prompt = buildPrompt(query, context);
-
-        const response = await fetch('https://models.github.ai/inference/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/vnd.github+json',
-                'X-GitHub-Api-Version': '2022-11-28',
-            },
-            body: JSON.stringify({
-                model: model,
-                messages: [
-                    { role: 'system', content: 'You are a product database API. Return valid JSON only.' },
-                    { role: 'user', content: prompt }
-                ],
-                max_tokens: 500,
-                temperature: 0.3
-            })
-        });
-
-        if (!response.ok) throw new Error(`Status ${response.status}`);
-
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content;
-
-        if (content) {
-            return parseAIResponse(content, query, 'GitHub Models', context?.image);
-        }
-    } catch (err) {
-        console.warn('[SearchAI] GitHub Models failed:', err);
-    }
-    return null;
-}
-
-async function tryGroq(query: string, context?: WebContext): Promise<EnhancedProductData | null> {
-    const groqKey = process.env.GROQ_API_KEY || process.env.NEXT_PUBLIC_GROQ_API_KEY;
-    if (!groqKey) return null;
-
-    try {
-        console.log('[SearchAI] Trying Groq...');
-        const prompt = buildPrompt(query, context);
-
-        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: 'llama3-8b-8192',
-            messages: [
-                { role: 'system', content: 'You are a product database API. Return valid JSON only.' },
-                { role: 'user', content: prompt }
-            ],
-            temperature: 0.3,
-            response_format: { type: "json_object" }
-        }, {
-            headers: { 'Authorization': `Bearer ${groqKey}` }
-        });
-
-        const content = response.data.choices[0]?.message?.content;
-        if (content) {
-            return parseAIResponse(content, query, 'Groq Llama-3', context?.image);
-        }
-    } catch (err) {
-        console.warn('[SearchAI] Groq failed:', err);
-    }
-    return null;
-}
-
-// --- Helpers ---
-
-// --- Helpers ---
-
-function buildPrompt(query: string, context?: WebContext): string {
-    let promptContext = "";
-    if (context) {
-        promptContext = `
-        CONTEXT FROM WEB SEARCH:
-        - Title: "${context.title || 'N/A'}"
-        - Snippet/Description: "${context.snippet || 'N/A'}"
-        
-        Using this context, reconstruct the most accurate product data possible.
-        `;
+    // Generate dynamic description based on specs
+    let enhancedDescription = aiData.description || '';
+    if (aiData.key_specs && Object.keys(aiData.key_specs).length > 0) {
+        const specs = Object.entries(aiData.key_specs)
+            .map(([key, value]) => `${key}: ${value}`)
+            .join(', ');
+        enhancedDescription += ` | Key Specs: ${specs}`;
     }
 
-    return `User Query: "${query}"
-    ${promptContext}
+    return {
+        id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        identity: {
+            name: aiData.name || query,
+            brand: aiData.brand || 'Unknown Brand',
+            barcode: '',
+            category: category.toUpperCase(),
+            description: enhancedDescription
+        },
+        media: {
+            front_image: webContext?.image || '/api/placeholder/400/400',
+            thumbnail: webContext?.image || '/api/placeholder/200/200'
+        },
+        grades: {
+            nutri_score: isFood ? (aiData.score || '?') : '?',
+            eco_score: '?',
+            processing_score: aiData.score || '?'  // Use as "quality score" for tech products
+        },
+        nutrition: isFood ? {
+            nutriments_raw: {
+                'energy-kcal_100g': aiData.key_specs?.calories_per_100g || 0,
+                'sugars_100g': aiData.key_specs?.sugar || 0,
+                'fat_100g': aiData.key_specs?.fat || 0,
+                'proteins_100g': aiData.key_specs?.protein || 0
+            }
+        } : {},
+        sensory_profile: {
+            flavors: []
+        },
+        ingredients: isFood && aiData.key_specs?.main_ingredients
+            ? aiData.key_specs.main_ingredients.split(',').map((i: string) => i.trim())
+            : [],
 
-    Role: You are an expert product analyst AI (Antigravity AI).
-    
-    Determine the category of the input query:
-    A. FOOD/MEDICINE:
-       - Generate Nutrition/Ingredients.
-       - Category: Food, Medicine, Beverage, etc.
-    
-    B. TECH/HARDWARE/ELECTRONICS (e.g. GPU, Phone, Laptop):
-       - DO NOT generate nutrition/ingredients.
-       - Brand: YOU MUST INFER THE BRAND. (e.g. "Galaxy S22" -> "Samsung", "RTX 3060" -> "NVIDIA", "Pixel" -> "Google"). Never return "Unknown".
-       - Specs: Generate key technical specs (e.g. { "VRAM": "12GB", "Power": "170W", "Chipset": "NVIDIA" }).
-       - Analysis: Provide Pros, Cons, and a Buying Verdict.
-       - Score: A score from 0-100 based on modern standards (e.g. RTX 3060 is decent = 75, RTX 4090 is top = 95).
-       - Price Analysis: Is it good value?
-    
-    C. QUESTION/TOPIC:
-       - Summary answer as description.
-       - Category: Information.
-
-    Respond ONLY with this JSON schema:
-    {
-      "name": "Product Name",
-      "brand": "Brand Name",
-      "category": "Food/Tech/Info/Other",
-      "description": "Detailed description",
-      "ingredients": ["ing1"] (Food only, else []),
-      "nutrition": {"energy_kcal": 0} (Food only, else {}),
-      "specs": {"Spec Name": "Value"} (Tech only),
-      "analysis": {
-         "pros": ["pro1", "pro2"],
-         "cons": ["con1", "con2"],
-         "verdict": "Buy" | "Pass" | "Wait",
-         "verdict_text": "Short explanation",
-         "price_analysis": "Good value/Overpriced",
-         "score": 85
-      }
-    }`;
-}
-
-function parseAIResponse(jsonString: string, query: string, sourceName: string, imageUrl?: string): EnhancedProductData {
-    try {
-        const cleanJson = jsonString.replace(/```json/gi, '').replace(/```/g, '').trim();
-        const data = JSON.parse(cleanJson);
-
-        return {
-            id: `ai_${Date.now()}`,
-            identity: {
-                name: data.name || query,
-                brand: data.brand || 'Unknown',
-                barcode: 'AI_GENERATED',
-                category: data.category || 'Unknown',
-                description: data.description || 'Details generated by AI.',
-            },
-            media: {
-                front_image: imageUrl || '/images/ai-product-placeholder.png', // Use web image if available
-                thumbnail: imageUrl || '/images/ai-product-placeholder.png'
-            },
-            grades: {
-                nutri_score: '?',
-                eco_score: '?',
-                processing_score: '?'
-            },
-            nutrition: {
-                nutriments_raw: data.nutrition || {}
-            },
-            sensory_profile: { flavors: [] },
-            ingredients: (data.ingredients || []).map((ing: string) => ({
-                id: ing.toLowerCase().replace(/\s+/g, '_'),
-                name: ing,
-                percent: 0,
-                rank: 0,
-                has_sub_ingredients: false
-            })),
-            source: sourceName as any,
-            // New Tech Fields
-            specs: data.specs || {},
-            analysis: data.analysis || {}
-        };
-    } catch (e) {
-        console.error('[SearchAI] Parse error:', e);
-        throw new Error('Failed to parse AI response');
-    }
+        // Add tech specs as custom field (can extend type later)
+        // @ts-ignore - extending with custom field
+        tech_specs: !isFood ? aiData.key_specs : undefined,
+        // @ts-ignore
+        price_estimate: aiData.price_estimate,
+        // @ts-ignore
+        ai_generated: true,
+        // @ts-ignore
+        web_source: webContext?.sourceUrl
+    };
 }

@@ -7,6 +7,9 @@ export interface UserSubscription {
     startDate: Date;
     endDate: Date | null; // null means lifetime/no expiry
     autoRenew: boolean;
+    freeAccessExpiresAt?: any; // Firestore Timestamp
+    freeAccessGranted?: boolean;
+    originalTier?: UserTier;
 }
 
 export interface DietaryPreferences {
@@ -118,8 +121,8 @@ export const TIER_CONFIG: Record<UserTier, TierFeatures> = {
         globalSearch: false,
         visualSearch: false,
         mealPlanning: false,
-        aiChat: false,
-        aiChatLimit: 0,
+        aiChat: true, // FREE users CAN use AI chat if they provide their own API key
+        aiChatLimit: 10, // 10 messages per day with own API key
         productCompare: 0,
         ecoScore: false,
         gamification: true,

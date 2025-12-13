@@ -21,16 +21,18 @@ export type { EnhancedProductData }; // Re-export type if needed by consumers wh
 
 import { searchFDA } from '@/services/external/fdaService';
 import { generateProductInfoAI } from '@/services/searchAiService';
+import { searchTechProductsWithGitHub } from '@/services/githubModelsService';
 import { findProductImages, searchWithSearXNG } from '@/services/searxngService';
 
 export const searchProductsAction = async (query: string): Promise<EnhancedProductData[]> => {
     try {
         console.log(`[Global Search] Initiating multi-source search for: ${query}`);
 
-        // 1. Parallel Execution: OpenFoodFacts + FDA
-        const [offResponse, fdaResults] = await Promise.allSettled([
+        // 1. Parallel Execution: OpenFoodFacts + USDA + FooDB
+        const [offResponse, usdaResults, foodbResults] = await Promise.allSettled([
             apiClient.get(`https://world.openfoodfacts.org/cgi/search.pl?search_terms=${query}&search_simple=1&action=process&json=1&page_size=20&fields=_id,code,product_name,brands,generic_name,image_small_url,image_front_small_url,image_url,nutrition_grades,ecoscore_grade,nova_group`, { timeout: 8000 }),
-            searchFDA(query)
+            searchFDA(query), // Now acting as USDA
+            fetchFromFooDB(query)
         ]);
 
         let rawResults: EnhancedProductData[] = [];
@@ -45,12 +47,38 @@ export const searchProductsAction = async (query: string): Promise<EnhancedProdu
             console.warn('[Global Search] OpenFoodFacts request failed or timed out.');
         }
 
-        // 3. Process FDA Results
-        if (fdaResults.status === 'fulfilled') {
-            rawResults = [...rawResults, ...fdaResults.value];
+        // 3. Process USDA Results
+        if (usdaResults.status === 'fulfilled') {
+            rawResults = [...rawResults, ...usdaResults.value];
         }
 
-        // 4. Deduplication
+        // 4. Process FooDB Results
+        // 4. Process FooDB Results
+        if (foodbResults.status === 'fulfilled' && foodbResults.value) {
+            const f = foodbResults.value;
+            // Manual map since FooDB service returns flat ProductData
+            rawResults.push({
+                id: `foodb_${f.id}`,
+                identity: {
+                    name: f.name,
+                    brand: f.brand || 'Unknown',
+                    category: 'Food',
+                    description: f.description || 'FooDB Entry',
+                    barcode: ''
+                },
+                media: {
+                    front_image: f.image || '',
+                    thumbnail: f.image || ''
+                },
+                grades: { nutri_score: '?', eco_score: '?', processing_score: '?' },
+                nutrition: { nutriments_raw: {} },
+                sensory_profile: { flavors: [] },
+                ingredients: [],
+                source: 'FooDB'
+            });
+        }
+
+        // 5. Deduplication
         const seen = new Set<string>();
         let results = rawResults.filter((product: EnhancedProductData) => {
             const normalizedName = product.identity.name.trim().toLowerCase();
@@ -62,67 +90,22 @@ export const searchProductsAction = async (query: string): Promise<EnhancedProdu
             return true;
         });
 
-        // 5. Augment Missing Images via SearXNG
+        // 6. Augment Missing Images via SearXNG (Allowed helper, not generative AI)
         const finalResults = await Promise.all(results.map(async (p) => {
-            // If image is placeholder or missing, try to find one
+            // ... image finding allowed ...
             if ((!p.media.front_image || p.media.front_image.includes('placeholder')) && p.identity.name) {
                 const images = await findProductImages(`${p.identity.name} ${p.identity.brand || ''}`, 1);
                 if (images.length > 0) {
-                    console.log(`[Global Search] Augmented missing image for ${p.identity.name}`);
                     return {
                         ...p,
-                        media: {
-                            ...p.media,
-                            front_image: images[0],
-                            thumbnail: images[0]
-                        }
+                        media: { ...p.media, front_image: images[0], thumbnail: images[0] }
                     };
                 }
             }
             return p;
         }));
 
-        if (finalResults.length > 0) {
-            return finalResults;
-        }
-
-        // 6. DB Failed? Fallback to Advanced Web Synthesis
-        // This handles "Fanta" if not in DB, or random questions
-        console.log('[Global Search] No DB results. Triggering Web-Augmented AI Fallback...');
-
-        // Search for Web Info + Images in parallel
-        const [webResults, imageResults] = await Promise.all([
-            searchWithSearXNG(query, 'general'),
-            findProductImages(query, 1)
-        ]);
-
-        const topWeb = webResults[0];
-        // Only use web image if imageResults failed AND web image is high quality (not a logo)
-        let topImage = imageResults[0];
-
-        if (!topImage && topWeb?.img_src) {
-            const url = topWeb.img_src.toLowerCase();
-            const isSuspicious = url.includes('logo') || url.includes('icon') || url.includes('assets') || url.includes('favicon') || url.includes('svg');
-            if (!isSuspicious) {
-                topImage = topWeb.img_src;
-            } else {
-                console.log('[Global Search] Filtered out suspicious fallback image:', url);
-            }
-        }
-
-        const webContext = {
-            title: topWeb?.title,
-            snippet: topWeb?.content,
-            image: topImage,
-            sourceUrl: topWeb?.url
-        };
-
-        const aiResult = await generateProductInfoAI(query, webContext);
-        if (aiResult) {
-            return [aiResult];
-        }
-
-        return [];
+        return finalResults; // RETURN ONLY DB RESULTS. NO AI FALLBACK.
 
     } catch (error: any) {
         console.error("[Global Search] Aggregation Error:", error.message);

@@ -59,6 +59,7 @@ export default function AdminSettingsPage() {
     });
     const [models, setModels] = useState<any>({});
     const [savingSecure, setSavingSecure] = useState(false);
+    const [testingProviderId, setTestingProviderId] = useState<string | null>(null);
 
     // --- FREE API KEYS ---
     const [freeApiKeys, setFreeApiKeys] = useState({
@@ -175,7 +176,7 @@ export default function AdminSettingsPage() {
             setModels(settings.apiKeys?.models || {});
 
             setOllamaConfig({
-                ollamaUrl: settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434',
+                ollamaUrl: settings.apiKeys?.ollamaUrl || 'http://localhost:11435',
                 ollamaFallbackUrl: settings.apiKeys?.ollamaFallbackUrl || '',
                 defaultOllamaModel: settings.apiKeys?.defaultOllamaModel || '',
                 ollamaModels: settings.apiKeys?.ollamaModels || {}
@@ -191,7 +192,7 @@ export default function AdminSettingsPage() {
             });
 
             // Load Models list if Ollama URL exists
-            const currentOllamaUrl = settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434';
+            const currentOllamaUrl = settings.apiKeys?.ollamaUrl || 'http://localhost:11435';
             if (currentOllamaUrl) {
                 fetchOllamaModels(currentOllamaUrl, false);
             }
@@ -457,26 +458,28 @@ export default function AdminSettingsPage() {
         let shouldTest = true;
         if (!apiKey || apiKey.includes('****')) {
             shouldTest = false;
-            // We can't test without the key. Just save the model? 
-            // Ideally we check if model changed.
         }
 
-        setSavingSecure(true);
+        setTestingProviderId(provider); // Set loading state for this specific provider
         try {
             const token = await user.getIdToken();
 
             if (shouldTest) {
                 // 1. Verify Connection
                 setMsg({ type: 'info', text: `Testing connection to ${provider}...` });
-                await axios.post('/api/admin/ai-test', {
+                const testRes = await axios.post('/api/admin/ai-test', {
                     provider,
                     apiKey,
                     modelId,
                     baseUrl: provider === 'deepseek' ? deepseekConfig.deepseekBaseUrl : undefined
                 }, { headers: { Authorization: `Bearer ${token}` } });
 
+                if (!testRes.data.success) {
+                    throw new Error(testRes.data.details || testRes.data.error || 'Verification Failed');
+                }
+
                 // If we get here, test passed
-                setMsg({ type: 'success', text: '✅ Connection Verified! Saving...' });
+                setMsg({ type: 'success', text: `✅ Verified! ${testRes.data.details || ''}` });
 
                 // 2. Save Key
                 await axios.post('/api/admin/keys', {
@@ -500,7 +503,9 @@ export default function AdminSettingsPage() {
             // Update local state models
             setModels((prev: any) => ({ ...prev, [provider]: modelId }));
 
-            setMsg({ type: 'success', text: `🎉 ${provider.charAt(0).toUpperCase() + provider.slice(1)} Config Saved & Verified!` });
+            if (!shouldTest) {
+                setMsg({ type: 'success', text: `Config Saved (No key update).` });
+            }
 
             // Clear the key field for security (it's masked on reload)
             setSecureKeys(prev => ({ ...prev, [provider]: '' }));
@@ -508,9 +513,10 @@ export default function AdminSettingsPage() {
         } catch (error: any) {
             console.error('Save Failed:', error);
             const errMsg = error.response?.data?.error || error.message;
-            setMsg({ type: 'error', text: `❌ Save Failed: ${errMsg}` });
+            const details = error.response?.data?.details || '';
+            setMsg({ type: 'error', text: `❌ Save Failed: ${errMsg} ${details}` });
         } finally {
-            setSavingSecure(false);
+            setTestingProviderId(null); // Clear loading state
         }
     };
 
@@ -585,6 +591,7 @@ export default function AdminSettingsPage() {
                         secureKeys={secureKeys}
                         setSecureKeys={setSecureKeys}
                         handleTestAndSave={handleTestAndSave}
+                        testingProviderId={testingProviderId} // Added Prop
                         savingSecure={savingSecure}
                         freeApiKeys={freeApiKeys}
                         setFreeApiKeys={setFreeApiKeys}
@@ -609,6 +616,10 @@ export default function AdminSettingsPage() {
                         setOpenRouterConfig={setOpenRouterConfig}
                         handleSaveOpenRouter={handleSaveOpenRouter}
                         savingOpenRouter={savingOpenRouter}
+                        githubModelsConfig={githubModelsConfig}
+                        setGithubModelsConfig={setGithubModelsConfig}
+                        handleSaveGithubModels={handleSaveGithubModels}
+                        savingGithubModels={savingGithubModels}
                     />
                 )}
                 {tabValue === 2 && (
@@ -619,10 +630,6 @@ export default function AdminSettingsPage() {
                         savingSearxng={savingSearxng}
                         handleRunBackup={handleRunBackup}
                         runningBackup={runningBackup}
-                        githubModelsConfig={githubModelsConfig}
-                        setGithubModelsConfig={setGithubModelsConfig}
-                        handleSaveGithubModels={handleSaveGithubModels}
-                        savingGithubModels={savingGithubModels}
                         pcConsultationPrice={pcConsultationPrice}
                         setPcConsultationPrice={setPcConsultationPrice}
                         handleSavePcPrice={handleSavePcPrice}

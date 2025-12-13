@@ -11,6 +11,8 @@ const CEREBRAS_API_KEY = process.env.NEXT_PUBLIC_CEREBRAS_API_KEY || '';
 const SAMBANOVA_API_KEY = process.env.NEXT_PUBLIC_SAMBANOVA_API_KEY || '';
 const SERPAPI_API_KEY = process.env.NEXT_PUBLIC_SERPAPI_API_KEY || '';
 const OPENAI_API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY || '';
+const HUGGINGFACE_API_KEY = process.env.NEXT_PUBLIC_HUGGINGFACE_API_KEY || '';
+const AZURE_OLLAMA_URL = process.env.NEXT_PUBLIC_OLLAMA_URL || 'http://localhost:11435';
 
 // Initialize Clients lazily or per-request to support dynamic keys
 import { getSystemSettings } from './systemService';
@@ -167,7 +169,78 @@ const callDeepSeek = (prompt: string) => callOpenAICompatible(prompt, DEEPSEEK_A
 const callCerebras = (prompt: string) => callOpenAICompatible(prompt, CEREBRAS_API_KEY, 'cerebras', "https://api.cerebras.ai/v1", "llama3.1-70b");
 const callSambaNova = (prompt: string) => callOpenAICompatible(prompt, SAMBANOVA_API_KEY, 'sambanova', "https://api.sambanova.ai/v1", "Meta-Llama-3.1-70B-Instruct");
 
-// Self-hosted Ollama (Free, Unlimited)
+// HuggingFace Inference API (Free tier fallback)
+const callHuggingFace = async (prompt: string): Promise<string> => {
+    const apiKey = await getDynamicKey('huggingface', HUGGINGFACE_API_KEY);
+    if (!apiKey) throw new Error('HuggingFace API Key Missing');
+
+    try {
+        // Using Meta-Llama-3-8B-Instruct (fast, reliable, free)
+        const response = await axios.post(
+            'https://api-inference.huggingface.co/models/meta-llama/Meta-Llama-3-8B-Instruct',
+            { inputs: prompt, parameters: { max_new_tokens: 512, temperature: 0.7 } },
+            { headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' } }
+        );
+
+        return response.data[0]?.generated_text || response.data?.generated_text || '';
+    } catch (error: any) {
+        console.error('HuggingFace Error:', error.message);
+        throw error;
+    }
+};
+
+// Helper to get dynamic Ollama URL
+const getOllamaUrl = async (): Promise<string> => {
+    try {
+        const settings = await getSystemSettings();
+        // @ts-ignore
+        return settings.apiKeys?.ollamaUrl || AZURE_OLLAMA_URL;
+    } catch (e) {
+        return AZURE_OLLAMA_URL;
+    }
+};
+
+// Azure Ollama - DeepSeek-R1 (Reasoning & Analysis)
+const callAzureDeepSeek = async (prompt: string): Promise<string> => {
+    try {
+        const baseUrl = await getOllamaUrl();
+        const response = await axios.post(
+            `${baseUrl}/api/generate`,
+            {
+                model: 'deepseek-r1:14b',
+                prompt: prompt,
+                stream: false
+            },
+            { timeout: 60000 } // 60s for reasoning tasks
+        );
+        return response.data.response || '';
+    } catch (error: any) {
+        console.error('[Azure DeepSeek] Error:', error.message);
+        throw error;
+    }
+};
+
+// Azure Ollama - Qwen2.5:7b (General Purpose & Coding - RAM Optimized)
+const callAzureQwen = async (prompt: string): Promise<string> => {
+    try {
+        const baseUrl = await getOllamaUrl();
+        const response = await axios.post(
+            `${baseUrl}/api/generate`,
+            {
+                model: 'qwen2.5:7b',  // 7B model - fits in 4GB RAM VM
+                prompt: prompt,
+                stream: false
+            },
+            { timeout: 30000 } // 30s for 7B model
+        );
+        return response.data.response || '';
+    } catch (error: any) {
+        console.error('[Azure Qwen] Error:', error.message);
+        throw error;
+    }
+};
+
+// Self-hosted Ollama (Free, Unlimited) - Legacy local fallback
 const callOllama = async (prompt: string): Promise<string> => {
     const { chatWithOllama, checkOllamaHealth } = await import('./ollamaService');
 
@@ -211,13 +284,14 @@ const getSwarmResponse = async (prompt: string, trustedProviders: Array<{ name: 
     const userProviders: Array<{ name: string, fn: (p: string) => Promise<string> }> = [];
 
     // Check keys concurrently
-    const [hasGroq, hasGemini, hasDeepSeek, hasCerebras, hasSambaNova, hasOpenAI] = await Promise.all([
+    const [hasGroq, hasGemini, hasDeepSeek, hasCerebras, hasSambaNova, hasOpenAI, hasHuggingFace] = await Promise.all([
         getDynamicKey('groq', ''),
         getDynamicKey('gemini', ''),
         getDynamicKey('deepseek', ''),
         getDynamicKey('cerebras', ''),
         getDynamicKey('sambanova', ''),
-        getDynamicKey('openai', '')
+        getDynamicKey('openai', ''),
+        getDynamicKey('huggingface', '')
     ]);
 
     if (hasGroq) userProviders.push({ name: 'Groq', fn: callGroq });
@@ -226,9 +300,14 @@ const getSwarmResponse = async (prompt: string, trustedProviders: Array<{ name: 
     if (hasCerebras) userProviders.push({ name: 'Cerebras', fn: callCerebras });
     if (hasSambaNova) userProviders.push({ name: 'SambaNova', fn: callSambaNova });
     if (hasOpenAI) userProviders.push({ name: 'OpenAI', fn: callOpenAI });
+    if (hasHuggingFace) userProviders.push({ name: 'HuggingFace', fn: callHuggingFace });
 
-    // Always add Ollama (Free, Self-Hosted, Client-side proxy or direct)
-    // Actually Ollama is usually local or proxied. 
+    // Azure Ollama (self-hosted, always available as fallback)
+    // DeepSeek-R1 for reasoning/analysis, Qwen2.5 for general/coding
+    userProviders.push({ name: 'Azure DeepSeek-R1', fn: callAzureDeepSeek });
+    userProviders.push({ name: 'Azure Qwen2.5', fn: callAzureQwen });
+
+    // Always add local Ollama last (Free, Self-Hosted, Client-side proxy or direct)
     userProviders.push({ name: 'Ollama', fn: callOllama });
 
     // Filter trusted if specified

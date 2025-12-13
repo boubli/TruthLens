@@ -189,15 +189,16 @@ export default function AIChatPage() {
     }
 
     // Feature gate - AI Chat access check
+    // Note: Free users can access if they have API keys (handled by needsKeySetup logic below)
     if (!features.aiChat) {
         return (
             <Box className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">
                 <Container maxWidth="sm">
                     <Paper sx={{ p: 5, borderRadius: 4, textAlign: 'center' }}>
                         <SmartToyIcon sx={{ fontSize: 60, color: 'warning.main', mb: 2 }} />
-                        <Typography variant="h5" fontWeight="bold" gutterBottom>Premium Feature</Typography>
+                        <Typography variant="h5" fontWeight="bold" gutterBottom>AI Chat</Typography>
                         <Typography color="text.secondary" paragraph>
-                            AI Chat is available for Plus, Pro, and Ultimate members.
+                            This feature requires a premium membership.
                         </Typography>
                         <Button variant="contained" color="warning" href="/upgrade">
                             Upgrade Now

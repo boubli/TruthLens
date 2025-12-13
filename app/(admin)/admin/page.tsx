@@ -13,6 +13,10 @@ import {
     DialogContent,
     DialogTitle,
     IconButton,
+    Button,
+    Card,
+    CardContent,
+    Chip,
 } from '@mui/material';
 import StatsCard from '@/components/admin/StatsCard';
 import PeopleIcon from '@mui/icons-material/People';
@@ -20,9 +24,19 @@ import PaymentIcon from '@mui/icons-material/Payment';
 import ScannerIcon from '@mui/icons-material/QrCodeScanner';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import CloseIcon from '@mui/icons-material/Close';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
+import SettingsIcon from '@mui/icons-material/Settings';
+import ChatIcon from '@mui/icons-material/Chat';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import ErrorIcon from '@mui/icons-material/Error';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import UpgradeRequestList from '@/components/admin/UpgradeRequestList';
 import ActiveUsersGraph from '@/components/admin/ActiveUsersGraph';
 import { getDashboardStats, DashboardStats, getUserActivityData, ActivityData } from '@/services/statsService';
+import { getSystemSettings } from '@/services/systemService';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
+import axios from 'axios';
 
 export default function AdminDashboardPage() {
     const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -30,6 +44,10 @@ export default function AdminDashboardPage() {
     const [graphOpen, setGraphOpen] = useState(false);
     const [activityData, setActivityData] = useState<ActivityData[]>([]);
     const [graphLoading, setGraphLoading] = useState(false);
+    const [aiServerStatus, setAiServerStatus] = useState<'online' | 'offline' | 'checking'>('checking');
+    const [aiModelsCount, setAiModelsCount] = useState(0);
+    const router = useRouter();
+    const { user } = useAuth();
 
     const handleOpenGraph = async () => {
         setGraphOpen(true);
@@ -42,18 +60,38 @@ export default function AdminDashboardPage() {
     };
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const data = await getDashboardStats();
-                setStats(data);
-            } catch (error) {
-                console.error('Failed to fetch stats:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
         fetchStats();
+        checkAIServer();
     }, []);
+
+    const fetchStats = async () => {
+        try {
+            const data = await getDashboardStats();
+            setStats(data);
+        } catch (error) {
+            console.error('Failed to fetch stats:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const checkAIServer = async () => {
+        try {
+            const settings = await getSystemSettings();
+            const ollamaUrl = settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434';
+            const token = await user?.getIdToken();
+
+            const response = await axios.get('/api/admin/ollama/models', {
+                params: { url: ollamaUrl },
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setAiModelsCount(response.data.models?.length || 0);
+            setAiServerStatus('online');
+        } catch (error) {
+            setAiServerStatus('offline');
+        }
+    };
 
     const formatNumber = (num: number): string => {
         if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -127,6 +165,110 @@ export default function AdminDashboardPage() {
                     )}
                 </Grid>
 
+                {/* AI Server Status */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Card sx={{
+                        height: '100%',
+                        background: aiServerStatus === 'online'
+                            ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                            : 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+                        color: 'white'
+                    }}>
+                        <CardContent>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <SmartToyIcon sx={{ fontSize: 40 }} />
+                                    <Typography variant="h6" fontWeight="bold">
+                                        AI Server
+                                    </Typography>
+                                </Box>
+                                {aiServerStatus === 'online' ? (
+                                    <Chip
+                                        icon={<CheckCircleIcon />}
+                                        label="ONLINE"
+                                        sx={{ bgcolor: 'rgba(255,255,255,0.3)', color: 'white', fontWeight: 'bold' }}
+                                    />
+                                ) : (
+                                    <Chip
+                                        icon={<ErrorIcon />}
+                                        label={aiServerStatus === 'checking' ? 'Checking...' : 'OFFLINE'}
+                                        sx={{ bgcolor: 'rgba(255,255,255,0.3)', color: 'white', fontWeight: 'bold' }}
+                                    />
+                                )}
+                            </Box>
+                            <Typography variant="body2" sx={{ mb: 2, opacity: 0.9 }}>
+                                {aiServerStatus === 'online'
+                                    ? `${aiModelsCount} AI models ready to use`
+                                    : 'AI server unavailable. Check connection.'
+                                }
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                sx={{ bgcolor: 'rgba(255,255,255,0.2)', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}
+                                endIcon={<ArrowForwardIcon />}
+                                onClick={() => router.push('/admin/ai-models')}
+                            >
+                                Manage AI Models
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </Grid>
+
+                {/* Quick Actions */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <Paper sx={{ p: 3, height: '100%' }}>
+                        <Typography variant="h6" fontWeight="bold" gutterBottom>
+                            🚀 Quick Actions
+                        </Typography>
+                        <Grid container spacing={2} sx={{ mt: 1 }}>
+                            <Grid size={{ xs: 6 }}>
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
+                                    startIcon={<PeopleIcon />}
+                                    onClick={() => router.push('/admin/users')}
+                                    sx={{ py: 1.5 }}
+                                >
+                                    Users
+                                </Button>
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
+                                    startIcon={<ChatIcon />}
+                                    onClick={() => router.push('/admin/chat')}
+                                    sx={{ py: 1.5 }}
+                                >
+                                    Support
+                                </Button>
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
+                                    startIcon={<SmartToyIcon />}
+                                    onClick={() => router.push('/admin/ai-models')}
+                                    sx={{ py: 1.5 }}
+                                >
+                                    AI Models
+                                </Button>
+                            </Grid>
+                            <Grid size={{ xs: 6 }}>
+                                <Button
+                                    fullWidth
+                                    variant="outlined"
+                                    startIcon={<SettingsIcon />}
+                                    onClick={() => router.push('/admin/settings')}
+                                    sx={{ py: 1.5 }}
+                                >
+                                    Settings
+                                </Button>
+                            </Grid>
+                        </Grid>
+                    </Paper>
+                </Grid>
+
                 <Grid container spacing={3} sx={{ mt: 1 }}>
                     <Grid size={{ xs: 12 }}>
                         <UpgradeRequestList />
@@ -156,4 +298,3 @@ export default function AdminDashboardPage() {
         </Container>
     );
 }
-

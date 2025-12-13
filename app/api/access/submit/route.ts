@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase-admin';
 import { FieldValue, Timestamp } from 'firebase-admin/firestore';
+import axios from 'axios';
+import { validateFileSignature } from '@/lib/fileValidators';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,9 +29,85 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: 'Server configuration error' }, { status: 500 });
         }
 
-        // 2. Transact: Re-Validate Code -> Create Request -> Update Code Usage -> Update User (if auto-approved)
+        // AI VERIFICATION FOR STUDENTS
+        let aiVerificationResult = null;
+        let shouldAutoApprove = false;
+
+        if (data.isStudent && data.studentProofBase64) {
+            console.log('[ACCESS] Running Secure AI student verification...');
+
+            // A. SECURITY: Magic Byte Validation (Anti-Malware)
+            try {
+                const buffer = Buffer.from(data.studentProofBase64, 'base64');
+                const validation = validateFileSignature(buffer);
+
+                if (!validation.isValid) {
+                    console.warn('[SECURITY] Invalid file signature detected.');
+                    return NextResponse.json({
+                        success: false,
+                        error: 'Security Alert: File format not recognized or potentially malformed. Please upload a valid JPG, PNG, or PDF.'
+                    }, { status: 400 });
+                }
+                console.log(`[SECURITY] File signature verified: ${validation.mimeType}`);
+            } catch (e) {
+                return NextResponse.json({ success: false, error: 'File processing error' }, { status: 400 });
+            }
+
+            // Get Ollama URL from settings
+            const settingsDoc = await adminDb.collection('system').doc('settings').get();
+            const settings = settingsDoc.data();
+            const ollamaUrl = settings?.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434';
+
+            try {
+                // Use Ollama AI to verify student ID
+                const prompt = `Analyze this image. It should be a Student ID Card.
+Check:
+1. Is this a document/ID card? Or is it a selfie/face/random object?
+2. If it is a document, is it a valid Student ID?
+3. Does the name match "${data.fullName}"?
+
+Respond ONLY in JSON:
+{
+  "verified": true/false,
+  "reason": "If rejected, explain WHY (e.g., 'Image is a selfie, not an ID' or 'Name does not match')",
+  "isIdCard": true/false
+}`;
+
+                const aiResponse = await axios.post(
+                    `${ollamaUrl}/api/generate`,
+                    {
+                        model: 'llava', // Vision model
+                        prompt: prompt,
+                        images: [data.studentProofBase64],
+                        stream: false
+                    },
+                    { timeout: 300000 }
+                );
+
+                if (aiResponse.data?.response) {
+                    const responseText = aiResponse.data.response;
+                    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+
+                    if (jsonMatch) {
+                        aiVerificationResult = JSON.parse(jsonMatch[0]);
+                        shouldAutoApprove = aiVerificationResult.verified === true;
+                        console.log('[ACCESS] AI Verification:', aiVerificationResult);
+                    } else {
+                        // Fallback keyword check
+                        shouldAutoApprove = responseText.toLowerCase().includes('valid') &&
+                            responseText.toLowerCase().includes('student');
+                    }
+                }
+            } catch (aiError) {
+                console.error('[ACCESS] AI verification failed:', aiError);
+                // Don't auto-approve on AI failure, require manual review
+                shouldAutoApprove = false;
+            }
+        }
+
+        // 2. Run Transaction
         const result = await adminDb.runTransaction(async (t) => {
-            // A. Check Code
+            // A. Validate Code
             const codesRef = adminDb!.collection('accessCodes');
             const codeSnapshot = await t.get(codesRef.where('code', '==', data.code.toUpperCase()).where('active', '==', true).limit(1));
 
@@ -48,8 +126,7 @@ export async function POST(req: NextRequest) {
                 throw new Error('Usage limit reached');
             }
 
-            // B. Prepare Request Data
-            const isStudentWithProof = !!(data.isStudent && data.studentProofUrl);
+            // B. Create Request
             const expiresAt = new Date();
             expiresAt.setMonth(expiresAt.getMonth() + 3);
 
@@ -66,13 +143,14 @@ export async function POST(req: NextRequest) {
                 codeUsed: codeData.code,
                 codeTier: codeData.tier,
                 isStudent: data.isStudent,
-                studentProofUrl: data.studentProofUrl,
-                status: isStudentWithProof ? 'approved' : 'pending',
+                studentProofUrl: 'verified-in-memory-zero-storage', // GDPR/Privacy: No file stored
+                aiVerification: aiVerificationResult || null,
+                status: shouldAutoApprove ? 'approved' : 'pending',
                 denialReason: null,
                 createdAt: FieldValue.serverTimestamp(),
-                processedAt: isStudentWithProof ? FieldValue.serverTimestamp() : null,
-                processedBy: isStudentWithProof ? 'auto_student' : null,
-                accessExpiresAt: isStudentWithProof ? Timestamp.fromDate(expiresAt) : null
+                processedAt: shouldAutoApprove ? FieldValue.serverTimestamp() : null,
+                processedBy: shouldAutoApprove ? 'ai_auto_approved' : null,
+                accessExpiresAt: shouldAutoApprove ? Timestamp.fromDate(expiresAt) : null
             };
 
             t.set(requestRef, requestData);
@@ -80,14 +158,14 @@ export async function POST(req: NextRequest) {
             // C. Update Code Usage
             t.update(codeDoc.ref, { usedCount: FieldValue.increment(1) });
 
-            // D. Auto-Approve Logic (Update User & Notify)
-            if (isStudentWithProof) {
-                // Get User
+            // D. Auto-Approve (if AI verified)
+            if (shouldAutoApprove) {
                 const userRef = adminDb!.collection('users').doc(uid);
                 const userDoc = await t.get(userRef);
                 const userData = userDoc.data();
                 const originalTier = userData?.subscription?.tier || 'free';
 
+                // Update user subscription
                 t.update(userRef, {
                     'subscription.tier': codeData.tier,
                     'subscription.freeAccessGranted': true,
@@ -95,21 +173,29 @@ export async function POST(req: NextRequest) {
                     'subscription.originalTier': originalTier
                 });
 
-                // Create Notification
+                // Set custom claim for instant access
+                await adminAuth!.setCustomUserClaims(uid, { tier: codeData.tier });
+
+                // Create notification (Async feedback for user)
                 const notifRef = adminDb!.collection('users').doc(uid).collection('notifications').doc();
                 t.set(notifRef, {
                     type: 'access_approved',
                     title: '🎉 Student Access Granted!',
-                    message: `Your student verification was approved! You now have ${codeData.tier.toUpperCase()} access for 3 months.`,
+                    message: `Congratulations! Your student verification was approved. You now have ${codeData.tier.toUpperCase()} access until ${expiresAt.toLocaleDateString()}.`,
                     read: false,
                     createdAt: FieldValue.serverTimestamp(),
-                    metadata: { requestId: requestRef.id, tier: codeData.tier, expiresAt: expiresAt.toISOString() }
+                    metadata: {
+                        requestId: requestRef.id,
+                        tier: codeData.tier,
+                        expiresAt: expiresAt.toISOString()
+                    }
                 });
             }
 
             return {
                 requestId: requestRef.id,
-                autoApproved: isStudentWithProof
+                autoApproved: shouldAutoApprove,
+                tier: shouldAutoApprove ? codeData.tier : null
             };
         });
 

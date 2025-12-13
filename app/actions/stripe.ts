@@ -32,24 +32,35 @@ export async function createCheckoutSession({
             throw new Error('Missing user information');
         }
 
-        // Define Product/Price Data dynamically
-        // Ideally, these are defined in Stripe Dashboard and we use Price IDs.
-        // For dynamic/ad-hoc generation ensuring strict pricing:
-
         let priceAmount = 0;
         let productName = `TruthLens ${tier.charAt(0).toUpperCase() + tier.slice(1)}`;
 
-        // Pricing Map (Matches systemService.ts defaults)
-        const prices = {
-            plus: { monthly: 399, lifetime: 1999 }, // In cents
-            pro: { monthly: 799, lifetime: 4999 },
-            ultimate: { monthly: 1499, lifetime: 7999 }
-        };
+        // Get pricing from Firebase system settings (admin-controlled)
+        if (adminDb) {
+            try {
+                const settingsDoc = await adminDb.collection('system').doc('settings').get();
+                const settings = settingsDoc.data();
 
-        if (prices[tier]) {
-            priceAmount = prices[tier][billingCycle];
-        } else {
-            throw new Error('Invalid tier');
+                if (settings?.pricing?.[tier]?.[billingCycle]) {
+                    priceAmount = settings.pricing[tier][billingCycle];
+                }
+            } catch (error) {
+                console.error('Failed to fetch pricing from settings, using defaults:', error);
+            }
+        }
+
+        // Fallback to default pricing if not set in Firebase
+        if (!priceAmount) {
+            const defaultPrices = {
+                plus: { monthly: 399, lifetime: 1999 },
+                pro: { monthly: 799, lifetime: 4999 },
+                ultimate: { monthly: 1499, lifetime: 7999 }
+            };
+            priceAmount = defaultPrices[tier]?.[billingCycle] || 0;
+        }
+
+        if (!priceAmount) {
+            throw new Error('Invalid tier or pricing not configured');
         }
 
         // Construct line item

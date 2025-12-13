@@ -6,7 +6,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
     Box,
     Typography,
@@ -50,12 +49,12 @@ interface DietaryPreferencesSectionProps {
 }
 
 const DIET_TYPES = [
-    { key: 'isKeto' as const, labelKey: 'diet_keto_label', descKey: 'diet_keto_desc', icon: EggAltIcon, color: '#F59E0B' },
-    { key: 'isVegan' as const, labelKey: 'diet_vegan_label', descKey: 'diet_vegan_desc', icon: GrassIcon, color: '#10B981' },
-    { key: 'isDiabetic' as const, labelKey: 'diet_diabetic_label', descKey: 'diet_diabetic_desc', icon: WaterDropIcon, color: '#3B82F6' },
-    { key: 'lowSodium' as const, labelKey: 'diet_lowsodium_label', descKey: 'diet_lowsodium_desc', icon: FavoriteIcon, color: '#EF4444' },
-    { key: 'glutenFree' as const, labelKey: 'diet_glutenfree_label', descKey: 'diet_glutenfree_desc', icon: SpaIcon, color: '#8B5CF6' },
-    { key: 'isHalal' as const, labelKey: 'diet_halal_label', descKey: 'diet_halal_desc', icon: Brightness3Icon, color: '#059669' },
+    { key: 'isKeto' as const, labelKey: 'Keto', descKey: 'Low carb, high fat', icon: EggAltIcon, color: '#F59E0B' },
+    { key: 'isVegan' as const, labelKey: 'Vegan', descKey: 'No animal products', icon: GrassIcon, color: '#10B981' },
+    { key: 'isDiabetic' as const, labelKey: 'Diabetic Friendly', descKey: 'Low sugar, low GI', icon: WaterDropIcon, color: '#3B82F6' },
+    { key: 'lowSodium' as const, labelKey: 'Low Sodium', descKey: 'Heart healthy', icon: FavoriteIcon, color: '#EF4444' },
+    { key: 'glutenFree' as const, labelKey: 'Gluten Free', descKey: 'No wheat/gluten', icon: SpaIcon, color: '#8B5CF6' },
+    { key: 'isHalal' as const, labelKey: 'Halal', descKey: 'Halal certified', icon: Brightness3Icon, color: '#059669' },
 ];
 
 export default function DietaryPreferencesSection({
@@ -66,7 +65,6 @@ export default function DietaryPreferencesSection({
     onAiSetup,
     isSaving
 }: DietaryPreferencesSectionProps) {
-    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
 
     return (
@@ -95,14 +93,14 @@ export default function DietaryPreferencesSection({
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <RestaurantMenuIcon color="primary" sx={{ fontSize: 28 }} />
                         <Typography variant="h5" fontWeight="800" gutterBottom={false}>
-                            {t('dietary_preferences_title')}
+                            {'Dietary Preferences'}
                         </Typography>
                         <IconButton size="small">
                             {isOpen ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
                         </IconButton>
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ ml: 5 }}>
-                        {t('dietary_preferences_subtitle')}
+                        {'Manage your diet type and restrictions'}
                     </Typography>
                 </Box>
                 <Button
@@ -120,7 +118,7 @@ export default function DietaryPreferencesSection({
                     }}
                     startIcon={<AutoAwesomeIcon />}
                 >
-                    {t('ai_setup_button')}
+                    {'AI Setup'}
                 </Button>
             </Box>
 
@@ -138,12 +136,12 @@ export default function DietaryPreferencesSection({
                         '& .MuiAlert-icon': { color: '#6366F1' }
                     }}
                 >
-                    {t('ai_analysis_info')}
+                    {'AI Analysis active: Your preferences are automatically refined based on your scanning history.'}
                 </Alert>
 
                 {/* Diet Types Grid */}
                 <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                    {t('core_diets_title')}
+                    {'Core Diets'}
                 </Typography>
 
                 <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -183,10 +181,10 @@ export default function DietaryPreferencesSection({
                                         </Box>
                                         <Box sx={{ flex: 1 }}>
                                             <Typography variant="body1" fontWeight="bold">
-                                                {t(diet.labelKey)}
+                                                {diet.labelKey}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                {t(diet.descKey)}
+                                                {diet.descKey}
                                             </Typography>
                                         </Box>
                                         <Switch
@@ -213,7 +211,7 @@ export default function DietaryPreferencesSection({
 
                 {/* Granular Preferences */}
                 <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                    {t('specific_needs_title')}
+                    {'Specific Needs'}
                 </Typography>
 
                 <Grid container spacing={3}>
@@ -221,7 +219,7 @@ export default function DietaryPreferencesSection({
                         <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, height: '100%', borderColor: alpha('#EF4444', 0.2), bgcolor: alpha('#EF4444', 0.02) }}>
                             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
                                 <WarningAmberIcon color="error" />
-                                <Typography variant="subtitle1" fontWeight="bold">{t('allergens_title')}</Typography>
+                                <Typography variant="subtitle1" fontWeight="bold">{'Allergens'}</Typography>
                             </Box>
                             <Autocomplete
                                 multiple
@@ -238,13 +236,13 @@ export default function DietaryPreferencesSection({
                                     <TextField
                                         {...params}
                                         variant="outlined"
-                                        placeholder={t('placeholder_add_allergens')}
+                                        placeholder={'Add allergens (e.g. Peanuts, Dairy)...'}
                                         sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                                     />
                                 )}
                             />
                             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                {t('allergens_help')}
+                                {'We will warn you if any product contains these allergens.'}
                             </Typography>
                         </Paper>
                     </Grid>
@@ -253,7 +251,7 @@ export default function DietaryPreferencesSection({
                         <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, height: '100%', borderColor: alpha('#F59E0B', 0.2), bgcolor: alpha('#F59E0B', 0.02) }}>
                             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
                                 <WarningAmberIcon color="warning" />
-                                <Typography variant="subtitle1" fontWeight="bold">{t('avoid_ingredients_title')}</Typography>
+                                <Typography variant="subtitle1" fontWeight="bold">{'Avoid Ingredients'}</Typography>
                             </Box>
                             <Autocomplete
                                 multiple
@@ -270,13 +268,13 @@ export default function DietaryPreferencesSection({
                                     <TextField
                                         {...params}
                                         variant="outlined"
-                                        placeholder={t('placeholder_add_ingredients')}
+                                        placeholder={'Add ingredients (e.g. High Fructose Corn Syrup)...'}
                                         sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                                     />
                                 )}
                             />
                             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                {t('avoid_ingredients_help')}
+                                {'Ingredients you want to avoid for any reason.'}
                             </Typography>
                         </Paper>
                     </Grid>
@@ -285,7 +283,7 @@ export default function DietaryPreferencesSection({
                         <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, borderColor: alpha('#10B981', 0.2), bgcolor: alpha('#10B981', 0.02) }}>
                             <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', mb: 2 }}>
                                 <AutoAwesomeIcon color="success" />
-                                <Typography variant="subtitle1" fontWeight="bold">{t('health_goals_title')}</Typography>
+                                <Typography variant="subtitle1" fontWeight="bold">{'Health Goals'}</Typography>
                             </Box>
                             <Autocomplete
                                 multiple
@@ -302,13 +300,13 @@ export default function DietaryPreferencesSection({
                                     <TextField
                                         {...params}
                                         variant="outlined"
-                                        placeholder={t('placeholder_select_type')}
+                                        placeholder={'Select health goal'}
                                         sx={{ bgcolor: 'background.paper', borderRadius: 1 }}
                                     />
                                 )}
                             />
                             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                {t('health_goals_help')}
+                                {'Helps us highlight products that match your goals.'}
                             </Typography>
                         </Paper>
                     </Grid>
@@ -330,7 +328,7 @@ export default function DietaryPreferencesSection({
                             '&:hover': { bgcolor: 'primary.dark' }
                         }}
                     >
-                        {isSaving ? t('saving_changes') : t('save_preferences')}
+                        {isSaving ? 'Saving...' : 'Save Preferences'}
                     </Button>
                 </Box>
             </Collapse>

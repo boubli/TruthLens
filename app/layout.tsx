@@ -7,7 +7,6 @@ import { Outfit } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AuthProvider } from '@/context/AuthContext';
-import { I18nProvider } from '@/components/providers/I18nProvider';
 import { CompareProvider } from '@/context/CompareContext';
 import CompareFloatingBar from '@/components/compare/CompareFloatingBar';
 
@@ -60,17 +59,15 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={outfit.variable}>
       <body className="antialiased" suppressHydrationWarning>
         <AuthProvider>
-          <I18nProvider>
-            <CompareProvider>
-              <ThemeProvider>
-                <SpecialWelcome />
-                <SeasonalEventManager />
-                <InstallPrompt />
-                {children}
-                <CompareFloatingBar />
-              </ThemeProvider>
-            </CompareProvider>
-          </I18nProvider>
+          <CompareProvider>
+            <ThemeProvider>
+              <SpecialWelcome />
+              <SeasonalEventManager />
+              <InstallPrompt />
+              {children}
+              <CompareFloatingBar />
+            </ThemeProvider>
+          </CompareProvider>
         </AuthProvider>
       </body>
     </html>

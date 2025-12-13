@@ -7,7 +7,7 @@ import axios from 'axios';
 import { getSystemSettings } from './systemService';
 
 // Default Ollama URL (can be overridden in Admin settings)
-const DEFAULT_OLLAMA_URL = 'http://20.199.129.203:11434';
+const DEFAULT_OLLAMA_URL = 'http://localhost:11435';
 
 export interface OllamaMessage {
     role: 'system' | 'user' | 'assistant';
@@ -128,11 +128,16 @@ const executeWithFallback = async <T>(
  * Maps task types to preferred models for optimal performance
  */
 export const MODEL_ROUTING: Record<string, string> = {
-    'analysis': 'phi',           // Product/ingredient analysis - needs reasoning
-    'chat': 'stablelm2',         // AI Chat Assistant - conversational
-    'multilingual': 'qwen:1.8b', // French/Arabic translations
-    'quick': 'tinyllama',        // Fast suggestions, simple tasks
-    'general': 'llama3.2:1b'     // Default fallback
+    'analysis': 'phi',           // ✅ Product/ingredient analysis - Strong reasoning (1.6GB)
+    'chat': 'stablelm2:1.6b',    // ✅ AI Chat Assistant - Natural conversation (982MB)
+    'multilingual': 'qwen:1.8b', // ✅ French/Arabic translations - Multilingual (1.1GB)
+    'quick': 'tinyllama',        // ✅ Fast suggestions, simple tasks (637MB)
+    'general': 'gemma:2b',       // ✅ General tasks - Google model (1.7GB)
+    'reasoning': 'mistral:7b',   // ✅ Advanced reasoning - 7B model (4GB) [FIXED VERSION]
+    'code': 'deepseek-coder:6.7b', // ✅ Code generation/analysis (3.8GB)
+    'advanced': 'llama3.1:8b',   // ✅ Advanced tasks - Latest Llama (4.7GB)
+    'deepseek': 'deepseek-llm:7b', // ✅ Alternative reasoning model (4.1GB)
+    'fallback': 'gemma:2b'       // ✅ Emergency fallback (1.7GB)
 };
 
 /**
@@ -200,8 +205,18 @@ export const getPreferredModel = async (requestedModel?: string): Promise<string
 
         // 4. Return best available model
         if (availableModels.length > 0) {
-            // Priority list for smart defaults
-            const priority = ['llama3.2:1b', 'qwen:1.8b', 'gemma:2b', 'tinyllama'];
+            // Priority list for smart defaults (all 10 installed models)
+            const priority = [
+                'gemma:2b',             // Google model - versatile
+                'llama3.1:8b',          // Latest Llama - powerful
+                'phi',                  // Strong reasoning
+                'qwen:1.8b',            // Multilingual
+                'stablelm2:1.6b',       // Conversational
+                'mistral:7b',           // Advanced (larger)
+                'deepseek-llm:7b',      // DeepSeek reasoning
+                'deepseek-coder:6.7b',  // Code tasks
+                'tinyllama'             // Quick fallback
+            ];
             for (const p of priority) {
                 if (enabledModels[p]) return p;
             }

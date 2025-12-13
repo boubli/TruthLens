@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Box, Container, Typography, Grid, Paper, IconButton, Avatar, InputBase, CircularProgress } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -30,54 +29,66 @@ import UserNotificationsMenu from '@/components/layout/UserNotificationsMenu';
 import { listenForUnreadForUser } from '@/services/supportService';
 
 export default function UserHome() {
-    const { user, tier, isPro, features: tierFeatures, dietaryPreferences } = useAuth();
+    const { user, userProfile, tier, features: tierFeatures } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
     const [unreadCount, setUnreadCount] = useState(0);
 
-    const { t } = useTranslation();
+
+
+    // Helper to format date
+    const getExpiryDate = () => {
+        if (userProfile?.subscription?.freeAccessExpiresAt) {
+            const dateVal = userProfile.subscription.freeAccessExpiresAt;
+            const date = typeof dateVal.toDate === 'function' ? dateVal.toDate() : new Date(dateVal);
+            return date.toLocaleDateString();
+        }
+        return null;
+    };
+
+    const expiryDate = getExpiryDate();
 
     // Features Definition (Moved up for Search Access)
     const features = [
         {
-            title: t('feature_scan_title'),
+            title: 'Scan Product',
             icon: <QrCodeScannerIcon sx={{ fontSize: 40, color: '#6C63FF' }} />,
             path: '/scan',
             color: 'rgba(108, 99, 255, 0.1)',
-            desc: t('feature_scan_desc'),
+            desc: 'Instant analysis',
             gradient: 'linear-gradient(135deg, rgba(108, 99, 255, 0.1) 0%, rgba(108, 99, 255, 0.05) 100%)'
         },
         {
-            title: t('feature_chat_title'),
+            title: 'AI Chat',
             icon: <SmartToyIcon sx={{ fontSize: 40, color: '#9333EA' }} />,
             path: '/ai-chat',
             color: 'rgba(147, 51, 234, 0.1)',
-            desc: t('feature_chat_desc'),
+            desc: 'Ask anything',
             gradient: 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(147, 51, 234, 0.05) 100%)'
         },
         {
-            title: t('feature_history_title'),
+            title: 'History',
             icon: <HistoryIcon sx={{ fontSize: 40, color: '#00F0FF' }} />,
             path: '/history',
             color: 'rgba(0, 240, 255, 0.1)',
-            desc: t('feature_history_desc'),
+            desc: 'Past scans',
             gradient: 'linear-gradient(135deg, rgba(0, 240, 255, 0.1) 0%, rgba(0, 240, 255, 0.05) 100%)'
         },
         {
-            title: t('feature_globalsearch_title'),
+            title: 'Global Search',
             icon: <PublicIcon sx={{ fontSize: 40, color: '#00E676' }} />,
             path: '/global-search',
             color: 'rgba(0, 230, 118, 0.1)',
-            desc: t('feature_globalsearch_desc'),
+            desc: 'Ultimate Only',
             gradient: 'linear-gradient(135deg, rgba(0, 230, 118, 0.1) 0%, rgba(0, 230, 118, 0.05) 100%)'
         },
         {
-            title: t('feature_foryou_title'),
+            title: 'For You',
             icon: <RecommendIcon sx={{ fontSize: 40, color: '#FCD34D' }} />,
             path: '/recommendations',
             color: 'rgba(252, 211, 77, 0.1)',
-            desc: t('feature_foryou_desc'),
+            desc: 'Smart picks',
             gradient: 'linear-gradient(135deg, rgba(252, 211, 77, 0.1) 0%, rgba(252, 211, 77, 0.05) 100%)'
         },
         {
@@ -89,36 +100,36 @@ export default function UserHome() {
             gradient: 'linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 107, 53, 0.05) 100%)'
         },
         {
-            title: t('feature_favorites_title'),
+            title: 'Favorites',
             icon: <FavoriteIcon sx={{ fontSize: 40, color: '#FF4081' }} />,
             path: '/favorites',
             color: 'rgba(255, 64, 129, 0.1)',
-            desc: t('feature_favorites_desc'),
+            desc: 'Saved items',
             gradient: 'linear-gradient(135deg, rgba(255, 64, 129, 0.1) 0%, rgba(255, 64, 129, 0.05) 100%)'
         },
         {
-            title: t('feature_profile_title'),
+            title: 'My Profile',
             icon: <PersonIcon sx={{ fontSize: 40, color: '#10B981' }} />,
             path: '/profile',
             color: 'rgba(16, 185, 129, 0.1)',
-            desc: t('feature_profile_desc'),
+            desc: 'Settings & account',
             gradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
             hiddenInGrid: true // Redundant with Header Icon
         },
         {
-            title: t('feature_upgrade_title'),
+            title: 'Upgrade',
             icon: <StarIcon sx={{ fontSize: 40, color: '#F59E0B' }} />,
             path: '/upgrade',
             color: 'rgba(245, 158, 11, 0.1)',
-            desc: t('feature_upgrade_desc'),
+            desc: 'Get Pro features',
             gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%)'
         },
         {
-            title: t('feature_support_title'),
+            title: 'Support Chat',
             icon: <ChatBubbleOutlineIcon sx={{ fontSize: 40, color: '#3B82F6' }} />,
             path: '/support',
             color: 'rgba(59, 130, 246, 0.1)',
-            desc: t('feature_support_desc'),
+            desc: 'Talk to us',
             gradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)'
         }
     ];
@@ -198,18 +209,18 @@ export default function UserHome() {
 
         // Late Night: 00:00 - 06:00 (AI Powered)
         if (hour >= 0 && hour < 6) {
-            setGreeting(t('greeting_late_night')); // Immediate placeholder
+            setGreeting('Up late? 🌙'); // Immediate placeholder
             generateDynamicGreeting(name, 'late_night').then((aiMsg) => {
                 if (aiMsg) setGreeting(aiMsg);
             });
         }
         // Standard Hours: Simple Greeting
         else if (hour < 12) {
-            setGreeting(t('greeting_morning'));
+            setGreeting('Good Morning ☀️');
         } else if (hour < 18) {
-            setGreeting(t('greeting_afternoon'));
+            setGreeting('Good Afternoon 🌤️');
         } else {
-            setGreeting(t('greeting_evening'));
+            setGreeting('Good Evening 🌙');
         }
     }, [user]);
 
@@ -332,7 +343,7 @@ export default function UserHome() {
                                     fontSize: { xs: '0.95rem', sm: '1rem' },
                                     color: 'grey.900' // Force dark text on white search bar
                                 }}
-                                placeholder={t('home_search_placeholder')}
+                                placeholder='Search products...'
                                 inputProps={{ 'aria-label': 'search products' }}
                                 value={query}
                                 onChange={(e) => {
@@ -454,10 +465,10 @@ export default function UserHome() {
                             {/* RESULTS HEADER */}
                             <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Typography variant="h6" fontWeight="bold">
-                                    {t('home_search_results')}
+                                    Search Results
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
-                                    {featureResults.length} {t('home_found')}
+                                    {featureResults.length} found
                                 </Typography>
                             </Box>
 
@@ -515,10 +526,10 @@ export default function UserHome() {
                                     <Box sx={{ textAlign: 'center', py: 8, opacity: 0.7 }}>
                                         <SearchIcon sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
                                         <Typography variant="h6" color="text.secondary">
-                                            {t('home_no_results')}
+                                            No products found
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
-                                            {t('home_try_searching')}
+                                            Try searching for something else
                                         </Typography>
                                     </Box>
                                 )
@@ -536,7 +547,7 @@ export default function UserHome() {
                                         fontSize: { xs: '1.1rem', sm: '1.25rem' }
                                     }}
                                 >
-                                    {t('home_quick_actions')}
+                                    Quick Actions
                                 </Typography>
                             </ScrollReveal>
 

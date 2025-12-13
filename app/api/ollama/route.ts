@@ -11,6 +11,7 @@ export const maxDuration = 60; // Allow 60s for LLM responses (Vercel Hobby Limi
 const normalizeUrl = (url: string) => url.replace(/\/$/, '');
 
 export async function POST(request: Request) {
+    let body;
     try {
         // 1. Authentication Check (Fastest check first)
         const authHeader = request.headers.get('Authorization');
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
         }
 
         // 2. Get Configuration
-        const body = await request.json();
+        body = await request.json();
         const settings = await getSystemSettings();
 
         // Resolve Target URL
@@ -55,15 +56,28 @@ export async function POST(request: Request) {
     } catch (error: any) {
         console.error('[Ollama Proxy] Error:', error.message);
 
-        // Handle Timeout specifically
-        if (error.code === 'ECONNABORTED') {
-            return NextResponse.json({ error: 'Ollama Request Timed Out (Server took too long)' }, { status: 504 });
+        // AUTO-FALLBACK: If the primary connection failed, try the SSH tunnel
+        if (body && (error.code === 'ECONNREFUSED' || error.code === 'ECONNABORTED' || error.response?.status === 502)) {
+            console.log('[Ollama Proxy] ⚠️ Primary connection failed. Attempting fallback to SSH Tunnel (localhost:11435)...');
+            try {
+                const targetEndpoint = body.endpoint || '/api/chat';
+                const fallbackUrl = `http://localhost:11435${targetEndpoint}`;
+
+                const retryResponse = await axios.post(fallbackUrl, body.payload, {
+                    timeout: 60000,
+                    responseType: 'json'
+                });
+
+                console.log('[Ollama Proxy] ✅ Fallback to SSH Tunnel successful!');
+                return NextResponse.json(retryResponse.data);
+
+            } catch (retryError: any) {
+                console.error('[Ollama Proxy] Fallback failed:', retryError.message);
+            }
         }
 
-        // Handle Connection Refused
-        if (error.code === 'ECONNREFUSED') {
-            return NextResponse.json({ error: 'Failed to connect to Ollama Server (Is it running?)' }, { status: 502 });
-        }
+        // ... (existing error handling) => Actually I should overwrite the whole catch block or refactor.
+        // Let's do a scoped refactor first.
 
         return NextResponse.json(
             { error: error.response?.data?.error || error.message || 'Internal Server Error' },

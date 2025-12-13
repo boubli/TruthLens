@@ -187,12 +187,20 @@ export const sendAIChatMessage = async (
     // Get System Settings for configured models
     const settings = await getSystemSettings();
     const models = settings.apiKeys?.models;
-    const configuredModel = models?.[provider as keyof typeof models];
+    const configuredModelString = models?.[provider as keyof typeof models] || '';
 
-    // Determine target model
-    // 1. If Platform Key: Use Configured Model -> Default
-    // 2. If User Key: Use High Tier -> Fallback Low Tier (Smart Logic)
-    let targetModel = configuredModel;
+    // Determine target models to try in order
+    let targetModels: string[] = [];
+
+    if (configuredModelString) {
+        targetModels = configuredModelString.split(',').map(m => m.trim()).filter(m => m.length > 0);
+    } else {
+        // Defaults
+        if (provider === 'gemini') targetModels = ['gemini-1.5-pro', 'gemini-1.5-flash'];
+        else if (provider === 'groq') targetModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+        else if (provider === 'deepseek') targetModels = ['deepseek-chat'];
+        else if (provider === 'openrouter') targetModels = [settings.apiKeys?.openrouterModel || 'meta-llama/llama-3.1-8b-instruct:free'];
+    }
 
 
     // Get language name for prompt
@@ -247,35 +255,28 @@ When users ask about TruthLens (any spelling variation) or who made/created/buil
     };
 
     try {
-        // If it's a user key, we might want to try "Best" then "Fallback"
-        if (source === 'user' && !targetModel) {
-            // Define defaults/fallbacks for user keys
-            let primaryModel = '';
-            let fallbackModel = '';
-
-            if (provider === 'gemini') {
-                primaryModel = 'gemini-1.5-pro';
-                fallbackModel = 'gemini-1.5-flash';
-            } else if (provider === 'groq') {
-                primaryModel = 'llama-3.3-70b-versatile';
-                fallbackModel = 'llama-3.1-8b-instant';
-            }
-
-            try {
-                return await attemptCall(primaryModel || undefined);
-            } catch (primaryError: any) {
-                console.warn(`[AI_SMART_FALLBACK] Primary model ${primaryModel} failed for user ${userId}. Retrying with ${fallbackModel}. Error:`, primaryError.message);
-                // Only retry on specific errors (404 Not Found, 429 Rate Limit?) - Actually user wants "if api failed switch"
-                // We retry if it's NOT an auth error.
-                if (primaryError?.code === 'INVALID_KEY' || primaryError?.status === 401) {
-                    throw primaryError; // Don't retry auth errors
-                }
-                return await attemptCall(fallbackModel);
-            }
-        } else {
-            // Platform key or configured model - just one attempt
-            return await attemptCall(targetModel);
+        // Generic fallback for Ollama/Others if empty
+        if (targetModels.length === 0) {
+            return await attemptCall();
         }
+
+        // Execute fallback loop
+        let lastError: any = null;
+        for (const model of targetModels) {
+            try {
+                return await attemptCall(model);
+            } catch (error: any) {
+                console.warn(`[AI_FALLBACK] Model ${model} failed. Error:`, error.message || error);
+                lastError = error;
+
+                // Stop on Auth Error
+                if (error?.code === 'INVALID_KEY' || error?.status === 401 || error?.status === 403 || error?.isInvalidKey) {
+                    throw error;
+                }
+            }
+        }
+        if (lastError) throw lastError;
+        throw new Error('All models failed.');
     } catch (error: any) {
         // Handle specific API errors
         if (error?.code) {

@@ -5,7 +5,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import { Box, Container, Typography, Grid, Button, Card, CardContent, Chip, useTheme, useMediaQuery, IconButton } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -29,7 +29,7 @@ import WelcomeModal from '@/components/ui/WelcomeModal';
 
 export default function LandingPage() {
   const router = useRouter();
-  const { t } = useTranslation();
+  // const { t } = useTranslation();
   const { user, userProfile, loading } = useAuth(); // Added userProfile
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -108,16 +108,16 @@ export default function LandingPage() {
               <QrCodeScannerIcon sx={{ fontSize: 20, color: 'white' }} />
             </Box>
             <Typography variant="h6" fontWeight="bold" sx={{ background: 'linear-gradient(45deg, #fff, #aaa)', backgroundClip: 'text', color: 'transparent' }}>
-              {t('brand_name')}
+              TruthLens
             </Typography>
           </Box>
 
           {!isMobile ? (
             <Box sx={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-              <Button color="inherit" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>{t('nav_features')}</Button>
-              <Button color="inherit" onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}>{t('nav_pricing')}</Button>
-              <Button variant="outlined" color="primary" onClick={() => router.push('/login')}>{t('nav_login')}</Button>
-              <Button variant="contained" color="primary" onClick={() => router.push('/signup')}>{t('nav_get_started')}</Button>
+              <Button color="inherit" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>Features</Button>
+              <Button color="inherit" onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}>Pricing</Button>
+              <Button variant="outlined" color="primary" onClick={() => router.push('/login')}>Login</Button>
+              <Button variant="contained" color="primary" onClick={() => router.push('/signup')}>Get Started</Button>
             </Box>
           ) : (
             <IconButton onClick={() => setMobileMenuOpen(!mobileMenuOpen)} color="inherit">
@@ -175,7 +175,7 @@ export default function LandingPage() {
               <Grid size={{ xs: 12, md: 6 }}>
                 <ScrollReveal>
                   <Chip
-                    label={t('landing_new_feature')}
+                    label="New: AI Truth Rating"
                     color="primary"
                     sx={{ mb: 3, bgcolor: 'rgba(108, 99, 255, 0.1)', color: 'primary.light', border: '1px solid rgba(108, 99, 255, 0.2)' }}
                   />
@@ -191,11 +191,11 @@ export default function LandingPage() {
                       WebkitTextFillColor: 'transparent',
                     }}
                   >
-                    {t('landing_hero_title_1')} <br />
-                    <span style={{ color: '#6C63FF', WebkitTextFillColor: '#6C63FF' }}>{t('landing_hero_title_2')}</span>
+                    See What's <br />
+                    <span style={{ color: '#6C63FF', WebkitTextFillColor: '#6C63FF' }}>Really Inside</span>
                   </Typography>
                   <Typography variant="h5" color="text.secondary" paragraph sx={{ mb: 4, maxWidth: 500, lineHeight: 1.6 }}>
-                    {t('landing_hero_subtitle')}
+                    Instantly decode ingredients, spot hidden additives, and get personalized health scores with a single scan.
                   </Typography>
 
                   <Box sx={{ display: 'flex', gap: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
@@ -210,7 +210,7 @@ export default function LandingPage() {
                         boxShadow: '0 0 30px rgba(108,99,255,0.4)'
                       }}
                     >
-                      {t('landing_cta_primary')}
+                      Start Scanning Free
                     </AnimatedButton>
                     <AnimatedButton
                       variant="outlined"
@@ -218,7 +218,7 @@ export default function LandingPage() {
                       onClick={() => document.getElementById('demo')?.scrollIntoView({ behavior: 'smooth' })}
                       sx={{ px: 4, py: 2, fontSize: '1.1rem', borderColor: 'rgba(255,255,255,0.2)', color: 'text.primary' }}
                     >
-                      {t('landing_cta_secondary')}
+                      See How It Works
                     </AnimatedButton>
                   </Box>
                 </ScrollReveal>
@@ -275,7 +275,7 @@ export default function LandingPage() {
         <Box id="features" sx={{ py: 15, bgcolor: '#050505' }}>
           <Container maxWidth="lg">
             <Typography variant="h2" textAlign="center" fontWeight="bold" sx={{ mb: 8 }}>
-              {t('landing_features_title_1')} <span style={{ color: '#6C63FF' }}>{t('landing_features_title_2')}</span>
+              Everything you need to <span style={{ color: '#6C63FF' }}>eat healthier</span>
             </Typography>
             <Grid container spacing={4}>
               {[
@@ -326,10 +326,10 @@ export default function LandingPage() {
           <Container maxWidth="md">
             <ScrollReveal>
               <Typography variant="h2" fontWeight="bold" gutterBottom>
-                {t('landing_footer_cta_title')}
+                Ready for the truth?
               </Typography>
               <Typography variant="h5" color="text.secondary" sx={{ mb: 5 }}>
-                {t('landing_footer_cta_subtitle')}
+                Join thousands of health-conscious users today.
               </Typography>
               <Button
                 variant="contained"
@@ -345,7 +345,7 @@ export default function LandingPage() {
                   '&:hover': { background: '#f0f0f0' }
                 }}
               >
-                {t('landing_footer_cta_button')}
+                Start Now
               </Button>
             </ScrollReveal>
           </Container>

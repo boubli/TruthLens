@@ -45,9 +45,29 @@ TruthLens uses a unique **AI Swarm** architecture to race multiple AI providers:
 ### 💎 Flexible & Lifetime Access
 *   **Fair Pricing**: Monthly subscriptions or a unique **Lifetime Deal**.
 *   **Tiered Features**:
-    *   **Explorer (Free)**: Basic AI (Azure) + Bring Your Own Key (BYOK) for Premium.
-    *   **Pro**: Premium AI Models Included (Groq/Gemini/DeepSeek) + Global Search.
-    *   **Ultimate**: All Pro Features + White Label Reports.
+    *   **Explorer (Free)**: 
+        - Basic AI (Azure Ollama - completely free, no key needed)
+        - **AI Chat**: Available with **Bring Your Own Key (BYOK)** for Groq/Gemini
+        - 10 messages/day with your own API key
+        - Basic product scanner (5 scans/day)
+        - Limited history (10 items)
+    *   **Plus ($4.99/mo)**: 
+        - Everything in Free
+        - **Platform AI keys included** (no BYOK needed)
+        - 20 scans/day
+        - Global search enabled
+    *   **Pro ($9.99/mo)**: 
+        - Unlimited scans & AI chat
+        - All premium AI models included
+        - Visual search & meal planning
+        - PC Builder access
+        - Priority support
+    *   **Ultimate ($19.99/mo)**: 
+        - All Pro features
+        - White label reports
+        - Beta access to new features
+
+> **💡 Tip for Free Users**: You can use AI Chat by adding your own free API keys from [Groq](https://console.groq.com/keys) or [Google AI Studio](https://aistudio.google.com/app/apikey). Or upgrade to Plus to get platform keys included!
 
 ### 🛠️ Powerful Admin Dashboard
 *   **Control Center**: Manage users, subscriptions, and app config in real-time.

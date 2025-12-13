@@ -1,6 +1,6 @@
 import { db } from '@/lib/firebase';
 import {
-    collection, doc, getDoc, getDocs, setDoc, updateDoc, query,
+    collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query,
     where, orderBy, Timestamp, increment, addDoc
 } from 'firebase/firestore';
 import { AccessCode, FreeAccessRequest, UserNotification, AccessCodeTier } from '@/types/accessRequest';
@@ -76,6 +76,13 @@ export const toggleAccessCodeStatus = async (codeId: string, active: boolean): P
     await updateDoc(doc(db, ACCESS_CODES_COLLECTION, codeId), { active });
 };
 
+/**
+ * Delete access code permanently from Firebase
+ */
+export const deleteAccessCode = async (codeId: string): Promise<void> => {
+    await deleteDoc(doc(db, ACCESS_CODES_COLLECTION, codeId));
+};
+
 // ==================== ACCESS REQUESTS (Client API Wrapper) ====================
 
 /**
@@ -93,8 +100,9 @@ export const submitAccessRequest = async (
         code: string;
         isStudent: boolean;
         studentProofUrl: string | null;
+        studentProofBase64?: string | null;
     }
-): Promise<{ success: boolean; requestId?: string; autoApproved?: boolean; error?: string }> => {
+): Promise<{ success: boolean; requestId?: string; autoApproved?: boolean; tier?: string; error?: string }> => {
     try {
         // Get current auth token
         const { getAuth } = await import('firebase/auth');

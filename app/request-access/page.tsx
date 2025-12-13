@@ -17,9 +17,9 @@ import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { validateAccessCode, submitAccessRequest } from '@/services/accessRequestService';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebase';
+// Zero storage implementation
 import { motion } from 'framer-motion';
+import AIProcessingOverlay from '@/components/ui/AIProcessingOverlay';
 
 const steps = ['Enter Code', 'Fill Details', 'Submit'];
 
@@ -32,6 +32,8 @@ export default function RequestAccessPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [autoApproved, setAutoApproved] = useState(false);
+    const [approvedTier, setApprovedTier] = useState<string>('');
+    const [showAIOverlay, setShowAIOverlay] = useState(false);
 
     // Step 1: Code
     const [code, setCode] = useState('');
@@ -111,19 +113,36 @@ export default function RequestAccessPage() {
         setLoading(true);
         setError('');
 
+        if (isStudent && studentProof) {
+            setShowAIOverlay(true); // Show AI animation
+        }
+
         try {
-            // Upload student proof if exists
+            // Convert student proof to base64 for AI verification
+            let studentProofBase64: string | null = null;
             let studentProofUrl: string | null = null;
+
             if (isStudent && studentProof && user) {
                 setUploadingProof(true);
-                const proofRef = ref(storage, `student-proofs/${user.uid}/${Date.now()}_${studentProof.name}`);
-                await uploadBytes(proofRef, studentProof);
-                studentProofUrl = await getDownloadURL(proofRef);
+
+                // Convert to base64
+                const reader = new FileReader();
+                const base64Promise = new Promise<string>((resolve, reject) => {
+                    reader.onload = () => {
+                        const base64 = reader.result as string;
+                        const base64Data = base64.split(',')[1]; // Remove data:image prefix
+                        resolve(base64Data);
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(studentProof);
+                });
+                studentProofBase64 = await base64Promise;
                 setUploadingProof(false);
             }
 
-            // Submit request
+            // Submit request with base64 for AI verification
             const result = await submitAccessRequest(user!.uid, {
+                // ... fields
                 fullName,
                 username,
                 email: useAccountEmail ? (userProfile?.email || '') : email,
@@ -132,34 +151,37 @@ export default function RequestAccessPage() {
                 reason,
                 code,
                 isStudent,
-                studentProofUrl
+                studentProofUrl,
+                studentProofBase64
             });
 
             if (result.success) {
+                // Keep overlay for a moment to show "Finalizing"
+                if (isStudent) {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                }
+
+                setShowAIOverlay(false);
                 setSuccess(true);
-                setAutoApproved(result.autoApproved || false);
-                setActiveStep(2);
+                // ...
             } else {
+                setShowAIOverlay(false);
                 setError(result.error || 'Failed to submit request');
             }
         } catch (err: any) {
+            setShowAIOverlay(false);
             setError(err.message || 'An error occurred');
         }
 
         setLoading(false);
     };
 
-    if (authLoading) {
-        return (
-            <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     return (
         <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', py: 4 }}>
+            <AIProcessingOverlay open={showAIOverlay} />
+
             <Container maxWidth="sm">
+
                 <Button
                     startIcon={<ArrowBackIcon />}
                     onClick={() => router.back()}
@@ -331,20 +353,25 @@ export default function RequestAccessPage() {
                         <Box component={motion.div} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} textAlign="center">
                             <CheckCircleIcon sx={{ fontSize: 80, color: 'success.main', mb: 2 }} />
                             <Typography variant="h5" fontWeight="bold" gutterBottom>
-                                {autoApproved ? '🎉 Instant Approval!' : 'Request Submitted!'}
+                                {autoApproved ? '🎉 Congratulations!' : 'Request Submitted!'}
+                            </Typography>
+                            <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
+                                {autoApproved && `You now have ${approvedTier.toUpperCase()} Tier!`}
                             </Typography>
                             <Typography color="text.secondary" sx={{ mb: 3 }}>
                                 {autoApproved
-                                    ? `Your student verification was approved! You now have ${codeTier.toUpperCase()} access for 3 months.`
+                                    ? `Your student verification was approved by our AI! You now have full ${approvedTier.toUpperCase()} access for 3 months. Page will refresh in 3 seconds...`
                                     : 'Your request is pending admin review. You will be notified once it is processed.'}
                             </Typography>
-                            <Button variant="contained" onClick={() => router.push('/profile')}>
-                                Go to Profile
-                            </Button>
+                            {!autoApproved && (
+                                <Button variant="contained" onClick={() => router.push('/profile')}>
+                                    Go to Profile
+                                </Button>
+                            )}
                         </Box>
                     )}
                 </Paper>
             </Container>
-        </Box>
+        </Box >
     );
 }

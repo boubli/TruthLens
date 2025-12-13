@@ -2,65 +2,64 @@
 import axios from 'axios';
 import { EnhancedProductData } from '@/services/productMapper';
 
-const FDA_API_URL = 'https://api.fda.gov/drug/label.json';
+const USDA_API_KEY = '1y9SZmWjZZrLLc6FlydP2ofW2Q82T8fxlK1ulS17';
+const USDA_API_URL = 'https://api.nal.usda.gov/fdc/v1/foods/search';
 
 export const searchFDA = async (query: string): Promise<EnhancedProductData[]> => {
     try {
-        // FDA API: search string e.g., search=openfda.brand_name:"tylenol"
-        // We use a broader search on brand_name or generic_name
-        const searchQuery = `openfda.brand_name:"${query}"+OR+openfda.generic_name:"${query}"`;
-
-        const response = await axios.get(FDA_API_URL, {
+        const response = await axios.get(USDA_API_URL, {
             params: {
-                search: searchQuery,
-                limit: 5
+                api_key: USDA_API_KEY,
+                query: query,
+                pageSize: 5,
+                dataType: ['Branded', 'Foundation', 'Survey (FNDDS)', 'SR Legacy']
             },
-            timeout: 5000 // 5s timeout
+            timeout: 8000
         });
 
-        if (response.data.results) {
-            return response.data.results.map((item: any) => mapFDAToEnhanced(item));
+        if (response.data.foods) {
+            return response.data.foods.map((item: any) => mapUSDAToEnhanced(item));
         }
 
         return [];
     } catch (error: any) {
-        // FDA API returns 404 for no results, which is normal
-        if (error.response?.status !== 404) {
-            console.error('[FDA Service] Search error:', error.message);
-        }
+        console.error('[USDA Service] Search error:', error.message);
         return [];
     }
 };
 
-const mapFDAToEnhanced = (fdaItem: any): EnhancedProductData => {
-    const openfda = fdaItem.openfda || {};
-    const brand = openfda.brand_name?.[0] || 'Unknown Brand';
-    const generic = openfda.generic_name?.[0] || '';
-    const name = generic ? `${brand} (${generic})` : brand;
-    const id = openfda.product_ndc?.[0] || fdaItem.id || 'fda_unknown';
-
+const mapUSDAToEnhanced = (item: any): EnhancedProductData => {
     return {
-        id: `fda_${id}`,
+        id: `usda_${item.fdcId}`,
         identity: {
-            name: name,
-            brand: openfda.manufacturer_name?.[0] || 'Unknown Manufacturer',
-            barcode: openfda.upc?.[0] || '', // Often missing in FDA open data
-            category: 'Medicine',
-            description: fdaItem.purpose?.[0] || fdaItem.indications_and_usage?.[0] || 'FDA Approved Medicine'
+            name: item.description,
+            brand: item.brandOwner || 'USDA Food',
+            barcode: item.gtinUpc || '',
+            category: item.foodCategory || 'Generic Food',
+            description: item.ingredients ? `Ingredients: ${item.ingredients}` : 'USDA Verified Food Data'
         },
-        // FDA doesn't provide images directly in this endpoint
         media: {
-            front_image: '/images/placeholder-medicine.png', // Fallback
-            thumbnail: '/images/placeholder-medicine.png'
+            front_image: '/api/placeholder/400/400?text=USDA',
+            thumbnail: '/api/placeholder/200/200?text=USDA'
         },
         grades: {
             nutri_score: '?',
             eco_score: '?',
             processing_score: '?'
         },
-        nutrition: { nutriments_raw: {} }, // Not applicable
+        nutrition: {
+            nutriments_raw: item.foodNutrients?.reduce((acc: any, n: any) => {
+                const name = n.nutrientName.toLowerCase();
+                // Simple mapping for demonstration
+                if (name.includes('energy')) acc.energy_kcal = n.value;
+                if (name.includes('protein')) acc.proteins = n.value;
+                if (name.includes('carbohydrate')) acc.carbohydrates = n.value;
+                if (name.includes('total lipid')) acc.fat = n.value;
+                return acc;
+            }, {}) || {}
+        },
         sensory_profile: { flavors: [] },
-        ingredients: [],
-        source: 'FDA' // Custom field used for UI handling if needed
+        ingredients: item.ingredients ? item.ingredients.split(',').map((i: string) => i.trim()) : [],
+        source: 'USDA'
     };
 };

@@ -42,7 +42,7 @@ export interface EnhancedProductData {
     // but the user requested strict structure. I will implement getters or just strictly use the object.)
     // For compatibility with components expecting 'ingredients', we might need to add it:
     ingredients: string[];
-    source?: 'OFF' | 'FDA' | 'FooDB' | 'AI';
+    source?: 'OFF' | 'FDA' | 'FooDB' | 'AI' | 'USDA';
 
     // Tech & Non-Food Fields
     specs?: Record<string, string>; // e.g. { "Processor": "M1", "RAM": "16GB" }

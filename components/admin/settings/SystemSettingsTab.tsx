@@ -24,14 +24,6 @@ interface SystemSettingsTabProps {
     savingSearxng: boolean;
     handleRunBackup: () => Promise<void>;
     runningBackup: boolean;
-    // GitHub Models (PC Builder)
-    githubModelsConfig: {
-        githubModelsToken: string;
-        githubModelsModel: string;
-    };
-    setGithubModelsConfig: React.Dispatch<React.SetStateAction<any>>;
-    handleSaveGithubModels: () => Promise<void>;
-    savingGithubModels: boolean;
     // PC Consultation Price
     pcConsultationPrice: number;
     setPcConsultationPrice: React.Dispatch<React.SetStateAction<number>>;
@@ -46,10 +38,6 @@ export default function SystemSettingsTab({
     savingSearxng,
     handleRunBackup,
     runningBackup,
-    githubModelsConfig,
-    setGithubModelsConfig,
-    handleSaveGithubModels,
-    savingGithubModels,
     pcConsultationPrice,
     setPcConsultationPrice,
     handleSavePcPrice,
@@ -57,51 +45,6 @@ export default function SystemSettingsTab({
 }: SystemSettingsTabProps) {
     return (
         <Box>
-            {/* --- GITHUB MODELS (PC BUILDER) CARD --- */}
-            <Card sx={{ mb: 4, borderRadius: 2, border: '1px solid #c8b6ff' }}>
-                <CardHeader
-                    title="GitHub Models API (PC Builder)"
-                    subheader="AI for PC build recommendations"
-                    avatar={<ComputerIcon sx={{ color: '#6C63FF' }} />}
-                    sx={{ bgcolor: '#f3f0ff', borderBottom: '1px solid #c8b6ff' }}
-                />
-                <CardContent sx={{ p: 3 }}>
-                    <TextField
-                        label="GitHub Personal Access Token"
-                        fullWidth
-                        type="password"
-                        value={githubModelsConfig.githubModelsToken}
-                        onChange={(e) => setGithubModelsConfig((prev: any) => ({ ...prev, githubModelsToken: e.target.value }))}
-                        placeholder="github_pat_11..."
-                        helperText="Create a token at github.com/settings/tokens with 'models' scope"
-                        sx={{ mb: 2 }}
-                    />
-                    <TextField
-                        label="Model"
-                        fullWidth
-                        value={githubModelsConfig.githubModelsModel}
-                        onChange={(e) => setGithubModelsConfig((prev: any) => ({ ...prev, githubModelsModel: e.target.value }))}
-                        placeholder="gpt-4o"
-                        helperText="Model ID from GitHub Models catalog"
-                        sx={{ mb: 2 }}
-                    />
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                        <Button
-                            variant="contained"
-                            onClick={handleSaveGithubModels}
-                            disabled={savingGithubModels}
-                            startIcon={savingGithubModels ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
-                            sx={{
-                                background: 'linear-gradient(45deg, #6C63FF 30%, #00F0FF 90%)',
-                                '&:hover': { opacity: 0.9 }
-                            }}
-                        >
-                            Save PC Builder Config
-                        </Button>
-                    </Box>
-                </CardContent>
-            </Card>
-
             {/* --- PC BUILDER CONSULTATION PRICE --- */}
             <Card sx={{ mb: 4, borderRadius: 2, border: '1px solid #ffd700' }}>
                 <CardHeader

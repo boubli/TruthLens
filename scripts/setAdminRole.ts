@@ -34,7 +34,7 @@ async function setAdminRole(email: string) {
         });
 
         console.log(`✅ Successfully set ${email} as admin!`);
-        console.log(`🎯 Access admin panel: http://localhost:3000/admin/payments`);
+        console.log(`🎯 Access admin panel: http://localhost:3000/admin`);
 
     } catch (error) {
         console.error('❌ Error:', error);

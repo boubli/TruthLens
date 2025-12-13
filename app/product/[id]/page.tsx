@@ -134,43 +134,12 @@ export default function ProductDetailPage() {
         setLoading(true);
         let data: any = null;
 
-        // Check if this is an AI-generated ephemeral product
-        const isAiProduct = barcode.startsWith('ai_');
-        const query = searchParams.get('q');
-
-        if (isAiProduct && source === 'global-search' && query) {
-            console.log(`[ProductPage] Hydrating AI Product from query: ${query}`);
-            // Import dynamically or use the imported action
-            const { getAIProductAction } = await import('@/app/actions');
-            data = await getAIProductAction(query);
-        } else {
-            // Standard Barcode Fetch
-            data = await getProductAction(barcode);
-        }
+        // Standard Barcode Fetch
+        data = await getProductAction(barcode);
 
         if (data) {
             setProduct(data);
-
-            // --- AI Auto-Repair Logic ---
-            if ((data.identity.brand === 'Unknown Brand' || data.identity.name === 'Unknown Product') && data.media.front_image && !isAiProduct) {
-                console.log("🔍 [AI Repair] Detected unknown metadata. Attempting vision repair...");
-                repairProductMetadata(data.media.front_image, data.identity.name).then(repaired => {
-                    if (repaired && repaired.brand && repaired.name) {
-                        console.log("✅ [AI Repair] Success:", repaired);
-                        setProduct((prev: any) => prev ? ({
-                            ...prev,
-                            identity: {
-                                ...prev.identity,
-                                brand: repaired.brand,
-                                name: repaired.name
-                            }
-                        }) : null);
-                    }
-                });
-            }
-            // -----------------------------
-
-            performAiAnalysis(data);
+            // AI Logic Removed as per request
         }
         setLoading(false);
     };
@@ -294,7 +263,8 @@ export default function ProductDetailPage() {
                             {/* DYNAMIC HEADER & SCORE */}
                             {(() => {
                                 const lowerCat = (product.identity.category || '').toLowerCase();
-                                const isTech = ['tech', 'electronic', 'hardware', 'laptop', 'gpu', 'phone', 'monitor', 'tv', 'watch', 'tablet', 'camera'].some(c => lowerCat.includes(c));
+                                // @ts-ignore
+                                const isTech = product.tech_specs || ['tech', 'electronic', 'hardware', 'laptop', 'gpu', 'phone', 'monitor', 'tv', 'watch', 'tablet', 'camera', 'software', 'ai', 'tool', 'game', 'console'].some(c => lowerCat.includes(c));
 
                                 // Tech Scoring Logic
                                 const techScore = product.analysis?.score || 0;
@@ -320,7 +290,8 @@ export default function ProductDetailPage() {
                             {/* DYNAMIC CONTENT SWITCHING BASED ON CATEGORY */}
                             {(() => {
                                 const lowerCat = (product.identity.category || '').toLowerCase();
-                                const isTech = ['tech', 'electronic', 'hardware', 'laptop', 'gpu', 'phone', 'monitor', 'tv', 'watch', 'tablet', 'camera'].some(c => lowerCat.includes(c));
+                                // @ts-ignore
+                                const isTech = product.tech_specs || ['tech', 'electronic', 'hardware', 'laptop', 'gpu', 'phone', 'monitor', 'tv', 'watch', 'tablet', 'camera', 'software', 'ai', 'tool', 'game', 'console', 'home', 'appliance', 'kitchen', 'furniture', 'decor', 'cleaning'].some(c => lowerCat.includes(c));
 
                                 if (isTech) {
                                     // --- TECH VIEW ---
@@ -345,8 +316,27 @@ export default function ProductDetailPage() {
                                                         <ComputerIcon color="primary" />
                                                         <Typography variant="h6" fontWeight="bold">Technical Specifications</Typography>
                                                     </Box>
+
+                                                    {/* @ts-ignore */}
+                                                    {product.release_date && (
+                                                        <Box sx={{ mb: 2, p: 1.5, bgcolor: 'rgba(108, 99, 255, 0.05)', borderRadius: 2, border: '1px solid rgba(108, 99, 255, 0.1)' }}>
+                                                            <Typography variant="caption" color="primary" fontWeight="bold">RELEASE DATE</Typography>
+                                                            {/* @ts-ignore */}
+                                                            <Typography variant="body1" fontWeight="bold">{product.release_date}</Typography>
+                                                        </Box>
+                                                    )}
+
                                                     <Grid container spacing={2}>
-                                                        {Object.entries(product.specs).map(([key, value]) => (
+                                                        {/* @ts-ignore */}
+                                                        {product.tech_specs ? Object.entries(product.tech_specs).map(([key, value]) => (
+                                                            <Grid size={{ xs: 12, sm: 6 }} key={key}>
+                                                                <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
+                                                                    <Typography variant="body2" color="text.secondary" sx={{ textTransform: 'capitalize' }}>{key.replace(/_/g, ' ')}</Typography>
+                                                                    {/* @ts-ignore */}
+                                                                    <Typography variant="body2" fontWeight="600">{value}</Typography>
+                                                                </Box>
+                                                            </Grid>
+                                                        )) : Object.entries(product.specs || {}).map(([key, value]) => (
                                                             <Grid size={{ xs: 12, sm: 6 }} key={key}>
                                                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
                                                                     <Typography variant="body2" color="text.secondary">{key}</Typography>

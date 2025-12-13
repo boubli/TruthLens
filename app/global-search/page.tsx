@@ -7,8 +7,8 @@ import CloseIcon from '@mui/icons-material/Close';
 import PublicIcon from '@mui/icons-material/Public';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import LockIcon from '@mui/icons-material/Lock';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
 import { searchProductsAction, EnhancedProductData } from '@/app/actions';
 import { useAuth } from '@/context/AuthContext';
 import { addToHistory } from '@/services/historyService';
@@ -29,7 +29,6 @@ export default function GlobalSearchPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { features, tier, loading: authLoading } = useAuth(); // Use tier-based feature flag
-    const { t } = useTranslation();
 
     // Auto-search from URL
     React.useEffect(() => {
@@ -107,20 +106,19 @@ export default function GlobalSearchPage() {
                                 <LockIcon sx={{ fontSize: 40 }} />
                             </Avatar>
                             <Typography variant="h4" fontWeight="bold" gutterBottom>
-                                {t('global_search_title')}
+                                {'Global Product Search'}
                             </Typography>
                             <Typography variant="body1" color="text.secondary">
-                                {t('global_search_restricted_desc')}
+                                {'This feature is available to Pro and Ultimate users only. Upgrade to unlock unlimited global product search.'}
                             </Typography>
                         </Box>
-                        <UpgradePrompt feature={t('global_search_feature_name')} variant="full" />
+                        <UpgradePrompt feature={'Global Search'} variant="full" />
                     </Container>
                 </Box>
             </PageTransition>
         );
     }
 
-    // ✅ Premium View (Ultimate Users)
     return (
         <PageTransition>
             <Box sx={{
@@ -162,10 +160,10 @@ export default function GlobalSearchPage() {
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                         }}>
-                            {t('global_search_title')}
+                            {'Global Product Search'}
                         </Typography>
                         <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.5)' }}>
-                            {t('global_search_subtitle')}
+                            {'Search across millions of products worldwide'}
                         </Typography>
                     </Box>
 
@@ -193,7 +191,7 @@ export default function GlobalSearchPage() {
                         <SearchIcon sx={{ color: 'rgba(255,255,255,0.5)', mr: 2 }} />
                         <TextField
                             fullWidth
-                            placeholder={t('global_search_placeholder')}
+                            placeholder={'Search for products, brands, or categories...'}
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             variant="standard"
@@ -226,7 +224,7 @@ export default function GlobalSearchPage() {
                                 boxShadow: '0 4px 12px rgba(108, 99, 255, 0.3)'
                             }}
                         >
-                            {t('search_button')}
+                            {'Search'}
                         </AnimatedButton>
                     </Paper>
 
@@ -307,9 +305,9 @@ export default function GlobalSearchPage() {
 
                     {hasSearched && results.length === 0 && !loading && (
                         <EmptyState
-                            title={t('global_search_no_results', { query })}
-                            description={t('global_search_no_results_desc')}
-                            actionLabel={t('clear_search')}
+                            title={`No results found for "${query}"`}
+                            description={'Try adjusting your search terms or check your spelling'}
+                            actionLabel={'Clear Search'}
                             onAction={handleClear}
                         />
                     )}

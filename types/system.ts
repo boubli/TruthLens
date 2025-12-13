@@ -50,6 +50,8 @@ export interface ExtendedSystemSettings {
         // GitHub Models API (for PC Builder / Grok-3)
         githubModelsToken?: string;       // GitHub PAT with models scope
         githubModelsModel?: string;       // Model to use (e.g., "openai/gpt-4.1")
+        // HuggingFace Inference API (Free Tier Fallback)
+        huggingface?: string;             // HuggingFace API Token
         defaultPcBuilderLocation?: string; // Default location for price searches
         models?: {
             gemini?: string;
@@ -57,9 +59,15 @@ export interface ExtendedSystemSettings {
             openai?: string;
             deepseek?: string;
             openrouter?: string;
+            huggingface?: string;
         };
     };
-    pcConsultationPrice: number; // Price in cents (default 2000)
+    pcConsultationPrice?: number; // Price for PC consultation in cents
+    pricing?: {
+        plus?: { monthly: number; lifetime: number };
+        pro?: { monthly: number; lifetime: number };
+        ultimate?: { monthly: number; lifetime: number };
+    };
     tierConfig: SystemTierConfig;
     branding?: {
         faviconUrl?: string;

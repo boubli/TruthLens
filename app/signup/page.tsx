@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Box, TextField, Typography, Alert, Grid, Paper } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import Link from 'next/link';
@@ -23,7 +22,6 @@ export default function SignupPage() {
     const [error, setError] = useState('');
     const [passwordError, setPasswordError] = useState('');
     const router = useRouter();
-    const { t } = useTranslation();
 
     const recaptchaRef = useRef<ReCAPTCHA>(null);
 
@@ -34,11 +32,11 @@ export default function SignupPage() {
         const confirmPassword = data.get('confirmPassword') as string;
 
         if (password !== confirmPassword) {
-            setPasswordError(t('auth_password_mismatch'));
+            setPasswordError('Passwords do not match');
             return;
         }
         if (password.length < 6) {
-            setPasswordError(t('auth_password_too_short'));
+            setPasswordError('Password must be at least 6 characters');
             return;
         }
 
@@ -53,7 +51,7 @@ export default function SignupPage() {
 
             if (!token) {
                 console.warn('reCAPTCHA failed to generate token');
-                setError(t('auth_captcha_failed'));
+                setError('Security check failed. Please refresh and try again.');
                 return;
             }
 
@@ -63,7 +61,7 @@ export default function SignupPage() {
             if (!result.success) {
                 // If failed, reset captcha so user can try again
                 recaptchaRef.current?.reset();
-                throw new Error(result.error || t('auth_registration_failed'));
+                throw new Error(result.error || 'Registration failed.');
             }
 
             if (result.token) {
@@ -79,7 +77,7 @@ export default function SignupPage() {
 
         } catch (err: any) {
             console.error('Signup error:', err);
-            setError(err.message || t('auth_create_account_failed'));
+            setError(err.message || 'Failed to create account.');
             recaptchaRef.current?.reset();
         } finally {
             setLoading(false);
@@ -92,13 +90,13 @@ export default function SignupPage() {
                 <Paper sx={{ p: 6, maxWidth: 500, textAlign: 'center' }}>
                     <CheckCircleIcon sx={{ fontSize: 80, color: 'success.main', mb: 3 }} />
                     <Typography variant="h4" fontWeight="bold" gutterBottom>
-                        {t('auth_account_created')}
+                        Account Created!
                     </Typography>
                     <Typography variant="body1" color="text.secondary" paragraph>
-                        {t('auth_check_email_verify')}
+                        Please check your email to verify your account before logging in.
                     </Typography>
                     <AnimatedButton variant="contained" size="large" onClick={() => router.push('/login')} sx={{ mt: 2 }}>
-                        {t('auth_go_to_login')}
+                        Go to Login
                     </AnimatedButton>
                 </Paper>
             </Box>
@@ -122,10 +120,10 @@ export default function SignupPage() {
                         <Box sx={{ textAlign: 'center', mb: 4 }}>
                             <PersonAddIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
                             <Typography variant="h4" fontWeight="bold" gutterBottom>
-                                {t('auth_create_account_title')}
+                                Create Account
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                {t('auth_create_account_subtitle')}
+                                Join TruthLens and start making healthier choices
                             </Typography>
                         </Box>
 
@@ -134,7 +132,7 @@ export default function SignupPage() {
                         <Box component="form" onSubmit={handleSignup} sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
                             <TextField
                                 name="email"
-                                label={t('auth_email')}
+                                label="Email Address"
                                 type="email"
                                 required
                                 fullWidth
@@ -143,17 +141,17 @@ export default function SignupPage() {
                             />
                             <TextField
                                 name="password"
-                                label={t('auth_password')}
+                                label="Password"
                                 type="password"
                                 required
                                 fullWidth
-                                helperText={t('auth_password_helper')}
+                                helperText="At least 6 characters"
                                 disabled={loading}
                                 autoComplete="new-password"
                             />
                             <TextField
                                 name="confirmPassword"
-                                label={t('auth_confirm_password')}
+                                label="Confirm Password"
                                 type="password"
                                 required
                                 fullWidth
@@ -182,15 +180,15 @@ export default function SignupPage() {
                                     background: 'linear-gradient(45deg, #6C63FF 30%, #00F0FF 90%)',
                                 }}
                             >
-                                {loading ? t('auth_creating_account') : t('auth_sign_up_button')}
+                                {loading ? 'Creating Account...' : 'Sign Up'}
                             </AnimatedButton>
                         </Box>
 
                         <Box sx={{ mt: 4, textAlign: 'center' }}>
                             <Typography variant="body2" color="text.secondary">
-                                {t('auth_already_have_account')}{' '}
+                                Already have an account?{' '}
                                 <Link href="/login" style={{ color: '#6C63FF', fontWeight: 600, textDecoration: 'none' }}>
-                                    {t('auth_sign_in_link')}
+                                    Sign In
                                 </Link>
                             </Typography>
                         </Box>
@@ -214,10 +212,10 @@ export default function SignupPage() {
                 <ScrollReveal>
                     <QrCodeScannerIcon sx={{ fontSize: 80, mb: 3 }} />
                     <Typography variant="h3" fontWeight="bold" gutterBottom textAlign="center">
-                        {t('auth_signup_welcome_title')}
+                        Start Your Health Journey
                     </Typography>
                     <Typography variant="h6" sx={{ opacity: 0.9, maxWidth: 400, textAlign: 'center' }}>
-                        {t('auth_signup_welcome_desc')}
+                        Get instant AI insights on every product you scan
                     </Typography>
                 </ScrollReveal>
             </Grid>

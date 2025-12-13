@@ -36,6 +36,8 @@ import CardMembershipIcon from '@mui/icons-material/CardMembershipRounded';
 import CardGiftcardIcon from '@mui/icons-material/CardGiftcardRounded';
 import KeyIcon from '@mui/icons-material/VpnKeyRounded';
 import CelebrationRoundedIcon from '@mui/icons-material/CelebrationRounded';
+import SupportIcon from '@mui/icons-material/SupportAgent';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { useAuth } from '@/context/AuthContext';
 
 interface AdminSidebarProps {
@@ -47,17 +49,19 @@ interface AdminSidebarProps {
 
 const SIDEBAR_WIDTH = 280; // Slightly wider for better readability on tablets/desktop
 
+// Organized menu items by category
 const menuItems = [
-    { name: 'Dashboard', path: '/admin', icon: DashboardIcon },
-    { name: 'Users', path: '/admin/users', icon: PeopleIcon },
-    { name: 'Access Requests', path: '/admin/access-requests', icon: CardGiftcardIcon },
-    { name: 'Access Codes', path: '/admin/access-codes', icon: KeyIcon },
-    { name: 'Cancellations', path: '/admin/cancellations', icon: EventBusyIcon },
-    { name: 'Events', path: '/admin/events', icon: CelebrationRoundedIcon },
-    { name: 'Chat', path: '/admin/chat', icon: ChatBubbleOutlineIcon },
-    { name: 'PC Requests', path: '/admin/pc-requests', icon: ComputerIcon },
-    { name: 'Subscriptions', path: '/admin/tiers', icon: CardMembershipIcon },
-    { name: 'Settings', path: '/admin/settings', icon: SettingsIcon },
+    { name: 'Dashboard', path: '/admin', icon: DashboardIcon, category: 'Overview' },
+    { name: 'Users', path: '/admin/users', icon: PeopleIcon, category: 'Management' },
+    { name: 'Chat Support', path: '/admin/chat', icon: ChatBubbleOutlineIcon, category: 'Management' },
+    { name: 'Access Requests', path: '/admin/access-requests', icon: CardGiftcardIcon, category: 'Access' },
+    { name: 'Access Codes', path: '/admin/access-codes', icon: KeyIcon, category: 'Access' },
+    { name: 'Subscriptions', path: '/admin/subscriptions', icon: CardMembershipIcon, category: 'Billing' },
+    { name: 'Cancellations', path: '/admin/cancellations', icon: EventBusyIcon, category: 'Billing' },
+    { name: 'AI Models', path: '/admin/ai-models', icon: SmartToyIcon, category: 'AI & Features' },
+    { name: 'PC Requests', path: '/admin/pc-requests', icon: ComputerIcon, category: 'AI & Features' },
+    { name: 'Events', path: '/admin/events', icon: CelebrationRoundedIcon, category: 'Customization' },
+    { name: 'Settings', path: '/admin/settings', icon: SettingsIcon, category: 'System' },
 ];
 
 export default function AdminSidebar({ mobileOpen, setMobileOpen, desktopOpen = true, unreadCount = 0 }: AdminSidebarProps) {

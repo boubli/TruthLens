@@ -38,8 +38,8 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const forcedUrl = searchParams.get('url');
 
-        // Use provided URL or saved URL
-        let ollamaUrl = forcedUrl || settings.apiKeys?.ollamaUrl || 'http://20.199.129.203:11434';
+        // Use provided URL or saved URL (SSH tunnel on 11435 → VM's 11434)
+        let ollamaUrl = forcedUrl || settings.apiKeys?.ollamaUrl || 'http://localhost:11435';
 
         // Normalize URL (remove trailing slash)
         if (ollamaUrl.endsWith('/')) {
@@ -62,6 +62,23 @@ export async function GET(request: Request) {
         });
     } catch (error: any) {
         console.error('[API] Ollama Proxy Error:', error.message);
+
+        // AUTO-FALLBACK: If the primary URL failed (e.g., blocked port), try the SSH tunnel
+        if (!debug.targetUrl?.includes('localhost:11435')) {
+            console.log('[API] ⚠️ Primary connection failed. Attempting fallback to SSH Tunnel (localhost:11435)...');
+            try {
+                const fallbackUrl = 'http://localhost:11435/api/tags';
+                const retryResponse = await axios.get(fallbackUrl, { timeout: 5000 });
+                console.log('[API] ✅ Fallback to SSH Tunnel successful!');
+                return NextResponse.json({
+                    ...retryResponse.data,
+                    debug: { ...debug, recovered: true, note: 'Recovered via SSH Tunnel' }
+                });
+            } catch (retryError: any) {
+                console.error('[API] Fallback failed:', retryError.message);
+            }
+        }
+
         debug.error = error.message;
         debug.stack = error.stack;
 

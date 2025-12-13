@@ -13,7 +13,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { createAccessCode, getAllAccessCodes, toggleAccessCodeStatus } from '@/services/accessRequestService';
+import { createAccessCode, getAllAccessCodes, toggleAccessCodeStatus, deleteAccessCode } from '@/services/accessRequestService';
 import { AccessCode, AccessCodeTier } from '@/types/accessRequest';
 
 export default function AdminAccessCodesPage() {
@@ -33,6 +33,12 @@ export default function AdminAccessCodesPage() {
     const [newLimit, setNewLimit] = useState(100);
     const [newExpiry, setNewExpiry] = useState('');
     const [creating, setCreating] = useState(false);
+
+    // Delete dialog state
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [codeToDelete, setCodeToDelete] = useState<AccessCode | null>(null);
+    const [deleting, setDeleting] = useState(false);
+
 
     // Auth check
     useEffect(() => {
@@ -103,6 +109,34 @@ export default function AdminAccessCodesPage() {
             console.error('Error toggling code:', err);
         }
     };
+
+    const openDeleteDialog = (code: AccessCode) => {
+        setCodeToDelete(code);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleDelete = async () => {
+        if (!codeToDelete) return;
+
+        setDeleting(true);
+        setError('');
+
+        try {
+            await deleteAccessCode(codeToDelete.id);
+            setSuccess(`Access code "${codeToDelete.code}" deleted successfully!`);
+            setDeleteDialogOpen(false);
+            setCodeToDelete(null);
+            loadCodes();
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to delete access code';
+            setError(message);
+            console.error('Error deleting code:', err);
+        }
+
+        setDeleting(false);
+    };
+
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
@@ -197,7 +231,11 @@ export default function AdminAccessCodesPage() {
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <IconButton color="error" size="small">
+                                    <IconButton
+                                        color="error"
+                                        size="small"
+                                        onClick={() => openDeleteDialog(code)}
+                                    >
                                         <DeleteIcon fontSize="small" />
                                     </IconButton>
                                 </TableCell>
@@ -272,6 +310,45 @@ export default function AdminAccessCodesPage() {
                     <Button onClick={() => setOpenDialog(false)}>Cancel</Button>
                     <Button variant="contained" onClick={handleCreateCode} disabled={creating}>
                         {creating ? <CircularProgress size={20} /> : 'Create Code'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog
+                open={deleteDialogOpen}
+                onClose={() => !deleting && setDeleteDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <DeleteIcon color="error" />
+                        Delete Access Code?
+                    </Box>
+                </DialogTitle>
+                <DialogContent>
+                    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                    <Typography>
+                        Are you sure you want to permanently delete the access code{' '}
+                        <strong>"{codeToDelete?.code}"</strong>?
+                    </Typography>
+                    <Typography color="text.secondary" sx={{ mt: 2 }}>
+                        This action cannot be undone. The code will be removed from Firebase and users will no longer be able to use it.
+                    </Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleDelete}
+                        disabled={deleting}
+                        startIcon={deleting ? <CircularProgress size={18} color="inherit" /> : <DeleteIcon />}
+                    >
+                        {deleting ? 'Deleting...' : 'Delete Code'}
                     </Button>
                 </DialogActions>
             </Dialog>
