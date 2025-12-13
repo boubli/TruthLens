@@ -32,6 +32,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import AddIcon from '@mui/icons-material/Add';
 import axios from 'axios';
 
 interface AdminUser {
@@ -42,7 +43,6 @@ interface AdminUser {
     status: 'Active' | 'Disabled';
     lastSignIn?: string;
     createdAt?: string;
-
 }
 
 interface UserTableProps {
@@ -148,12 +148,15 @@ export default function UserManagementPage() {
 
 
     // Dialog States
+    const [createOpen, setCreateOpen] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [passOpen, setPassOpen] = useState(false);
     const [deleteOpen, setDeleteOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
     // Form data
+    const [newUserEmail, setNewUserEmail] = useState('');
+    const [newUserPass, setNewUserPass] = useState('');
     const [role, setRole] = useState('user');
     const [tier, setTier] = useState('free');
     const [newPassword, setNewPassword] = useState('');
@@ -169,40 +172,59 @@ export default function UserManagementPage() {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/api/admin/users');
+            const token = await currentUser?.getIdToken();
+            const res = await axios.get('/api/admin/users', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
             setUsers(res.data.users);
         } catch (err: any) {
             console.error(err);
-            setError('Failed to fetch users. Ensure you have admin privileges and server key is set.');
+            setError('Failed to fetch users. Ensure you have admin privileges.');
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        fetchUsers();
-    }, []);
+        if (currentUser) {
+            fetchUsers();
+        }
+    }, [currentUser]);
 
     const handleAction = async (action: string, data: any = {}) => {
-        if (!selectedUser) return;
         setActionLoading(true);
         setActionMsg('');
         try {
+            const token = await currentUser?.getIdToken();
             const res = await axios.post('/api/admin/action', {
                 action,
-                userId: selectedUser.uid,
+                userId: selectedUser?.uid,
                 data
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             if (res.data.success) {
                 // Refresh list or update local state
                 if (action === 'deleteUser') {
-                    setUsers(users.filter(u => u.uid !== selectedUser.uid));
+                    if (selectedUser) {
+                        setUsers(users.filter(u => u.uid !== selectedUser.uid));
+                    }
                     setDeleteOpen(false);
+                } else if (action === 'createUser') {
+                    setActionMsg('User created successfully!');
+                    setTimeout(() => {
+                        setCreateOpen(false);
+                        fetchUsers(); // Refresh full list to get new user
+                    }, 1000);
                 } else if (action === 'updateRole') {
-                    setUsers(users.map(u => u.uid === selectedUser.uid ? { ...u, role: data.role } : u));
+                    if (selectedUser) {
+                        setUsers(users.map(u => u.uid === selectedUser.uid ? { ...u, role: data.role } : u));
+                    }
                 } else if (action === 'updateTier') {
-                    setUsers(users.map(u => u.uid === selectedUser.uid ? { ...u, tier: data.tier } : u));
+                    if (selectedUser) {
+                        setUsers(users.map(u => u.uid === selectedUser.uid ? { ...u, tier: data.tier } : u));
+                    }
                 } else if (action === 'setPassword') {
                     setActionMsg('Password updated successfully!');
                     setTimeout(() => setPassOpen(false), 1500);
@@ -239,6 +261,19 @@ export default function UserManagementPage() {
         setTimeout(() => setEditOpen(false), 800);
     }
 
+    const handleCreateUser = () => {
+        if (!newUserEmail || !newUserPass) {
+            setActionMsg('Email and Password are required.');
+            return;
+        }
+        handleAction('createUser', {
+            email: newUserEmail,
+            password: newUserPass,
+            role: role,
+            tier: tier
+        });
+    }
+
 
     const openEdit = (user: AdminUser) => {
         setSelectedUser(user);
@@ -261,11 +296,29 @@ export default function UserManagementPage() {
         setActionMsg('');
     };
 
+    const openCreate = () => {
+        setNewUserEmail('');
+        setNewUserPass('');
+        setRole('user');
+        setTier('free');
+        setCreateOpen(true);
+        setActionMsg('');
+    };
+
     return (
         <Box>
-            <Typography variant="h4" fontWeight="bold" sx={{ mb: 4, color: '#333' }}>
-                User Management
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+                <Typography variant="h4" fontWeight="bold" sx={{ color: '#333' }}>
+                    User Management
+                </Typography>
+                <Button
+                    variant="contained"
+                    startIcon={<AddIcon />}
+                    onClick={openCreate}
+                >
+                    Create User
+                </Button>
+            </Box>
 
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -430,6 +483,66 @@ export default function UserManagementPage() {
                         disabled={actionLoading || (selectedUser?.uid === currentUser?.uid && admins.length <= 1)}
                     >
                         {actionLoading ? 'Deleting...' : 'Delete Permanently'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+             {/* Create User Dialog */}
+             <Dialog open={createOpen} onClose={() => setCreateOpen(false)}>
+                <DialogTitle>Create New User</DialogTitle>
+                <DialogContent sx={{ minWidth: 350, pt: 2 }}>
+                    <TextField
+                        label="Email Address"
+                        fullWidth
+                        value={newUserEmail}
+                        onChange={(e) => setNewUserEmail(e.target.value)}
+                        sx={{ mb: 2 }}
+                    />
+                     <TextField
+                        label="Initial Password"
+                        fullWidth
+                        value={newUserPass}
+                        onChange={(e) => setNewUserPass(e.target.value)}
+                        sx={{ mb: 2 }}
+                    />
+
+                    <TextField
+                        select
+                        label="Role"
+                        fullWidth
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                        variant="outlined"
+                        sx={{ mb: 2 }}
+                    >
+                        <MenuItem value="user">User</MenuItem>
+                        <MenuItem value="admin">Admin</MenuItem>
+                    </TextField>
+
+                    <TextField
+                        select
+                        label="Subscription Tier"
+                        fullWidth
+                        value={tier}
+                        onChange={(e) => setTier(e.target.value)}
+                        variant="outlined"
+                    >
+                        <MenuItem value="free">Free</MenuItem>
+                        <MenuItem value="plus">Plus</MenuItem>
+                        <MenuItem value="pro">Pro</MenuItem>
+                        <MenuItem value="ultimate">Ultimate</MenuItem>
+                    </TextField>
+
+                    {actionMsg && <Alert severity={actionMsg.includes('Error') ? 'error' : 'success'} sx={{ mt: 2 }}>{actionMsg}</Alert>}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setCreateOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreateUser}
+                        disabled={actionLoading}
+                    >
+                        {actionLoading ? 'Creating...' : 'Create User'}
                     </Button>
                 </DialogActions>
             </Dialog>

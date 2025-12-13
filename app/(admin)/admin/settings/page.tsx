@@ -14,6 +14,7 @@ import {
 import SettingsSuggestIcon from '@mui/icons-material/SettingsSuggest';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import { getSystemSettings, updateSystemSettings } from '@/services/systemService';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -23,6 +24,7 @@ import axios from 'axios';
 import GeneralSettingsTab from '@/components/admin/settings/GeneralSettingsTab';
 import AISettingsTab from '@/components/admin/settings/AISettingsTab';
 import SystemSettingsTab from '@/components/admin/settings/SystemSettingsTab';
+import AdminProfileTab from '@/components/admin/settings/AdminProfileTab';
 
 import { EventManagerConfig } from '@/types/system';
 
@@ -567,7 +569,7 @@ export default function AdminSettingsPage() {
                     <Tab icon={<SettingsSuggestIcon />} iconPosition="start" label="General" />
                     <Tab icon={<SmartToyIcon />} iconPosition="start" label="AI & Models" />
                     <Tab icon={<CloudQueueIcon />} iconPosition="start" label="Integrations" />
-
+                    <Tab icon={<ManageAccountsIcon />} iconPosition="start" label="My Account" />
                 </Tabs>
             </Paper>
 
@@ -635,6 +637,9 @@ export default function AdminSettingsPage() {
                         handleSavePcPrice={handleSavePcPrice}
                         savingPcPrice={savingPcPrice}
                     />
+                )}
+                {tabValue === 3 && (
+                    <AdminProfileTab />
                 )}
 
             </Box>
