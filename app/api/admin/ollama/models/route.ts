@@ -21,15 +21,12 @@ export async function GET(request: Request) {
         const idToken = authHeader.split('Bearer ')[1];
         try {
             const decodedToken = await adminAuth!.verifyIdToken(idToken);
-            // Relaxed Security for Development: Allow any authenticated user to access this endpoint
-            // TODO: Re-enable strict admin check in production
-            /* 
+
             if (decodedToken.uid !== 'admin' && !decodedToken.admin) {
                 if (decodedToken.role !== 'admin' && decodedToken.admin !== true) {
                     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
                 }
             } 
-            */
         } catch (e) {
             return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
         }
