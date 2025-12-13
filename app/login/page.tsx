@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Box, Button, TextField, Typography, Alert, Grid, Paper } from '@mui/material';
+import { Box, Button, TextField, Typography, Alert, Grid, Paper, IconButton, InputAdornment } from '@mui/material';
 import GoogleIcon from '@mui/icons-material/Google';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import Visibility from '@mui/icons-material/Visibility';
+import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInWithPopup, signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
@@ -18,7 +20,14 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [verificationSent, setVerificationSent] = useState(false);
     const [unverifiedEmail, setUnverifiedEmail] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
+
+    const handleClickShowPassword = () => setShowPassword((show) => !show);
+
+    const handleMouseDownPassword = (event: React.MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault();
+    };
 
     const handleGoogleLogin = async () => {
         setLoading(true);
@@ -230,11 +239,27 @@ export default function LoginPage() {
                             <TextField
                                 name="password"
                                 label="Password"
-                                type="password"
+                                type={showPassword ? 'text' : 'password'}
                                 required
                                 fullWidth
                                 disabled={loading}
                                 autoComplete="current-password"
+                                slotProps={{
+                                    input: {
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    aria-label="toggle password visibility"
+                                                    onClick={handleClickShowPassword}
+                                                    onMouseDown={handleMouseDownPassword}
+                                                    edge="end"
+                                                >
+                                                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    },
+                                }}
                             />
 
                             <Box sx={{ textAlign: 'right', mt: -1 }}>
