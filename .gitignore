@@ -52,7 +52,7 @@ dev_*.log
 tsc_output*.txt
 lint_*.json
 debug-*.js
-fetch_models.js
+fetch_*.js
 ollama_test.json
 *_test.json
 
