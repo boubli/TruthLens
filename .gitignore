@@ -43,6 +43,17 @@ npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 
+# Build and Debug Files
+build_*.txt
+build_*.log
+build_output.*
+dev_*.txt
+dev_*.log
+tsc_output*.txt
+lint_*.json
+debug-*.js
+ollama_test.json
+
 # Local Security/Keys (Preserved from previous configuration)
 certificates/
 serviceAccountKey.json
